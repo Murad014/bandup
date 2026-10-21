@@ -37,15 +37,17 @@ Browser (author)
   │ 1. GET /admin, /admin/sessions, /admin/sessions/{id}/edit   (navigation)
   ▼
 ┌───────────────────────────────┐
-│ Thymeleaf @Controller (admin) │ returns admin page shells (no content/answers
-│   AdminPageController         │ embedded); behind an authorization layer
+│ Thymeleaf @Controller (admin) │ returns admin pages using a dedicated admin
+│   AdminPageController         │ layout (persistent left sidebar); behind an
+│                               │ authorization layer. No content/answers in HTML.
 └───────────────────────────────┘
   │ 2. pages load admin JS modules
   ▼
 ┌───────────────────────────────┐
 │ admin JS (ES modules)         │ 3. GET/POST/PUT/DELETE /api/v1/admin/passages
-│  - sessions list              │ 4. passage editor (gloss/evidence helpers)
-│  - session editor + preview   │ 5. question/answer/evidence editors
+│  - sidebar (toggle, active)   │ 4. passage editor (gloss/evidence helpers)
+│  - sessions list              │ 5. question/answer/evidence editors
+│  - session editor + preview   │
 └───────────────────────────────┘
   │
   ▼
@@ -60,33 +62,61 @@ Browser (author)
    (no answers)        (full objects)
 ```
 
-The admin pages carry only routing/ids; all content is fetched. Grading/answer
-data lives behind admin endpoints only.
+The public top navbar only offers a role-gated **Admin** link to enter the
+area; once inside, navigation is the admin sidebar. Admin pages carry only
+routing/ids; all content is fetched. Grading/answer data lives behind admin
+endpoints only.
 
 ---
 
-## 3. Admin area within the shared shell
+## 3. Admin layout and sidebar navigation
 
-- The admin pages decorate the shared layout (`layout/main.html`,
-  `reading-practice-ui` design §3a), so the global navbar, theme, and nav guard
-  come for free.
-- The navbar gains an **Admin** nav item, visible only to admin-role users
-  (Requirement 1.4). Until real auth exists, visibility is driven by a
-  server-provided flag; the access-control layer (not the hidden link) is what
-  actually protects the area.
-- Within the admin area, a secondary admin sub-navigation (e.g. "Sessions")
-  gives room to add future content types (Grammar, Listening) later.
+The admin area uses a **dedicated admin layout** with a **persistent left
+sidebar**, not the public top navbar (Requirement 11).
+
+- A dedicated `templates/admin/layout.html` provides the admin shell: `<html>`,
+  `<head>` (reusing `app.css` theme variables + `admin.css`), a **sidebar**
+  region, and a main content area where each admin page injects its body. It
+  does not render the public navbar.
+- The **public** top navbar (from `reading-practice-ui`) keeps only a role-gated
+  **Admin** link as the entry point into the area; all in-admin navigation is
+  the sidebar.
+
+### Sidebar
+
+- Rendered from a **single data-driven list** of admin nav items supplied by the
+  controller/model — adding a new section (e.g. a future Grammar content type)
+  is a data change, not a per-page edit (Requirement 11.3).
+
+  ```
+  AdminNavItem { key, label, href, icon? }
+  ```
+
+- Contents: the admin brand/area title at the top; the nav items (e.g.
+  **Dashboard**, **Sessions**); and a sign-out / exit-to-app affordance pinned at
+  the bottom (Requirement 11.5).
+- The item whose `key` matches the page's `activeKey` is marked current
+  (`aria-current="page"`) (Requirement 11.2).
+- **Responsive** (Requirement 11.4): on wide screens the sidebar is pinned
+  beside the content; on narrow screens it collapses to an off-canvas drawer
+  opened by a keyboard-operable toggle (`aria-expanded`).
+- **Theming/a11y** (Requirement 11.6): uses the shared theme variables and
+  focus-visible rules; the active item and toggle are keyboard operable.
+- The unsaved-changes guard (§5.3 / Requirement 10) hooks sidebar link clicks the
+  same way the shared nav guard does, so navigating away from a dirty editor
+  prompts for confirmation.
 
 ### Routes (Thymeleaf)
 
 | Route | View | Purpose |
 |------|------|---------|
-| `GET /admin` | `admin/index` | admin home / dashboard |
-| `GET /admin/sessions` | `admin/sessions` | list sessions |
+| `GET /admin` | `admin/index` | admin dashboard (sidebar: Dashboard active) |
+| `GET /admin/sessions` | `admin/sessions` | list sessions (Sessions active) |
 | `GET /admin/sessions/new` | `admin/session-edit` | create |
 | `GET /admin/sessions/{id}/edit` | `admin/session-edit` | edit |
 
-All under an authorization layer (§7).
+All admin views decorate `admin/layout.html` and sit behind the authorization
+layer (§7).
 
 ---
 
@@ -164,6 +194,7 @@ The UI renders these without discarding the author's input (Requirement 7.4).
 admin/
 ├── api.js        list/get/create/update/delete/publish; stub + httpApi (mirrors reading/api.js)
 ├── fixtures.js   stub seed sessions (full objects incl. answers) for dev
+├── sidebar.js    sidebar toggle (off-canvas on narrow) + active item + nav guard hook
 ├── sessions.js   list page controller (render rows, delete, publish toggle)
 ├── editor.js     session editor controller (metadata, groups, questions, dirty guard, save/publish)
 ├── passage.js    passage editor: gloss/evidence helpers + live preview
@@ -298,13 +329,14 @@ Draft save relaxes rules 3–5 (allows incomplete work); **publish** enforces al
 src/main/resources/
 ├── templates/
 │   └── admin/
-│       ├── index.html          admin home (decorates layout/main.html)
+│       ├── layout.html         dedicated admin shell (sidebar + content slot)
+│       ├── index.html          admin dashboard (decorates admin/layout.html)
 │       ├── sessions.html       sessions list
 │       └── session-edit.html   create/edit editor
 └── static/
-    ├── css/admin.css           admin-specific styles (builds on app.css vars)
+    ├── css/admin.css           admin layout + sidebar styles (builds on app.css vars)
     └── js/admin/
-        ├── api.js  fixtures.js  validate.js
+        ├── api.js  fixtures.js  validate.js  sidebar.js
         ├── sessions.js  editor.js  passage.js
 ```
 

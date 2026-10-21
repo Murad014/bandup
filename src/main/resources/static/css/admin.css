@@ -1,0 +1,274 @@
+/* =========================================================================
+   admin.css — Material-inspired admin layout (sidebar + content), editor, list.
+   Builds on the shared theme variables from app.css.
+   ========================================================================= */
+
+:root { --admin-sb-w: 248px; }
+
+body.admin { background: var(--bg); }
+
+/* ---- Shell: sidebar + content ---------------------------------------- */
+.admin-shell {
+    display: grid;
+    grid-template-columns: var(--admin-sb-w) 1fr;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 12px;
+    background: var(--paper);
+    border-right: 1px solid var(--line);
+    box-shadow: var(--shadow-1);
+}
+.admin-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: 700 1.2rem var(--ui);
+    color: var(--fg);
+    text-decoration: none;
+    padding: 6px 12px 16px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+}
+.admin-brand span { color: var(--accent); }
+
+.admin-nav__caption {
+    font: 600 .68rem var(--ui);
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 6px 0 4px;
+    padding: 0 14px;
+}
+
+.admin-nav { display: flex; flex-direction: column; gap: 3px; }
+.admin-nav__link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font: 500 .95rem var(--ui);
+    color: var(--fg);
+    text-decoration: none;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: background .15s ease, color .15s ease;
+}
+.admin-nav__link:hover { background: var(--surface); }
+.admin-nav__link.is-active { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+
+/* Icons for the main nav items (only items with a data-key). */
+.admin-nav__link[data-key]::before {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    font-size: 1.05rem;
+    opacity: .85;
+}
+.admin-nav__link[data-key="dashboard"]::before { content: "\25A6"; } /* ▦ */
+.admin-nav__link[data-key="sessions"]::before { content: "\2630"; }  /* ☰ */
+.admin-nav__link.is-active[data-key]::before { opacity: 1; }
+
+.admin-sidebar__foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.admin-sidebar__foot .admin-nav__link { color: var(--muted); font-weight: 500; font-size: .9rem; }
+.admin-nav__theme [data-theme-icon] { font-size: 1.05rem; width: 20px; display: inline-block; text-align: center; }
+
+.admin-main {
+    min-width: 0;
+    padding: 32px clamp(20px, 5vw, 56px) 72px;
+}
+/* Center the page content as a container within the main column. */
+.admin-main > * {
+    max-width: 1060px;
+    margin-inline: auto;
+}
+
+/* Sidebar toggle — hidden on wide screens. */
+.admin-sb-toggle {
+    display: none;
+    position: fixed; top: 12px; left: 12px; z-index: 40;
+    width: 42px; height: 42px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--fg);
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-1);
+}
+
+@media (max-width: 760px) {
+    .admin-shell { grid-template-columns: 1fr; }
+    .admin-sb-toggle { display: inline-block; }
+    .admin-sidebar {
+        position: fixed; z-index: 35; left: 0; top: 0; bottom: 0;
+        width: var(--admin-sb-w);
+        transform: translateX(-100%);
+        transition: transform .2s ease;
+        box-shadow: var(--shadow-3);
+    }
+    .admin-shell.sb-open .admin-sidebar { transform: translateX(0); }
+    .admin-main { padding-top: 64px; }
+}
+@media (prefers-reduced-motion: reduce) { .admin-sidebar { transition: none; } }
+
+/* ---- Common admin UI -------------------------------------------------- */
+.admin-h1 { font: 600 1.7rem/1.2 var(--display); margin: 0 0 6px; }
+.admin-sub { color: var(--muted); margin: 0 0 20px; }
+.admin-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.admin-spacer { flex: 1; }
+
+.admin-status { color: var(--muted); font-size: .92rem; padding: 12px 0; }
+.admin-error { color: var(--bad); background: var(--bad-soft); border-radius: var(--radius); padding: 12px 14px; }
+.admin-error ul { margin: 6px 0 0; padding-left: 18px; }
+
+.badge { font: 600 .66rem var(--ui); letter-spacing: .05em; text-transform: uppercase; padding: 3px 9px; border-radius: var(--radius-pill); }
+.badge--draft { background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
+.badge--published { background: var(--ok-soft); color: var(--ok); }
+
+/* ---- Editor action bar ------------------------------------------------ */
+.editor-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 16px 0;
+    margin: 0 0 24px;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter: saturate(140%) blur(8px);
+    border-bottom: 1px solid var(--line);
+}
+.editor-topbar__title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.editor-topbar .admin-h1 { margin: 0; }
+.editor-actions { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+#editorErrors { margin-bottom: 20px; }
+
+/* ---- Cards ------------------------------------------------------------ */
+.card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-1);
+}
+.card h3 { margin: 0 0 12px; font: 600 1.05rem var(--ui); }
+
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 8px; }
+.dash-card {
+    display: block;
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    padding: 22px; text-decoration: none; color: var(--fg);
+    box-shadow: var(--shadow-1); transition: box-shadow .15s ease, transform .1s ease;
+}
+.dash-card:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); }
+.dash-card h3 { margin: 0 0 6px; font: 600 1.1rem var(--ui); color: var(--accent); }
+.dash-card p { margin: 0; color: var(--muted); font-size: .92rem; }
+
+/* ---- Sessions table --------------------------------------------------- */
+.lib-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.lib-search {
+    flex: 1 1 260px;
+    min-width: 180px;
+    font: 400 .95rem var(--ui);
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--fg);
+}
+.lib-search:focus { outline: none; border-color: var(--accent); background: var(--paper); box-shadow: 0 0 0 3px var(--accent-soft); }
+.lib-toolbar select {
+    font: 400 .9rem var(--ui); padding: 9px 10px;
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--surface); color: var(--fg);
+}
+.lib-count { color: var(--muted); font-size: .85rem; }
+.row-actions { white-space: nowrap; }
+.admin-table { width: 100%; border-collapse: collapse; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-1); }
+.admin-table th, .admin-table td { text-align: left; padding: 13px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.admin-table th { font: 600 .72rem var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--surface); }
+.admin-table tbody tr:last-child td { border-bottom: 0; }
+.admin-table tbody tr:hover { background: var(--surface); }
+.admin-table td .btn { padding: 6px 12px; margin-right: 6px; }
+.admin-empty { text-align: center; padding: 56px 16px; color: var(--muted); background: var(--paper); border: 1px dashed var(--line); border-radius: var(--radius-lg); }
+
+/* ---- Forms / editor (Material filled inputs) ------------------------- */
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+.field label { font-weight: 500; font-size: .82rem; color: var(--muted); }
+.field input[type=text], .field input[type=number], .field textarea, .field select {
+    font: 400 .95rem var(--ui);
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--fg);
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--paper);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field .err { color: var(--bad); font-size: .8rem; }
+.field.has-error input, .field.has-error textarea { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+@media (max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.editor-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .editor-split { grid-template-columns: 1fr; } }
+
+/* Passage editor + preview */
+.passage-edit {
+    min-height: 240px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    background: var(--surface);
+    font: 400 1.05rem/1.7 var(--body);
+    outline: none;
+}
+.passage-edit:focus { border-color: var(--accent); background: var(--paper); box-shadow: 0 0 0 3px var(--accent-soft); }
+.passage-edit .w { border-bottom: 1.5px dotted var(--accent); }
+.passage-edit .ev { background: var(--evid); border-radius: 3px; }
+.passage-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.passage-preview { font: 400 1.05rem/1.7 var(--body); padding: 14px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--paper); min-height: 240px; }
+.passage-preview .w { border-bottom: 1.5px dotted var(--accent); cursor: help; }
+.passage-preview .ev { background: var(--evid); border-radius: 3px; }
+
+/* Question cards */
+.q-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; background: var(--surface); }
+.q-card .q-head { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.q-num { font-weight: 700; color: var(--accent); }
+.dirty-dot { color: var(--accent); font-weight: 700; }
+
+/* Option bank (matching groups + multiple-choice options) */
+.opt-bank { margin-bottom: 14px; padding: 12px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--paper); }
+.opt-bank__label { font: 600 .75rem var(--ui); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.opt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.opt-key {
+    flex: none; display: inline-grid; place-items: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .8rem;
+}
+.opt-row input[type=text] {
+    flex: 1; font: 400 .92rem var(--ui); padding: 7px 10px;
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--fg);
+}
+.q-card label.check { display: flex; align-items: center; gap: 8px; font-weight: 500; padding: 4px 0; }

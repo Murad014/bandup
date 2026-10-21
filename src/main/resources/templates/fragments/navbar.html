@@ -35,6 +35,15 @@
                     <span th:if="${item.comingSoon()}" class="app-nav__badge">soon</span>
                 </span>
             </li>
+            <!-- Role-gated entry point into the admin area (sidebar lives there). -->
+            <li class="app-nav__item" th:if="${isAdmin}">
+                <a class="app-nav__link" th:href="@{/admin}">Admin</a>
+            </li>
+            <li class="app-nav__item">
+                <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle theme">
+                    <span data-theme-icon aria-hidden="true">☾</span>
+                </button>
+            </li>
         </ul>
     </div>
 </nav>

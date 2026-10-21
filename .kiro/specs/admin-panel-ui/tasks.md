@@ -14,18 +14,24 @@ Conventions:
 
 ---
 
-- [ ] 1. Admin area shell + access-control stand-in
+- [x] 1. Admin layout (sidebar) + access-control stand-in
+  - Create a dedicated admin layout (`templates/admin/layout.html`) with a
+    persistent left sidebar (brand/area title, data-driven nav items Dashboard /
+    Sessions, active-item marking, sign-out/exit affordance) and a content slot;
+    reuse `app.css` theme vars + a new `admin.css`. Add `admin/sidebar.js` for the
+    responsive off-canvas toggle (keyboard-operable) and the nav-guard hook.
   - Add admin Thymeleaf routes (`/admin`, `/admin/sessions`,
-    `/admin/sessions/new`, `/admin/sessions/{id}/edit`) decorating the shared
-    layout, with an admin sub-navigation.
-  - Add a role-gated **Admin** navbar item and a server-side **deny-by-default**
-    authorization layer for `/admin/**` and `/api/v1/admin/**` (stands in until
-    the auth spec lands).
+    `/admin/sessions/new`, `/admin/sessions/{id}/edit`) decorating the admin
+    layout with the correct `activeKey`.
+  - Add a role-gated **Admin** entry on the public navbar (entry point only) and
+    a server-side **deny-by-default** authorization layer for `/admin/**` and
+    `/api/v1/admin/**` (stands in until the auth spec lands).
   - _Verify_: MockMvc — admin routes/API denied without the admin role (not just
-    hidden); allowed with it. Shell renders with admin sub-nav.
-  - _Requirements: 1, NFR 1, NFR 4_
+    hidden); allowed with it; admin page renders the sidebar with the active item
+    marked (`aria-current`).
+  - _Requirements: 1, 11, NFR 1, NFR 4_
 
-- [ ] 2. Stub admin API client + fixtures
+- [x] 2. Stub admin API client + fixtures
   - Implement `admin/api.js`: `list`, `get`, `create`, `update`, `remove`,
     `publish`, `unpublish` against the §4 contract; stub + `httpApi` (mirrors
     `reading/api.js`).
@@ -35,7 +41,7 @@ Conventions:
     `answerKey`; unknown id → 404; create assigns an id.
   - _Requirements: 2, 3, 6 (contract)_
 
-- [ ] 3. Sessions list page
+- [x] 3. Sessions list page
   - Implement `admin/sessions.js`: render rows (title, stage, status, question
     count) from `list`; empty state + "New session"; row actions edit / delete /
     publish-unpublish; error + retry.
@@ -45,7 +51,7 @@ Conventions:
     path shows retry.
   - _Requirements: 2, 8.3, 8.4, 9_
 
-- [ ] 4. Client validation module
+- [x] 4. Client validation module
   - Implement `admin/validate.js` (pure) covering §6 rules: required
     title/stage; duration/threshold; unique contiguous numbering; answer
     presence/format (TFNG set, FILL non-empty list); evidence-reference
@@ -54,7 +60,7 @@ Conventions:
     publish enforcement.
   - _Requirements: 7, 8.1, 8.2_
 
-- [ ] 5. Session metadata editor
+- [x] 5. Session metadata editor
   - Implement the editor shell (`admin/editor.js`) + `session-edit.html`: load
     via `get` (or blank for new), bind metadata fields (title, stage, duration
     mm:ss/seconds, threshold), save via `create`/`update`.
@@ -65,7 +71,7 @@ Conventions:
     payload renders field messages and preserves input.
   - _Requirements: 3, 7.2, 7.4_
 
-- [ ] 6. Passage editor — gloss/evidence helpers + serialization
+- [x] 6. Passage editor — gloss/evidence helpers + serialization
   - Implement `admin/passage.js`: the editing surface (contenteditable per
     design §5.2) with toolbar helpers **Add gloss** (wrap selection in
     `span.w[data-az]`, prompt for AZ), **Mark evidence** (wrap in `span.ev[id]`
@@ -76,7 +82,7 @@ Conventions:
     allowed tags/attrs; registry reflects current `.ev` ids.
   - _Requirements: 4_
 
-- [ ] 7. Passage live preview
+- [x] 7. Passage live preview
   - Render the serialized `passageHtml` in a read-only preview using the learner
     reading styles (`.w` glosses, `.ev` evidence); allow toggling evidence
     visualisation.
@@ -84,7 +90,7 @@ Conventions:
     the preview match the serialized passage.
   - _Requirements: 4.5, 4.6_
 
-- [ ] 8. Question groups + questions editor
+- [x] 8. Question groups + questions editor
   - In `editor.js`: add/reorder/remove groups (type TFNG/FILL, heading,
     instruction); add/reorder/remove questions (TFNG statement; FILL pre/post);
     maintain unique contiguous numbering; renumber on change.
@@ -92,7 +98,7 @@ Conventions:
     reorder/remove renumbers; numbering stays contiguous across groups.
   - _Requirements: 5_
 
-- [ ] 9. Answers, explanations, evidence links
+- [x] 9. Answers, explanations, evidence links
   - Per question: TFNG answer selector (TRUE/FALSE/NOT GIVEN); FILL accepted
     answers (one or more); explanation editor (HTML fragment); evidence picker
     populated from the passage registry (or unset).
@@ -102,7 +108,7 @@ Conventions:
     current `eN` ids; a reference to a removed evidence id is flagged.
   - _Requirements: 6, 7.1_
 
-- [ ] 10. Draft / publish lifecycle
+- [x] 10. Draft / publish lifecycle
   - Wire Save (draft — relaxed validation) and Publish (full validation via
     `validate.js`, then `publish`); Unpublish sets back to draft; reflect status
     in editor + list.
@@ -110,7 +116,7 @@ Conventions:
     invalid content and succeeds when valid; unpublish returns to draft.
   - _Requirements: 7, 8_
 
-- [ ] 11. Unsaved-changes guard
+- [x] 11. Unsaved-changes guard
   - Mark the editor dirty on any change; register the shared nav guard
     (`window.BandUpNav.registerGuard`) + a `beforeunload` handler; clear on
     successful save.
@@ -118,16 +124,17 @@ Conventions:
     guard returns false after save.
   - _Requirements: 10_
 
-- [ ] 12. Accessibility and responsive pass
+- [x] 12. Accessibility and responsive pass
   - Labelled controls for metadata/questions/answers; keyboard-operable editor
-    toolbar and evidence picker; focus indicators; responsive two-pane
-    (editor/preview) collapsing on narrow screens; dark/light theming via shared
-    vars.
-  - _Verify_: keyboard-only walkthrough of create→author→publish; layout check at
-    narrow/wide widths; theme check.
-  - _Requirements: NFR 4_
+    toolbar, evidence picker, and **sidebar toggle**; focus indicators;
+    current-page indication in the sidebar; responsive two-pane
+    (editor/preview) collapsing on narrow screens and the **sidebar collapsing
+    off-canvas**; dark/light theming via shared vars.
+  - _Verify_: keyboard-only walkthrough of create→author→publish including
+    sidebar navigation; layout check at narrow/wide widths; theme check.
+  - _Requirements: 11, NFR 4_
 
-- [ ] 13. End-to-end authoring flow against the stub
+- [x] 13. End-to-end authoring flow against the stub
   - Wire all modules: list → new → metadata → passage (glosses + evidence) →
     questions → answers/explanations/evidence → validate → publish → appears
     published in the list; round-trip edit.
