@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!--
+  Dedicated admin shell with a persistent left sidebar. Admin pages decorate it:
+    th:replace="~{admin/layout :: layout(~{::title}, ~{::#pageCss}, ~{::main}, 'sessions')}"
+  The sidebar is rendered from the `adminNav` model attribute (AdminWebAdvice);
+  the item matching the activeKey argument is marked current.
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:fragment="layout(title, headExtra, content, activeKey)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title th:replace="${title}">BandUp Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Roboto:wght@400;500;700&display=swap">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <script th:src="@{/js/theme.js}"></script>
+    <th:block th:replace="${headExtra} ?: _"></th:block>
+</head>
+<body class="admin">
+    <button class="admin-sb-toggle" type="button" data-admin-sb-toggle
+            aria-expanded="false" aria-controls="adminSidebar" aria-label="Toggle admin navigation">☰</button>
+
+    <div class="admin-shell" data-admin-shell>
+        <aside class="admin-sidebar" id="adminSidebar" data-admin-sidebar aria-label="Admin navigation">
+            <a class="admin-brand" th:href="@{/admin}">Band<span>Up</span> Admin</a>
+            <p class="admin-nav__caption">Content</p>
+            <nav class="admin-nav">
+                <a th:each="item : ${adminNav}"
+                   class="admin-nav__link" data-admin-nav-link
+                   th:href="${item.href()}"
+                   th:text="${item.label()}"
+                   th:classappend="${item.key() == activeKey} ? ' is-active' : ''"
+                   th:attr="aria-current=${item.key() == activeKey} ? 'page' : null, data-key=${item.key()}">Section</a>
+            </nav>
+            <div class="admin-sidebar__foot">
+                <button class="admin-nav__link admin-nav__theme" type="button" data-theme-toggle aria-label="Toggle theme">
+                    <span data-theme-icon aria-hidden="true">☾</span> <span>Theme</span>
+                </button>
+                <a class="admin-nav__link" th:href="@{/}">↩ Exit to app</a>
+            </div>
+        </aside>
+
+        <div class="admin-main">
+            <th:block th:replace="${content}"></th:block>
+        </div>
+    </div>
+
+    <script th:src="@{/js/admin/sidebar.js}" defer></script>
+</body>
+</html>

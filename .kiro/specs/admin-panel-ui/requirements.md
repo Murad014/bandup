@@ -29,7 +29,11 @@ driven by a REST API (`/api/v1/admin/**`), built against a stub first.
 
 - Consumes/produces the content model served by the Reading backend. The admin
   **write** endpoints and the learner **read** endpoints share one data store.
-- Reuses the shared app shell / navbar from `reading-practice-ui` design §3a.
+- Uses a **dedicated admin layout with a persistent left sidebar** for admin
+  navigation. It reuses the shared theme variables and base styles (app.css) but
+  does **not** use the public top navbar for navigating within the admin area.
+  The public navbar only provides a role-gated **entry point** into the admin
+  area.
 
 ### Definitions
 
@@ -56,8 +60,8 @@ authorised authors, so that only trusted users can create or change content.
    API THEN the system SHALL deny access with a forbidden response.
 3. WHERE a user has the admin role THE system SHALL grant access to the admin
    area.
-4. WHERE the navbar is shown THE Admin entry SHALL be visible only to users with
-   the admin role.
+4. WHERE the public top navbar is shown THE Admin entry (the link into the
+   admin area) SHALL be visible only to users with the admin role.
 5. WHILE the authentication mechanism is not yet implemented THE admin area
    SHALL remain guarded by an explicit access-control layer (not merely hidden
    links), so enabling real auth later does not expose it retroactively.
@@ -240,6 +244,30 @@ don't accidentally discard work.
 
 ---
 
+## Requirement 11 — Admin navigation (sidebar)
+
+**User story:** As an author, I want a persistent sidebar in the admin area, so
+that I can move between admin sections quickly.
+
+#### Acceptance Criteria
+
+1. WHERE any admin page is shown THE admin layout SHALL present a persistent
+   left sidebar containing the admin brand/area title and the admin navigation
+   items (e.g. Dashboard, Sessions; extensible to future content types).
+2. WHERE a sidebar item corresponds to the current page THE sidebar SHALL mark
+   it as the active item.
+3. WHERE the admin navigation set grows THE sidebar SHALL render from a single
+   data-driven source without changes to individual admin pages.
+4. WHERE the viewport is narrow THE sidebar SHALL collapse into a toggle
+   (off-canvas or compact) and remain operable by keyboard.
+5. WHERE a sign-out / exit-to-app affordance is needed THE sidebar SHALL provide
+   it (exact auth action deferred to the auth spec).
+6. WHERE the admin layout is rendered THE UI SHALL apply the shared theming
+   (light/dark) and accessibility expectations (focus indicators, accessible
+   labels, current-page indication).
+
+---
+
 ## Non-functional requirements
 
 1. **Access control is mandatory.** The admin area SHALL be protected by a
@@ -252,8 +280,10 @@ don't accidentally discard work.
 3. **No answer leakage to learners.** Answer keys and explanations authored here
    SHALL only be exposed through admin endpoints, never through the learner
    `GET /api/v1/passages/{id}` response.
-4. The admin UI SHALL reuse the shared app shell, theming, responsive behaviour,
+4. The admin UI SHALL use a dedicated admin layout with a persistent sidebar
+   (Requirement 11), reusing the shared theme variables, responsive behaviour,
    and accessibility expectations (focus indicators, labelled controls, keyboard
-   operability) defined for the app.
+   operability) defined for the app. It SHALL NOT use the public top navbar for
+   in-admin navigation.
 5. The admin UI SHALL degrade gracefully with visible error states on any API
    failure, never failing silently.

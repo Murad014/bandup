@@ -8,11 +8,23 @@
 <main class="wrap home">
     <section class="home__hero">
         <h1 class="home__title">Practice IELTS, one skill at a time.</h1>
-        <p class="home__lead">Choose a practice area from the navigation above.</p>
+        <p class="home__lead">Focused, timed practice with instant feedback and
+            explanations — so every attempt teaches you something.</p>
         <div class="home__actions">
             <a class="btn btn--primary" th:href="@{/reading/yellowstone-wolves}">Start Reading</a>
         </div>
     </section>
+
+    <div class="card-grid">
+        <a class="feature-card" th:href="@{/reading/yellowstone-wolves}">
+            <h3>Reading</h3>
+            <p>Timed passages with True/False/Not Given and gap-fill questions, highlights and vocabulary help.</p>
+        </a>
+        <div class="feature-card">
+            <h3>Grammar <span class="badge">soon</span></h3>
+            <p>Targeted grammar drills are on the way.</p>
+        </div>
+    </div>
 </main>
 </body>
 </html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::title}, ~{::#pageCss}, ~{::main}, 'sessions')}">
+<head>
+    <title>Sessions · BandUp Admin</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<main id="sessionsRoot">
+    <div class="admin-row">
+        <h1 class="admin-h1">Reading sessions</h1>
+        <span class="admin-spacer"></span>
+        <a class="btn btn--primary" th:href="@{/admin/sessions/new}" data-admin-nav-link>New session</a>
+    </div>
+
+    <div class="lib-toolbar">
+        <input id="sessionsSearch" class="lib-search" type="search"
+               placeholder="Search title or stage…" aria-label="Search sessions">
+        <select id="sessionsFilter" aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+        </select>
+        <select id="sessionsSort" aria-label="Sort">
+            <option value="title">Sort: Title</option>
+            <option value="status">Sort: Status</option>
+            <option value="questions">Sort: Questions</option>
+        </select>
+        <span class="admin-spacer"></span>
+        <span id="sessionsCount" class="lib-count"></span>
+    </div>
+
+    <p id="sessionsStatus" class="admin-status">Loading sessions…</p>
+
+    <table id="sessionsTable" class="admin-table" hidden>
+        <thead>
+            <tr><th>Title</th><th>Stage</th><th>Status</th><th>Questions</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="sessionsBody"></tbody>
+    </table>
+
+    <p id="sessionsNote" class="admin-status" hidden></p>
+
+    <div id="sessionsEmpty" class="admin-empty" hidden>
+        <p>No sessions yet.</p>
+        <a class="btn btn--primary" th:href="@{/admin/sessions/new}" data-admin-nav-link>Create the first session</a>
+    </div>
+
+    <script type="module" th:src="@{/js/admin/sessions-page.js}"></script>
+</main>
+</body>
+</html>

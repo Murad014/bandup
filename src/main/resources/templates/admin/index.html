@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::title}, ~{}, ~{::main}, 'dashboard')}">
+<head>
+    <title>Dashboard · BandUp Admin</title>
+</head>
+<body>
+<main>
+    <h1 class="admin-h1">Admin dashboard</h1>
+    <p class="admin-sub">Manage Reading practice content.</p>
+    <div class="dash-grid">
+        <a class="dash-card" th:href="@{/admin/sessions}">
+            <h3>Sessions</h3>
+            <p>Browse, edit, publish and delete reading sessions.</p>
+        </a>
+        <a class="dash-card" th:href="@{/admin/sessions/new}">
+            <h3>New session</h3>
+            <p>Author a passage, questions, answers and evidence.</p>
+        </a>
+    </div>
+</main>
+</body>
+</html>
