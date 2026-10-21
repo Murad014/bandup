@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Node (JS test tooling only: jsdom for the reading UI tests) ###
+node_modules/
+npm-debug.log*
+.npm/

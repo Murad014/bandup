@@ -1,0 +1,24 @@
+{
+  "name": "bandup",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test jstest/core-api.test.mjs jstest/app.dom.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Murad014/bandup.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Murad014/bandup/issues"
+  },
+  "homepage": "https://github.com/Murad014/bandup#readme",
+  "devDependencies": {
+    "jsdom": "^30.1.3"
+  }
+}
