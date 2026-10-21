@@ -1,0 +1,199 @@
+/* =========================================================================
+   app.css — shared app shell: theme variables, base, and the global navbar.
+   Feature stylesheets (e.g. reading.css) build on these variables.
+   Theme vars are lifted from the prototype so the whole app stays consistent.
+   ========================================================================= */
+
+:root {
+    --bg:#f6f7f5; --paper:#ffffff; --fg:#1d2326; --muted:#5f6a6e; --line:#dfe3e1;
+    --accent:#c2541b; --accent-soft:#fbe9df; --mark:#fff0a8; --mark-fg:#1d2326;
+    --ok:#1f7a4d; --ok-soft:#e2f3ea; --bad:#b3261e; --bad-soft:#fbe5e3; --evid:#d8ecff;
+    --display:"Literata", Georgia, serif;
+    --body:"Literata", Georgia, serif;
+    --ui:"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --nav-h:56px;
+    color-scheme: light;
+}
+
+/* Dark theme: follow the OS unless an explicit light theme is set... */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg:#131718; --paper:#1b2022; --fg:#e8ecea; --muted:#9aa5a8; --line:#2d3538;
+        --accent:#ef8a52; --accent-soft:#3a2418; --mark:#6b5a12; --mark-fg:#fff7d1;
+        --ok:#5fcf95; --ok-soft:#15301f; --bad:#ff8a80; --bad-soft:#3a1a18; --evid:#1d3550;
+        color-scheme: dark;
+    }
+}
+/* ...or when dark is requested explicitly. */
+:root[data-theme="dark"] {
+    --bg:#131718; --paper:#1b2022; --fg:#e8ecea; --muted:#9aa5a8; --line:#2d3538;
+    --accent:#ef8a52; --accent-soft:#3a2418; --mark:#6b5a12; --mark-fg:#fff7d1;
+    --ok:#5fcf95; --ok-soft:#15301f; --bad:#ff8a80; --bad-soft:#3a1a18; --evid:#1d3550;
+    color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--ui);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.wrap {
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+a { color: var(--accent); }
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ---- Buttons ---------------------------------------------------------- */
+.btn {
+    display: inline-block;
+    font: 600 .9rem var(--ui);
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 9px 16px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--fg);
+    text-decoration: none;
+}
+.btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ---- Navbar ----------------------------------------------------------- */
+.app-nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+}
+.app-nav__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.app-nav__brand {
+    font: 700 1.15rem var(--ui);
+    color: var(--fg);
+    text-decoration: none;
+    letter-spacing: .01em;
+}
+.app-nav__brand span { color: var(--accent); }
+
+.app-nav__menu {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    margin-left: auto;
+}
+.app-nav__item { display: flex; }
+
+.app-nav__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--fg);
+}
+.app-nav__link:hover { background: var(--bg); }
+
+.app-nav__link.is-active {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.app-nav__link--disabled {
+    color: var(--muted);
+    cursor: not-allowed;
+}
+.app-nav__link--disabled:hover { background: transparent; }
+
+.app-nav__badge {
+    font: 700 .62rem var(--ui);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--line);
+    color: var(--muted);
+}
+
+/* Hamburger toggle — hidden on wide screens. */
+.app-nav__toggle {
+    display: none;
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+    cursor: pointer;
+    position: relative;
+}
+.app-nav__bars,
+.app-nav__bars::before,
+.app-nav__bars::after {
+    position: absolute;
+    left: 50%;
+    width: 18px;
+    height: 2px;
+    background: var(--fg);
+    transform: translateX(-50%);
+    transition: transform .2s ease;
+}
+.app-nav__bars { top: 50%; transform: translate(-50%, -50%); }
+.app-nav__bars::before { content: ""; top: -6px; }
+.app-nav__bars::after  { content: ""; top: 6px; }
+
+/* ---- Responsive: collapse the menu behind the toggle ------------------ */
+@media (max-width: 640px) {
+    .app-nav__toggle { display: inline-block; }
+    .app-nav__menu {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: var(--nav-h);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        margin: 0;
+        padding: 8px;
+        background: var(--paper);
+        border-bottom: 1px solid var(--line);
+    }
+    .app-nav.open .app-nav__menu { display: flex; }
+    .app-nav__item { width: 100%; }
+    .app-nav__link { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+}
+
+/* ---- Home page -------------------------------------------------------- */
+.home { max-width: 760px; margin: 0 auto; }
+.home__hero { padding: 48px 0; }
+.home__title { font: 600 2rem/1.15 var(--display); margin: 0 0 12px; text-wrap: balance; }
+.home__lead { color: var(--muted); font-size: 1.05rem; margin: 0 0 24px; }
+.home__actions { display: flex; gap: 12px; flex-wrap: wrap; }

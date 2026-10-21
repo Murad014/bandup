@@ -1,0 +1,210 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Yellowstone Wolves Practice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+    /* Layout: computer-IELTS split screen — passage left, answer sheet right; stacks on phones */
+    :root{
+        --bg:#f6f7f5; --paper:#ffffff; --fg:#1d2326; --muted:#5f6a6e; --line:#dfe3e1;
+        --accent:#c2541b; --accent-soft:#fbe9df; --mark:#fff0a8; --mark-fg:#1d2326;
+        --ok:#1f7a4d; --ok-soft:#e2f3ea; --bad:#b3261e; --bad-soft:#fbe5e3; --evid:#d8ecff;
+        --display:"Literata",Georgia,serif; --body:"Literata",Georgia,serif;
+        --ui:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    }
+    @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+        --bg:#131718; --paper:#1b2022; --fg:#e8ecea; --muted:#9aa5a8; --line:#2d3538;
+        --accent:#ef8a52; --accent-soft:#3a2418; --mark:#6b5a12; --mark-fg:#fff7d1;
+        --ok:#5fcf95; --ok-soft:#15301f; --bad:#ff8a80; --bad-soft:#3a1a18; --evid:#1d3550; color-scheme:dark}}
+    :root[data-theme="dark"]{
+        --bg:#131718; --paper:#1b2022; --fg:#e8ecea; --muted:#9aa5a8; --line:#2d3538;
+        --accent:#ef8a52; --accent-soft:#3a2418; --mark:#6b5a12; --mark-fg:#fff7d1;
+        --ok:#5fcf95; --ok-soft:#15301f; --bad:#ff8a80; --bad-soft:#3a1a18; --evid:#1d3550; color-scheme:dark}
+    *{box-sizing:border-box}
+    body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.5}
+    body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+    .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+    header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+    .bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:10px;max-width:1200px;margin:0 auto}
+    .bar h1{font:600 1rem/1.2 var(--ui);margin:0;flex:1;min-width:0}
+    .bar h1 small{display:block;font-weight:500;font-size:.75rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+    .timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.1rem;padding:4px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--line)}
+    .timer.low{color:var(--bad);border-color:var(--bad)}
+    button{font:600 .9rem var(--ui);cursor:pointer;border-radius:8px;padding:8px 14px;border:1px solid var(--line);background:var(--paper);color:var(--fg)}
+    button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    button:focus-visible,input:focus-visible,label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+    main{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:20px;padding-block:20px}
+    @media (max-width:820px){main{grid-template-columns:1fr}}
+    .panel{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0}
+    @media (min-width:821px){.panel{max-height:calc(100vh - 110px);overflow:auto;position:sticky;top:84px}}
+    .label{font:600 .72rem var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+    .passage h2{font:600 1.5rem/1.2 var(--display);margin:0 0 12px;text-wrap:balance}
+    .passage p.text{font:400 1.08rem/1.8 var(--body);margin:0;max-width:65ch}
+    .tips{font-size:.85rem;color:var(--muted);background:var(--bg);border-radius:8px;padding:8px 12px;margin:0 0 14px}
+    .w{border-bottom:1.5px dotted var(--accent);cursor:help}
+    mark{background:var(--mark);color:var(--mark-fg);border-radius:3px;cursor:pointer;padding:0 1px}
+    .ev.on{background:var(--evid);box-shadow:0 0 0 2px var(--evid);border-radius:3px}
+    #hlBtn{position:absolute;z-index:20;background:var(--fg);color:var(--paper);border:0;padding:6px 12px;font-size:.85rem;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+    #pop{position:absolute;z-index:20;background:var(--fg);color:var(--paper);padding:6px 10px;border-radius:8px;font-size:.9rem;max-width:240px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+    #pop b{display:block;font-size:.75rem;opacity:.7;font-weight:500}
+    details.vocab{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+    details.vocab summary{cursor:pointer;font-weight:600}
+    .vlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px 16px;margin-top:10px;font-size:.9rem}
+    .vlist div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:3px 0}
+    .vlist span:last-child{color:var(--muted);text-align:right}
+    .qgroup{margin-bottom:22px}
+    .qgroup h3{font:600 1rem var(--ui);margin:0 0 4px}
+    .instr{font-size:.85rem;color:var(--muted);margin:0 0 12px}
+    .instr strong{color:var(--fg)}
+    .q{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;display:grid;gap:8px}
+    .q .stem{display:flex;gap:10px;align-items:baseline}
+    .num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:.85rem}
+    .opts{display:flex;gap:6px;flex-wrap:wrap;padding-left:36px}
+    .opts label{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:.85rem;font-weight:600;cursor:pointer;user-select:none}
+    .opts input{position:absolute;opacity:0;pointer-events:none}
+    .opts label:has(input:checked){background:var(--accent);border-color:var(--accent);color:#fff}
+    .fill{width:9.5em;max-width:100%;font:500 1rem var(--ui);padding:4px 8px;border:none;border-bottom:2px solid var(--accent);background:var(--bg);color:var(--fg);border-radius:4px 4px 0 0}
+    .q.correct{border-color:var(--ok);background:var(--ok-soft)}
+    .q.wrong{border-color:var(--bad);background:var(--bad-soft)}
+    .fb{font-size:.88rem;padding-left:36px}
+    .fb .tag{font-weight:700}
+    .q.correct .tag{color:var(--ok)} .q.wrong .tag{color:var(--bad)}
+    .fb button{margin-top:6px;padding:4px 10px;font-size:.8rem}
+    .result{border-radius:12px;padding:16px;background:var(--accent-soft);margin-bottom:18px}
+    .result .big{font:600 2rem/1 var(--display);font-variant-numeric:tabular-nums}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media (prefers-reduced-motion:no-preference){.q{transition:background .25s,border-color .25s}}
+</style>
+
+<header class="wrap">
+    <div class="bar">
+        <h1><small>Stage 1 · Mini passage 4</small>The Return of the Wolves</h1>
+        <span class="timer" id="timer" aria-live="off">5:00</span>
+        <button class="primary" id="submit">Submit</button>
+    </div>
+</header>
+
+<main class="wrap">
+    <section class="panel passage" aria-label="Reading passage">
+        <p class="label">Reading passage</p>
+        <h2>The Return of the Wolves</h2>
+        <p class="tips">✏️ Select text to <b>highlight</b> it. Tap a highlight to remove it. Tap a <span class="w" style="cursor:default">dotted word</span> for the Azerbaijani meaning.</p>
+        <p class="text" id="passage"><span class="ev" id="e1">By the 1920s, grey wolves had been completely <span class="w" data-az="məhv edilmək">eliminated</span> from Yellowstone National Park in the United States, largely through <span class="w" data-az="dövlət tərəfindən dəstəklənən">government-sponsored</span> hunting</span>. Without their main <span class="w" data-az="yırtıcı">predator</span>, <span class="ev" id="e4"><span class="w" data-az="maral (böyük maral növü)">elk</span> populations <span class="w" data-az="artmaq, genişlənmək">expanded</span> rapidly and <span class="w" data-az="həddən artıq otlamaq">overgrazed</span> young <span class="w" data-az="söyüd">willow</span> and <span class="w" data-az="titrək qovaq">aspen</span> trees along <span class="w" data-az="çay sahilləri">riverbanks</span></span>. <span class="ev" id="e2">In 1995, fourteen wolves <span class="w" data-az="tutulmaq">captured</span> in Canada were <span class="w" data-az="azad edilmək, buraxılmaq">released</span> into the park, and a further seventeen followed the next year</span>. Many scientists claim the <span class="w" data-az="nəticə">outcome</span> was a classic example of a "<span class="w" data-az="trofik kaskad (qida zəncirində zəncirvari təsir)">trophic cascade</span>", in which changes at the top of a <span class="w" data-az="qida zənciri">food chain</span> <span class="w" data-az="dalğa kimi aşağı yayılmaq">ripple down</span> to affect the entire <span class="w" data-az="ekosistem">ecosystem</span>. <span class="ev" id="e5">As elk numbers fell and the animals avoided open valleys, <span class="w" data-az="bitki örtüyü">vegetation</span> recovered, which in turn provided <span class="w" data-az="yaşayış yeri">habitat</span> for <span class="w" data-az="qunduzlar">beavers</span> and <span class="w" data-az="oxuyan quşlar">songbirds</span></span>. <span class="w" data-az="buna baxmayaraq">Nevertheless</span>, this <span class="w" data-az="izah, hekayə">narrative</span> has been <span class="w" data-az="şübhə altına alınmaq">challenged</span>. <span class="ev" id="e6">Some ecologists point out that <span class="w" data-az="sərt">harsh</span> winters, growing bear populations and human hunting also reduced elk numbers during the same period, making it difficult to <span class="w" data-az="aid etmək, hesabına yazmaq">attribute</span> the changes to wolves alone</span>.</p>
+        <details class="vocab">
+            <summary>Word list (Azərbaycanca)</summary>
+            <div class="vlist" id="vlist"></div>
+        </details>
+    </section>
+
+    <section class="panel" aria-label="Questions">
+        <div id="resultBox" hidden></div>
+        <form id="form" autocomplete="off">
+            <div class="qgroup">
+                <h3>Questions 1–3</h3>
+                <p class="instr">Do the statements agree with the information in the text? Choose <strong>TRUE</strong>, <strong>FALSE</strong> or <strong>NOT GIVEN</strong>.</p>
+                <div id="tfng"></div>
+            </div>
+            <div class="qgroup">
+                <h3>Questions 4–6</h3>
+                <p class="instr">Complete the sentences. Write <strong>ONE WORD ONLY</strong> from the text.</p>
+                <div id="fills"></div>
+            </div>
+            <div class="actions"><button class="primary" type="submit">Submit answers</button><button type="button" id="reset">Start again</button></div>
+        </form>
+    </section>
+</main>
+
+<button id="hlBtn" hidden>Highlight</button>
+<div id="pop" hidden></div>
+
+<script>
+    const Q = [
+        {n:1,type:"tf",text:"Wolves disappeared from Yellowstone mainly because of disease.",a:"FALSE",ev:"e1",
+            why:"<b>Mainly</b> = <i>largely</i>. The text gives the main reason: <b>hunting</b>, not disease. The text names a different cause, so it disagrees → FALSE."},
+        {n:2,type:"tf",text:"More wolves were released in the second year than in the first.",a:"TRUE",ev:"e2",
+            why:"First year (1995): <b>14</b>. Next year: <b>17</b>. 17 is more than 14 → TRUE. IELTS often hides a comparison inside numbers, so you have to do the small calculation yourself."},
+        {n:3,type:"tf",text:"The number of tourists visiting Yellowstone increased after the wolves returned.",a:"NOT GIVEN",ev:"e2",
+            why:"The text talks about elk, trees, beavers and birds, but <b>tourists</b> are never mentioned. Don't use your own knowledge → NOT GIVEN."},
+        {n:4,type:"fill",pre:"Without wolves, too many elk damaged young trees near",post:".",a:["riverbanks"],ev:"e4",
+            why:"<b>Damaged by eating too much</b> = <i>overgrazed</i>; <b>near</b> = <i>along</i>. After 'near' you need a place: <b>riverbanks</b> (one word, with the s)."},
+        {n:5,type:"fill",pre:"The recovery of plants created homes for beavers and",post:".",a:["songbirds"],ev:"e5",
+            why:"<b>Plants</b> = <i>vegetation</i>; <b>homes</b> = <i>habitat</i>. The pair is <i>beavers and songbirds</i>."},
+        {n:6,type:"fill",pre:"Critics say it is hard to give credit for the changes only to",post:".",a:["wolves"],ev:"e6",
+            why:"<b>Give credit to</b> = <i>attribute to</i>; <b>only</b> = <i>alone</i>. Answer: <b>wolves</b>. Trap: 'bears' and 'winters' are in the same sentence, but they are the <i>other</i> causes."}
+    ];
+    const $=s=>document.querySelector(s);
+    // build questions
+    $("#tfng").innerHTML=Q.filter(q=>q.type==="tf").map(q=>`
+  <div class="q" id="q${q.n}"><div class="stem"><span class="num">${q.n}</span><span>${q.text}</span></div>
+  <div class="opts" role="radiogroup" aria-label="Question ${q.n}">${["TRUE","FALSE","NOT GIVEN"].map((o,i)=>
+        `<label><input type="radio" id="q${q.n}o${i}" name="q${q.n}" value="${o}">${o}</label>`).join("")}</div>
+  <div class="fb" hidden></div></div>`).join("");
+    $("#fills").innerHTML=Q.filter(q=>q.type==="fill").map(q=>`
+  <div class="q" id="q${q.n}"><div class="stem"><span class="num">${q.n}</span>
+  <span>${q.pre} <input class="fill" id="in${q.n}" name="q${q.n}" aria-label="Answer ${q.n}" autocapitalize="off" spellcheck="false"> ${q.post}</span></div>
+  <div class="fb" hidden></div></div>`).join("");
+    // word list
+    $("#vlist").innerHTML=[...document.querySelectorAll("#passage .w")].map(w=>`<div><span>${w.textContent}</span><span>${w.dataset.az}</span></div>`).join("");
+
+    // timer
+    let left=300,done=false;const T=$("#timer");
+    const tick=()=>{if(done)return;const m=Math.floor(Math.abs(left)/60),s=String(Math.abs(left)%60).padStart(2,"0");
+        T.textContent=(left<0?"+":"")+m+":"+s;T.classList.toggle("low",left<=60);left--;};
+    tick();let iv=setInterval(tick,1000);
+
+    // popover for words
+    const pop=$("#pop");
+    function place(el,x,y){el.hidden=false;const w=el.offsetWidth,max=document.documentElement.clientWidth-w-8;
+        el.style.left=Math.max(8,Math.min(x-w/2,max))+"px";el.style.top=(y+window.scrollY+8)+"px";}
+    document.addEventListener("click",e=>{
+        const w=e.target.closest("#passage .w");
+        if(w && !window.getSelection().toString()){const r=w.getBoundingClientRect();
+            pop.innerHTML=`<b>${w.textContent}</b>${w.dataset.az}`;place(pop,r.left+r.width/2,r.bottom);return;}
+        if(!e.target.closest("#pop"))pop.hidden=true;
+        const m=e.target.closest("#passage mark");
+        if(m && !window.getSelection().toString()){const p=m.parentNode;while(m.firstChild)p.insertBefore(m.firstChild,m);m.remove();p.normalize();}
+    });
+
+    // highlighting
+    const hl=$("#hlBtn"),P=$("#passage");let saved=null;
+    function checkSel(){const s=window.getSelection();
+        if(!s.rangeCount||s.isCollapsed){hl.hidden=true;return;}
+        const r=s.getRangeAt(0);if(!P.contains(r.commonAncestorContainer)){hl.hidden=true;return;}
+        saved=r.cloneRange();const b=r.getBoundingClientRect();place(hl,b.left+b.width/2,b.bottom);pop.hidden=true;}
+    document.addEventListener("mouseup",()=>setTimeout(checkSel,10));
+    document.addEventListener("touchend",()=>setTimeout(checkSel,300));
+    document.addEventListener("selectionchange",()=>{if(window.getSelection().isCollapsed)setTimeout(()=>{if(window.getSelection().isCollapsed)hl.hidden=true},200)});
+    hl.addEventListener("mousedown",e=>e.preventDefault());
+    hl.addEventListener("click",()=>{if(!saved)return;
+        const mk=document.createElement("mark");mk.appendChild(saved.extractContents());saved.insertNode(mk);
+        window.getSelection().removeAllRanges();hl.hidden=true;saved=null;});
+
+    // submit
+    function grade(e){e&&e.preventDefault();if(done)return;done=true;clearInterval(iv);
+        const used=300-left-1;let score=0;
+        Q.forEach(q=>{const box=$("#q"+q.n),fb=box.querySelector(".fb");let ans,ok;
+            if(q.type==="tf"){const c=document.querySelector(`input[name=q${q.n}]:checked`);ans=c?c.value:"";ok=ans===q.a;}
+            else{ans=$("#in"+q.n).value.trim();ok=q.a.includes(ans.toLowerCase());}
+            if(ok)score++;box.classList.add(ok?"correct":"wrong");
+            box.querySelectorAll("input").forEach(i=>i.disabled=true);
+            const correct=Array.isArray(q.a)?q.a[0]:q.a;
+            fb.innerHTML=`<span class="tag">${ok?"✓ Correct":"✗ "+(ans?"You wrote: "+ans:"No answer")+" · Answer: "+correct}</span><br>${q.why}<br><button type="button" data-ev="${q.ev}">Show in text</button>`;
+            fb.hidden=false;});
+        const pct=Math.round(score/Q.length*100),mm=Math.floor(Math.max(used,0)/60),ss=String(Math.max(used,0)%60).padStart(2,"0");
+        const msg=pct>=80?"Great job! Next: Mini passage 5.":"Read the explanations, then tap Start again and try once more.";
+        const R=$("#resultBox");R.className="result";R.hidden=false;
+        R.innerHTML=`<p class="label">Your result</p><div class="big">${score}/${Q.length}</div><p style="margin:6px 0 0">${pct}% · time ${mm}:${ss}. ${msg}</p><p style="margin:6px 0 0;font-size:.85rem;color:var(--muted)">Tell your coach in the chat: <b>${score}/${Q.length}, ${mm}:${ss}</b></p>`;
+        R.scrollIntoView({behavior:"smooth",block:"start"});}
+    $("#form").addEventListener("submit",grade);$("#submit").addEventListener("click",grade);
+    document.addEventListener("click",e=>{const b=e.target.closest("[data-ev]");if(!b)return;
+        document.querySelectorAll(".ev.on").forEach(x=>x.classList.remove("on"));
+        const t=document.getElementById(b.dataset.ev);t.classList.add("on");t.scrollIntoView({behavior:"smooth",block:"center"});});
+    $("#reset").addEventListener("click",()=>{done=false;left=300;clearInterval(iv);tick();iv=setInterval(tick,1000);
+        $("#form").reset();$("#resultBox").hidden=true;
+        document.querySelectorAll(".q").forEach(q=>{q.classList.remove("correct","wrong");q.querySelector(".fb").hidden=true;q.querySelectorAll("input").forEach(i=>i.disabled=false)});
+        document.querySelectorAll(".ev.on").forEach(x=>x.classList.remove("on"));
+        P.querySelectorAll("mark").forEach(m=>{const p=m.parentNode;while(m.firstChild)p.insertBefore(m.firstChild,m);m.remove();});P.normalize();
+        window.scrollTo({top:0,behavior:"smooth"});});
+</script>
+
+</body></html>

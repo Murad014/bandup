@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Data-driven navbar. Renders one entry per NavItem:
+   - enabled  -> real link (<a>), marked active when its key == activeKey
+   - disabled -> non-interactive label, with a "soon" badge when comingSoon
+  NavItem is a Java record, so Thymeleaf accesses components via method calls
+  (item.key(), item.enabled(), ...).
+-->
+<nav class="app-nav" data-app-nav aria-label="Primary" th:fragment="navbar(navItems, activeKey)">
+    <div class="app-nav__inner wrap">
+        <a class="app-nav__brand" th:href="@{/}">Band<span>Up</span></a>
+
+        <button class="app-nav__toggle" type="button"
+                data-nav-toggle aria-expanded="false" aria-controls="navMenu"
+                aria-label="Toggle navigation">
+            <span class="app-nav__bars" aria-hidden="true"></span>
+        </button>
+
+        <ul class="app-nav__menu" id="navMenu" data-nav-menu>
+            <li th:each="item : ${navItems}" class="app-nav__item">
+                <!-- Working link -->
+                <a th:if="${item.enabled()}"
+                   class="app-nav__link" data-nav-link
+                   th:classappend="${item.key() == activeKey} ? ' is-active' : ''"
+                   th:href="${item.href()}"
+                   th:text="${item.label()}"
+                   th:attr="aria-current=${item.key() == activeKey} ? 'page' : null">Reading</a>
+
+                <!-- Planned / disabled feature -->
+                <span th:unless="${item.enabled()}"
+                      class="app-nav__link app-nav__link--disabled" aria-disabled="true">
+                    <span th:text="${item.label()}">Grammar</span>
+                    <span th:if="${item.comingSoon()}" class="app-nav__badge">soon</span>
+                </span>
+            </li>
+        </ul>
+    </div>
+</nav>
+</body>
+</html>

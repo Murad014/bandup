@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>Reading · BandUp</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/reading.css}">
+</head>
+<body>
+<!--
+  Reading practice shell. All dynamic content (title, passage, questions, timer)
+  is filled by reading.js from the REST API. Only the session id + API base are
+  embedded here. Reading aids (gloss popover, highlight button) are present but
+  inert until later tasks wire the behaviour.
+-->
+<main class="reading" id="reading-root"
+      th:attr="data-session-id=${sessionId}" data-api-base="/api/v1">
+
+    <div class="reading-bar">
+        <div class="bar">
+            <h1>
+                <small id="stageLabel">Loading…</small>
+                <span id="passageTitle">&nbsp;</span>
+            </h1>
+            <span class="timer" id="timer" aria-live="off">--:--</span>
+            <button class="btn btn--primary" id="submit" type="button" disabled>Submit</button>
+        </div>
+    </div>
+
+    <div class="reading-main">
+        <section class="panel passage" aria-label="Reading passage">
+            <p class="label">Reading passage</p>
+            <div id="passage" class="panel__status">Loading passage…</div>
+            <details class="vocab" hidden>
+                <summary>Word list (Azərbaycanca)</summary>
+                <div class="vlist" id="vlist"></div>
+            </details>
+        </section>
+
+        <section class="panel" aria-label="Questions">
+            <div id="resultBox" hidden></div>
+            <form id="form" autocomplete="off">
+                <div id="questions" class="panel__status">Loading questions…</div>
+                <div class="actions">
+                    <button class="btn btn--primary" type="submit" disabled>Submit answers</button>
+                    <button class="btn" type="button" id="reset" disabled>Start again</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <!-- Floating selection-highlight action and vocab popover (positioned by JS). -->
+    <button id="hlBtn" type="button" hidden>Highlight</button>
+    <div id="pop" hidden></div>
+
+    <script type="module" th:src="@{/js/reading.js}"></script>
+</main>
+</body>
+</html>

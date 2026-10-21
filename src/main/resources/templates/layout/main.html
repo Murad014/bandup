@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<!--
+  Shared app shell. Every feature page decorates this layout by passing its own
+  <title>, optional head extras (e.g. a page stylesheet), and main content:
+
+    <html th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+
+  Pages with no head extras pass the no-op fragment: ~{}
+
+  The navbar is rendered from the global `navItems` model attribute
+  (see NavigationAdvice) and the page's `activeKey`.
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, headExtra, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title th:replace="${title}">BandUp</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <th:block th:replace="${headExtra} ?: _"></th:block>
+</head>
+<body>
+    <nav th:replace="~{fragments/navbar :: navbar(${navItems}, ${activeKey})}"></nav>
+    <th:block th:replace="${content}"></th:block>
+    <script th:src="@{/js/nav.js}" defer></script>
+</body>
+</html>
