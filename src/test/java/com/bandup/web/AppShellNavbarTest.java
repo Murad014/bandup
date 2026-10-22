@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import com.bandup.TestcontainersConfiguration;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -22,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(AppShellNavbarTest.ActiveReadingController.class)
+@Import({TestcontainersConfiguration.class, AppShellNavbarTest.ActiveReadingController.class})
 class AppShellNavbarTest {
 
     @Autowired
