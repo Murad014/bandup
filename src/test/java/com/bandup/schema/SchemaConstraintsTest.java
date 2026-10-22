@@ -36,6 +36,41 @@ class SchemaConstraintsTest {
         assertThat(tables).isEqualTo(28);
     }
 
+    // ------------------------------------------------- V5: ids from the app
+
+    @Test
+    void exerciseGroupAndQuestionAcceptIdsTakenFromTheirSequence() {
+        long exerciseId = nextId("exercise");
+        long groupId = nextId("question_group");
+        long questionId = nextId("question");
+
+        jdbc.update("""
+                insert into exercise (id, slug, skill, target_language, title)
+                values (?, 'chosen-ids', 'READING', 'en', 'Chosen ids')""", exerciseId);
+        jdbc.update("""
+                insert into question_group (id, exercise_id, position, type_code, instruction_html)
+                values (?, ?, 1, 'TFNG', 'Do the statements agree?')""", groupId, exerciseId);
+        jdbc.update("""
+                insert into question (id, exercise_id, group_id, position, stem_text)
+                values (?, ?, ?, 1, 'Wolves returned.')""", questionId, exerciseId, groupId);
+
+        assertThat(jdbc.queryForObject("select id from question where stem_text = 'Wolves returned.'", Long.class))
+                .isEqualTo(questionId);
+        // Rows without an id still get one from the same sequence, never a used one.
+        assertThat(exercise("no-id-given", null, null)).isGreaterThan(exerciseId);
+    }
+
+    @Test
+    void otherTablesStillRejectChosenIds() {
+        assertThatThrownBy(() -> jdbc.update("insert into topic (id, slug) values (999, 'chosen')"))
+                .isInstanceOf(org.springframework.jdbc.BadSqlGrammarException.class)
+                .rootCause().hasMessageContaining("GENERATED ALWAYS");
+    }
+
+    private long nextId(String table) {
+        return jdbc.queryForObject("select nextval(pg_get_serial_sequence(?, 'id'))", Long.class, table);
+    }
+
     // -------------------------------------------------------------- exercise
 
     @Test

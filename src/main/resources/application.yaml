@@ -17,3 +17,19 @@ spring:
 
   flyway:
     locations: classpath:db/migration
+
+# Access tokens (JWT, HS256). Set BANDUP_JWT_SECRET (at least 32 bytes) in every
+# shared or deployed environment; never commit it. Left empty in local dev, a
+# random key is generated at startup (tokens then don't survive a restart).
+bandup:
+  jwt:
+    secret: ${BANDUP_JWT_SECRET:}
+    issuer: bandup
+    access-token-lifetime: 15m
+
+  # Sign-in sessions. The first admin is created at startup from
+  # BANDUP_ADMIN_EMAIL / BANDUP_ADMIN_PASSWORD when no admin exists (never commit them).
+  auth:
+    refresh-token-lifetime: 14d
+    admin-email: ${BANDUP_ADMIN_EMAIL:}
+    admin-password: ${BANDUP_ADMIN_PASSWORD:}

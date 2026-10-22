@@ -75,6 +75,9 @@ covered by their own specs. This spec only fixes the tables they rely on.
    for each answer the value given, whether it was correct, and the expected
    answer, so later edits cannot rewrite history.
 4. Concurrent admin edits SHALL be detected with optimistic locking.
+5. A question SHALL keep its id when its exercise is edited or reordered, so
+   recorded answers stay linked to the right question. The application MAY
+   assign the ids of exercises, groups and questions from their sequences.
 
 ## Requirement 5 — Learners and roles
 

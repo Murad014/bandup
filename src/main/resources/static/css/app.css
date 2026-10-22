@@ -138,6 +138,12 @@ a { color: var(--accent); }
     padding: 0;
 }
 .app-nav__item { display: flex; }
+/* Elements hidden with the hidden attribute stay hidden even when a class sets display. */
+[hidden] { display: none !important; }
+.app-nav__account { gap: 4px; align-items: center; }
+.app-nav__user { color: var(--muted, #9aa4b2); font-size: 14px; padding: 0 6px; max-width: 14ch;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-nav__signout { background: none; border: 0; font: inherit; cursor: pointer; }
 .app-nav__link {
     display: inline-flex;
     align-items: center;

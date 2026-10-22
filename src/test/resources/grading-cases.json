@@ -1,0 +1,35 @@
+{
+  "about": "Shared grading cases (backend requirement 3.2, database design §4.6). Used by the Java Grader tests; the browser stub's tests can reuse them. 'given' is a string (text answer) or an array (option keys).",
+  "cases": [
+    { "name": "TFNG exact",                         "family": "choiceFixed", "accepted": ["FALSE"],     "given": "FALSE",          "points": 1, "possible": 1 },
+    { "name": "TFNG ignores case and spaces",       "family": "choiceFixed", "accepted": ["NOT GIVEN"], "given": "  not   given ", "points": 1, "possible": 1 },
+    { "name": "TFNG wrong value",                   "family": "choiceFixed", "accepted": ["FALSE"],     "given": "TRUE",           "points": 0, "possible": 1 },
+    { "name": "TFNG blank",                         "family": "choiceFixed", "accepted": ["FALSE"],     "given": "   ",            "points": 0, "possible": 1 },
+
+    { "name": "gap: first accepted value",          "family": "gap", "accepted": ["riverbanks", "river banks"], "given": "Riverbanks",     "points": 1, "possible": 1 },
+    { "name": "gap: other accepted value",          "family": "gap", "accepted": ["riverbanks", "river banks"], "given": " river  banks ", "points": 1, "possible": 1 },
+    { "name": "gap: not accepted",                  "family": "gap", "accepted": ["riverbanks"],                "given": "rivers",         "points": 0, "possible": 1 },
+    { "name": "gap: no limit, long answer",         "family": "gap", "accepted": ["the grey wolves of the park"], "given": "The grey wolves of the park", "points": 1, "possible": 1 },
+    { "name": "gap: within ONE WORD",               "family": "gap", "accepted": ["elk"], "wordLimit": { "maxWords": 1, "numbersAllowed": false }, "given": "elk", "points": 1, "possible": 1 },
+    { "name": "gap: over the limit scores 0",       "family": "gap", "accepted": ["grey wolves", "the grey wolves"], "wordLimit": { "maxWords": 2, "numbersAllowed": false }, "given": "the grey wolves", "points": 0, "possible": 1 },
+    { "name": "gap: a number is a word without AND/OR A NUMBER", "family": "gap", "accepted": ["17 wolves"], "wordLimit": { "maxWords": 1, "numbersAllowed": false }, "given": "17 wolves", "points": 0, "possible": 1 },
+    { "name": "gap: numbers don't count with AND/OR A NUMBER",   "family": "gap", "accepted": ["17 grey wolves"], "wordLimit": { "maxWords": 2, "numbersAllowed": true }, "given": "17 grey wolves", "points": 1, "possible": 1 },
+    { "name": "gap: decimal and year are numbers",  "family": "gap", "accepted": ["3.5 metres in 1995"], "wordLimit": { "maxWords": 2, "numbersAllowed": true }, "given": "3.5 metres in 1995", "points": 1, "possible": 1 },
+    { "name": "gap: words still counted with numbers allowed",   "family": "gap", "accepted": ["the grey wolves"], "wordLimit": { "maxWords": 2, "numbersAllowed": true }, "given": "the grey wolves", "points": 0, "possible": 1 },
+
+    { "name": "MCQ right key",                      "family": "mcSingle", "accepted": ["B"], "given": "b",   "points": 1, "possible": 1 },
+    { "name": "MCQ wrong key",                      "family": "mcSingle", "accepted": ["B"], "given": "C",   "points": 0, "possible": 1 },
+    { "name": "MCQ two keys can't be one answer",   "family": "mcSingle", "accepted": ["B"], "given": ["B", "C"], "points": 0, "possible": 1 },
+
+    { "name": "Choose TWO: both right",             "family": "mcMulti", "accepted": ["A", "D"], "chooseCount": 2, "given": ["D", "A"],      "points": 2, "possible": 2 },
+    { "name": "Choose TWO: one right (partial)",    "family": "mcMulti", "accepted": ["A", "D"], "chooseCount": 2, "given": ["A", "C"],      "points": 1, "possible": 2 },
+    { "name": "Choose TWO: only one given, right",  "family": "mcMulti", "accepted": ["A", "D"], "chooseCount": 2, "given": ["d"],           "points": 1, "possible": 2 },
+    { "name": "Choose TWO: three given scores 0",   "family": "mcMulti", "accepted": ["A", "D"], "chooseCount": 2, "given": ["A", "D", "E"], "points": 0, "possible": 2 },
+    { "name": "Choose TWO: same key twice counts once", "family": "mcMulti", "accepted": ["A", "D"], "chooseCount": 2, "given": ["A", "a"], "points": 1, "possible": 2 },
+    { "name": "Choose THREE: all wrong",            "family": "mcMulti", "accepted": ["A", "C", "E"], "chooseCount": 3, "given": ["B", "D", "F"], "points": 0, "possible": 3 },
+    { "name": "Choose TWO: nothing given",          "family": "mcMulti", "accepted": ["A", "D"], "chooseCount": 2, "given": [],              "points": 0, "possible": 2 },
+
+    { "name": "match heading key",                  "family": "match", "accepted": ["iv"], "given": "IV", "points": 1, "possible": 1 },
+    { "name": "match wrong key",                    "family": "match", "accepted": ["iv"], "given": "v",  "points": 0, "possible": 1 }
+  ]
+}

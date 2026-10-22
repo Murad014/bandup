@@ -1,6 +1,7 @@
 # Tasks — Backend
 
-All tasks are **[Backend]** only. **Nothing is started.** Each task is done
+All tasks are **[Backend]** only. **Phase 1 backend is complete** (foundation,
+Identity, Practice, Content). Each task is done
 only when requested, one at a time, and ends green (`sh gradlew test`).
 Frontend work (login pages, `auth.js`, switching the UIs from their stubs to
 these APIs) is not in these lists; see "Follow-ups" at the end.
@@ -44,29 +45,59 @@ adapter tasks; their API tasks also need Identity (token user, role checks).
 
 ## Foundation — Shared kernel
 
-- [ ] 2. Shared kernel — domain
-  - `LanguageCode`, `Translations<T>`, `LanguageChain`, `LanguageFallbacks`,
-    `DomainException`, `Violation`. JDK only.
-  - _Verify_: unit tests (no Spring): exact hit, fallback, missing item,
-    `pt-BR → pt → en`, `kk → ru → en`, case-insensitive codes, unknown
-    region/language, loop in data.
+- [x] 2. Shared kernel — domain
+  - In `com.bandup.api.shared.domain`, JDK only: `LanguageCode` (BCP-47 shape,
+    case-insensitive equality that keeps the stored spelling, `base()`),
+    `Translations<T>` (immutable, one value per language), `LanguageChain`
+    (non-empty, no repeats, always ends with English; `pick`, `pickAll`),
+    `LanguageFallbacks` (builds chains; bad user input never throws),
+    `Violation`, `DomainException` (carries every violation).
+  - _Verified_: 54 unit tests, no Spring: exact hit, fallback, missing item,
+    `pt-BR → pt → en`, `kk → ru → en`, case-insensitive codes with stored
+    spelling, unknown region → base, unknown/malformed/blank → English,
+    English stops the walk, data without English still ends in English, loop
+    in data, the guide's Emre example; value-object rules. ArchUnit rule 2
+    now checks these 6 classes. 101 tests green.
   - _Requirements: 6_
 
-- [ ] 3. Shared kernel — language adapter, request language, errors
-  - `LanguageCatalog` + `JdbcLanguageCatalog`; `RequestLanguage`;
-    `ProblemDetail` handler (incl. `errors` for 422, 401/403 bodies).
-  - _Verify_: adapter test on seeded languages (Testcontainers); web tests for
-    each status mapping.
+- [x] 3. Shared kernel — language adapter, request language, errors
+  - application: `LanguageCatalog` port; outcome exceptions
+    `InvalidRequestException` (400), `UnauthenticatedException` (401),
+    `ForbiddenException` (403), `NotFoundException` (404),
+    `ConflictException` (409). Note: design §8.3 names
+    `ConcurrentModificationException` for stale saves; `ConflictException` is
+    used instead because that name already means something else in `java.util`.
+  - infrastructure: `JdbcLanguageCatalog` (reads all languages, enabled or not).
+  - web: `RequestLanguage.pick(explicit, userLanguage, Accept-Language)`
+    (user language is empty until Identity provides it); `ApiProblems`
+    factory (reused by Identity's security handlers for filter-level 401/403);
+    global `ApiExceptionHandler` (global so unknown URLs are Problem Details
+    too): `DomainException` → 422 with `errors[]`, DB constraint → 409 without
+    SQL, anything unexpected → 500 without internal details.
+  - _Verified_: `JdbcLanguageCatalogTest` (Testcontainers, seeded languages:
+    `kk → ru → en`, disabled `tr` still resolves), `RequestLanguageTest`
+    (priority order, q-weights, wildcard, malformed header),
+    `ApiExceptionHandlerTest` (400/401/403/404/405/409/422/500, Spring MVC
+    errors, `application/problem+json`, no SQL or exception text leaked).
+    Live app: unknown `/api/v1/...` → Problem Details 404. 116 tests green.
   - _Requirements: 6, 7_
 
 ---
 
 ## Follow-ups outside these lists (need separate approval)
 
-- **UI:** `auth.js`, login/register pages, navbar Admin link from the token.
-- **UI:** reading page → passage + attempt APIs; remove the public reading fixture.
-- **UI:** admin editor → admin API (`data-g`, meanings per language); remove the
-  public admin fixture.
+- **UI:** planned in [`../frontend/tasks.md`](../frontend/tasks.md)
+  (foundation: page shells, `auth.js`, sign-in, admin guard),
+  [`../frontend/reading/tasks.md`](../frontend/reading/tasks.md) and
+  [`../frontend/admin/tasks.md`](../frontend/admin/tasks.md).
 - **Phase 2:** Catalog (browse/filter), Google sign-in, email verification /
   password reset.
 - **After first production:** Media (images/audio; diagram questions, Listening).
+
+## Open product decisions (Identity; see design §13)
+
+- Registration reveals whether an email exists (409) while login hides it.
+- No rate limiting of login attempts (a lockout needs a new table).
+- `refresh_token` rows are never cleaned up.
+- Two tabs refreshing at once end the session; fix planned in `auth.js`
+  (frontend foundation task 2: single-flight refresh across tabs).

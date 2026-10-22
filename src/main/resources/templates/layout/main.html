@@ -26,5 +26,6 @@
     <nav th:replace="~{fragments/navbar :: navbar(${navItems}, ${activeKey})}"></nav>
     <th:block th:replace="${content}"></th:block>
     <script th:src="@{/js/nav.js}" defer></script>
+    <script type="module" th:src="@{/js/account-nav.js}"></script>
 </body>
 </html>
