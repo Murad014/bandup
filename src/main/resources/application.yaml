@@ -2,9 +2,18 @@ spring:
   application:
     name: bandup
 
-# DEV ONLY: opens the admin area without authentication so /admin is reachable
-# during development. MUST be false (or removed) before any real deployment —
-# otherwise the admin panel is publicly accessible.
-app:
-  admin:
-    dev-allow: true
+  # Local dev defaults; override with env vars in any shared/deployed environment.
+  datasource:
+    url: ${BANDUP_DB_URL:jdbc:postgresql://localhost:5433/bandup}
+    username: ${BANDUP_DB_USERNAME:admin}
+    password: ${BANDUP_DB_PASSWORD:admin}
+
+  # The schema is owned by Flyway migrations (src/main/resources/db/migration).
+  # Hibernate only checks that entities match it; it never changes the schema.
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    locations: classpath:db/migration
