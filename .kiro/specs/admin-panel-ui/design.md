@@ -126,6 +126,12 @@ The admin objects are the **full** editable form, including answers — the key
 difference from the learner read API. The server spec defines these
 authoritatively; this is the client's view.
 
+> **Superseded by the backend** (backend design §8.4): groups and questions
+> carry `id`s, each question holds its own `answer` (always a list),
+> `evidenceId` and `explanations {lang: …}` instead of a separate `answerKey`
+> keyed by number; glosses are `data-g` keys with meanings per language;
+> saves send `version` (stale → 409). The editor needs a UI task to switch.
+
 ### 4.1 `GET /api/v1/admin/passages` — list
 
 ```json

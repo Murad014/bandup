@@ -406,6 +406,10 @@ backend spec; this UI depends only on the §4 contract and the §3a nav-item mod
   strict allow-list before storing/serving:
   - allowed tags: `p`, `span`, `mark`, `em`, `strong`, `b`, `i`, `br`;
   - allowed attributes: `class`, `id`, `data-az` (and only on `span`);
+    **superseded by the backend** (backend design §8.3): `data-az` became
+    `data-g` (meanings come from the API's `glosses` map), `class` is limited
+    to `w`/`ev`, `data-g` only on `span.w`, `id` only on `span.ev`; and
+    explanations / instructions keep no attributes at all;
   - stripped: `script`, `style`, event handlers (`on*`), `iframe`, inline
     URLs/`javascript:`, and any tag/attribute not on the list.
   - After sanitization the client may safely inject via `innerHTML`.

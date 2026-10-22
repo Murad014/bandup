@@ -1,0 +1,139 @@
+# Tasks — Frontend
+
+Connects the existing pages (templates, JS, CSS from `reading-practice-ui`
+and `admin-panel-ui`) to the finished backend. All tasks are **[Frontend]**
+only. Each task is done only when requested, one at a
+time, and ends green.
+
+This file holds the **foundation** (page shells, sign-in) and the
+**build order**. Each area has its own task list, numbered from 1.
+
+- **Contracts:** learner API = backend design §7.4; admin API = backend
+  design §8.4 (supersedes `admin-panel-ui` design §4); auth = backend design
+  §6.2–6.4; frontend needs = backend design §10.
+- **Rules:** `com.bandup.ui` never imports `com.bandup.api` (ArchUnit rule 1).
+  Pages are public shells without data; the API decides access. Text from the
+  API goes in with `textContent`; only server-sanitized HTML fields
+  (`passageHtml`, `instruction`, `explanation`) use `innerHTML`.
+- **Verify** = MockMvc tests (Gradle, like the backend) + headless Chrome
+  runs against the real app. No Node, no npm, no build step: the browser runs
+  the plain JS files as they are.
+
+## Build order
+
+| Step | Tasks | File |
+|------|-------|------|
+| 1 | Foundation 1–4: page shells, `auth.js`, sign-in pages, admin guard | this file |
+| 2 | Reading 1–5: learner API, all question types, results, help language, remove fixture | [`reading/tasks.md`](reading/tasks.md) |
+| 3 | Admin 1–7: admin API, new editor model, glosses, all types, save/publish flow, remove fixture | [`admin/tasks.md`](admin/tasks.md) |
+| 4 | Final 1: end-to-end pass | this file |
+
+Reading and Admin both need foundation 1–2; Admin also needs 3–4.
+
+---
+
+## Foundation
+
+- [x] 1. Page shells in `com.bandup.ui`
+  - Controllers for the routes the templates already use: `/` (home),
+    `/reading/{slug}`, `/admin`, `/admin/sessions`, `/admin/sessions/new`,
+    `/admin/sessions/{slug}/edit` (the link `sessions.js` builds); `/login`
+    and `/register` come with task 3.
+  - `NavigationAdvice` supplies `navItems` and `adminNav` (data only, no
+    user state). Remove `isAdmin` from `navbar.html`: the Admin link is
+    shown by JS from the token's roles (task 2).
+  - Pages embed only what JS needs (`data-session-id`, `data-api-base`);
+    every page is public — admin data is protected by the API.
+  - _Verify_: MockMvc: each route 200 with its template; no answers or
+    exercise data in any page HTML; unknown slug still gets the shell (the
+    API's 404 is shown by JS); ArchUnit rule 1 still green.
+  - _Requirements: backend NFR 2_
+  - _Done_:
+    - `com.bandup.ui`: `HomeController`, `ReadingPageController`, `NavItem`,
+      `NavigationAdvice`; `com.bandup.ui.admin`: `AdminPageController`,
+      `AdminNavItem`, `AdminNavigationAdvice` (same items and labels as the
+      removed `com.bandup.web` classes).
+    - `navbar.html`: the server-side `isAdmin` check became
+      `<li data-nav-admin hidden>`, shown by `auth.js` in task 2.
+    - `app.css`: `[hidden] { display: none !important; }` — Chrome showed the
+      hidden Admin link because `.app-nav__item` sets `display: flex`.
+    - The new-session page has no `data-session-id` (Thymeleaf drops the
+      empty attribute); `editor.js` already reads that as "new".
+  - _Verified_: `UiPagesTest` (6): all six routes 200 with their templates
+    for anonymous visitors; navbar items, active item, hidden Admin link and
+    the CSS rule; reading page carries only slug + API base, no passage
+    text, glosses or answers; unknown slug gets the shell; a hostile slug is
+    escaped; admin pages have the sidebar and no data.
+    `SecurityRulesTest` updated: pages (admin ones too) are public now.
+    Real app on the dev database (now at V5): every page 200, learner API
+    200, admin API 401 without a token; Chrome screenshots of the reading
+    page and the editor render (still on their stubs until reading /
+    admin task 1). 360 tests green.
+
+- [ ] 2. `auth.js` — tokens in the browser
+  - _In progress_: `static/js/auth.js` (memory-only token, silent refresh,
+    single-flight refresh with Web Locks + BroadcastChannel, `apiFetch` with
+    one retry, login/register/logout, `safeNext`) and `account-nav.js`
+    (Sign in / name + Sign out / Admin link) are written and wired into
+    `layout/main.html` and `navbar.html`. Not yet verified in Chrome; next:
+    a JUnit browser test driving headless Chrome over the DevTools protocol
+    (JDK WebSocket, no new dependencies), then tasks 3–4.
+  - Access token kept **in memory only** (never `localStorage`); on page load
+    one silent `POST /api/v1/auth/refresh` (cookie) restores the session.
+  - `apiFetch(url, options)`: adds `Authorization: Bearer …`, on `401`
+    refreshes once and retries once, then reports "signed out".
+  - **Single-flight refresh across tabs** (backend open decision 4): only one
+    tab refreshes at a time (Web Locks API `navigator.locks`, fallback
+    `BroadcastChannel`); the others wait and reuse its new token, so two tabs
+    never present the same refresh token.
+  - `currentUser()` from `GET /api/v1/auth/me` (id, displayName, roles,
+    languages); `onChange(listener)`; `logout()` (`POST /auth/logout`, forget
+    token, notify tabs).
+  - Navbar: shows the user's name + Sign out when signed in, Sign in
+    otherwise; the Admin link when roles include ADMIN or AUTHOR.
+  - _Verify_: headless Chrome against the real app: token never written to storage;
+    401 → one refresh + one retry; refresh failure → signed out; two
+    simultaneous callers → one refresh request; logout clears and notifies.
+    Manual: reload keeps you signed in; two tabs reloading together stay
+    signed in.
+  - _Requirements: backend 8.2, 8.4, 8.5, 8.6_
+
+- [ ] 3. Login and register pages
+  - `templates/login.html`, `templates/register.html` in the main layout;
+    `login.js`, `register.js` using `auth.js`.
+  - Login: email + password; `401` → "Wrong email or password." (one
+    message for every failure, as the API). After login go to `?next=`
+    (same-site paths only) or home.
+  - Register: email, password (≥ 10 characters), display name, help language
+    (from enabled support languages); `422` → each field's message under its
+    field, input kept; `409` → "This email already has an account"; on
+    success log in with the same credentials, then continue as login.
+  - _Verify_: headless Chrome for form → request mapping, error display, `next`
+    open-redirect guard (`//evil.com`, `https://…` rejected). Manual: sign
+    up, sign out, sign in, wrong password.
+  - _Requirements: backend 8.1–8.3_
+
+- [ ] 4. Admin guard in the browser
+  - Admin pages start with `currentUser()`: not signed in → redirect to
+    `/login?next=<this page>`; signed in without ADMIN/AUTHOR → "You don't
+    have access" message (no admin UI rendered).
+  - Any admin API `401` after a failed refresh → same redirect, unsaved
+    editor content kept in `sessionStorage` and offered back after sign-in.
+  - _Verify_: headless Chrome for the decision logic; manual with LEARNER and ADMIN
+    accounts (the first admin comes from `BANDUP_ADMIN_EMAIL` /
+    `BANDUP_ADMIN_PASSWORD`).
+  - _Requirements: backend 4.7_
+
+---
+
+## Final
+
+- [ ] 1. End-to-end pass
+  - Real app + dev database: admin signs in → creates an exercise with every
+    supported question type → publish blocked with errors → fixes → publishes
+    → learner (anonymous and signed in) opens it in az and en → submits →
+    sees results with explanations and evidence → admin edits it (revision 2)
+    → deletes it (archived, attempts kept).
+  - Accessibility and responsive re-check of the new pages and controls
+    (keyboard, focus, labels, narrow widths).
+  - _Verify_: written checklist with results in this task; all suites green.

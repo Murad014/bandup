@@ -66,7 +66,14 @@ depends on no technology.
 6. Contexts SHALL reference each other's aggregates by id only, and SHALL read
    another context's data through a port, never through its classes. Only the
    shared kernel may be used by every context.
-7. THE rules in 1.2–1.6 SHALL be enforced by automated ArchUnit tests.
+7. Each context's domain SHALL follow tactical DDD: one module per aggregate,
+   split into building-block packages (`aggregate`, `entity`, `valueobject`,
+   `repository`, `service`, `exception`); every domain class SHALL declare its
+   building block (`@AggregateRoot`, `@Entity`, `@ValueObject`,
+   `@DomainService`); an aggregate SHALL be changed only through its root,
+   have exactly one repository that stores it whole, be equal by identity,
+   and reference other aggregates only by id.
+8. THE rules in 1.2–1.7 SHALL be enforced by automated ArchUnit tests.
 
 ## Requirement 2 — Learner passage view
 
@@ -94,14 +101,17 @@ depends on no technology.
    correct key up to N, and more than N keys score 0.
 3. THE server SHALL store the attempt with the exercise revision, the given
    values, a snapshot of the expected answers, and points per question.
-4. THE response SHALL contain score, total, percent, elapsed time and, per
-   question, the result, the correct answer, the explanation (in the
-   learner's language with fallback) and the evidence link.
+4. THE response (`201`) SHALL contain score, total, percent, elapsed time
+   and, per question, the result, points earned and possible, the answer as
+   given, the correct answer (and all accepted answers), the explanation (in
+   the learner's language with fallback) and the evidence link.
 5. THE endpoint SHALL be public. WHEN a valid access token is sent THEN the
    attempt SHALL be stored for that user; without one it SHALL be anonymous.
-6. IF a question number is unknown or repeated, or the elapsed time is
-   negative, THEN the server SHALL respond `400`; IF the exercise isn't
-   PUBLISHED THEN `404`.
+6. IF a question number is unknown or repeated, a question is answered twice
+   (e.g. under both numbers of a "Choose TWO"), or the elapsed time is
+   negative, THEN the server SHALL respond `400` listing every problem; IF the
+   exercise isn't PUBLISHED THEN `404`. Any number of a question's range
+   identifies it; unanswered questions score 0.
 
 ## Requirement 4 — Admin exercise management
 
@@ -118,17 +128,27 @@ depends on no technology.
 4. IF a save carries a stale version THEN the API SHALL respond `409` and SHALL
    NOT overwrite the newer content.
 5. WHEN the content of a PUBLISHED exercise is saved THEN its revision SHALL
-   increase by one.
+   increase by one, and the save SHALL pass the publish rules (so learners
+   never see a broken exercise). An ARCHIVED exercise SHALL NOT be edited,
+   published or unpublished.
 6. WHEN an exercise with attempts is deleted THEN it SHALL be archived instead;
-   one without attempts SHALL be removed.
+   one without attempts SHALL be removed. A question that recorded attempts
+   point at SHALL NOT be removed (`422` naming it).
 7. Every admin endpoint SHALL require an access token with the ADMIN or AUTHOR
    role (R8).
+8. Groups and questions SHALL keep their ids across saves (the admin object
+   carries them); an id that isn't one of the exercise's SHALL be refused.
+   Unknown question types, languages, stages, topics and pictures SHALL be
+   `422` field errors, not database errors.
 
 ## Requirement 5 — Author HTML
 
 1. THE server SHALL sanitize every author-supplied HTML field (passage,
    instructions, explanations) against the allow-list in `reading-practice-ui`
-   design §9, with `data-g` replacing `data-az`, before storing it.
+   design §9, with `data-g` replacing `data-az`, before storing it. In a
+   passage only `span.w[data-g]`, `span.ev[id]` and the classes `w`/`ev` may
+   carry attributes; instructions and explanations SHALL carry none. Removing
+   a tag SHALL NOT join the words around it.
 2. WHEN a passage is saved THEN its gloss (`data-g`) and evidence (`ev` id)
    keys SHALL be read from the sanitized HTML, and the stored glosses and
    evidence SHALL be synchronised to exactly those keys.
@@ -154,38 +174,60 @@ depends on no technology.
 1. Every error response SHALL use the Problem Details format (RFC 9457).
 2. Validation errors (`422`) SHALL add an `errors` list of
    `{ field, message }`, matching `admin-panel-ui` design §4.3.
-3. Database constraint violations SHALL be translated to clear `409`/`422`
-   messages, never exposed as raw SQL errors.
-4. Missing/invalid/expired tokens SHALL get `401`; a valid token without the
-   required role SHALL get `403`.
+3. Database constraint violations SHALL be answered `409` with a generic
+   message (specific constraints MAY map to clearer messages); raw SQL and
+   internal details SHALL only be logged, never returned. Unexpected errors
+   SHALL get `500` with a generic message.
+4. Missing/invalid/expired tokens SHALL get `401` (with
+   `WWW-Authenticate: Bearer`); a valid token without the required role SHALL
+   get `403`. Both SHALL be Problem Details like every other error.
 
 ## Requirement 8 — Identity and authentication (JWT)
 
 1. A learner SHALL be able to register with email, password, display name and
-   languages (`POST /api/v1/auth/register`). Emails are unique and stored
-   lower-case; passwords SHALL be at least 10 characters.
+   languages (`POST /api/v1/auth/register`, `201`). Emails are unique and
+   stored lower-case; passwords SHALL be at least 10 characters and at most
+   72 bytes (BCrypt ignores anything longer); display names at most 80
+   characters; languages must exist (blank = English). Every invalid field
+   SHALL be reported at once (`422`); a duplicate email gets `409`.
+   Registering doesn't sign in; the client calls login next.
 2. WHEN `POST /api/v1/auth/login` succeeds THEN the API SHALL return an access
-   token (JWT, valid 15 minutes) in the body and set a refresh token in an
-   `HttpOnly`, `Secure`, `SameSite=Strict` cookie limited to
-   `/api/v1/auth` (valid 14 days).
+   token (JWT, valid 15 minutes) in the body and set a refresh token in the
+   `bandup_refresh` cookie: `HttpOnly`, `Secure`, `SameSite=Strict`, limited
+   to `/api/v1/auth`, valid 14 days. The refresh token SHALL never appear in a
+   response body.
 3. IF login fails THEN the API SHALL respond `401` with the same message for a
-   wrong email and a wrong password.
+   wrong email, a malformed email, a wrong password and an inactive account,
+   in about the same time (a dummy hash is checked when the email is unknown).
 4. WHEN `POST /api/v1/auth/refresh` is called with a valid refresh cookie THEN
    the API SHALL return a new access token and **rotate** the refresh token
    (the old one stops working). IF an already-used refresh token is presented
-   THEN all of that user's refresh tokens SHALL be revoked.
-5. WHEN `POST /api/v1/auth/logout` is called THEN the refresh token SHALL be
-   revoked and the cookie cleared.
+   THEN the whole login session (every token from that sign-in, including the
+   newest) SHALL be revoked. Concurrent uses of one session SHALL be processed
+   one after another. A failed refresh SHALL answer `401` and clear the cookie,
+   and its revocations SHALL still be saved.
+5. WHEN `POST /api/v1/auth/logout` is called THEN the whole session of that
+   refresh token SHALL be revoked and the cookie cleared (`204`). Logging out
+   with a missing or unknown cookie SHALL also succeed.
 6. `GET /api/v1/auth/me` SHALL return the current user's public id, display
-   name, roles and languages.
+   name, roles and languages (no email, no internal id).
 7. THE access token SHALL carry the user's public id (never the internal id),
    roles and support language, and SHALL be signed with a server secret from
-   configuration (never committed).
+   configuration (`BANDUP_JWT_SECRET`, at least 32 bytes, never committed;
+   shorter stops startup). Without it (local dev) a random key SHALL be used
+   with a warning.
 8. Passwords SHALL be stored only as BCrypt hashes; refresh tokens only as
    SHA-256 hashes.
 9. THE first admin SHALL be created at startup from configuration
-   (`BANDUP_ADMIN_EMAIL`, `BANDUP_ADMIN_PASSWORD`) when no admin exists.
-10. Disabled or deleted users SHALL NOT be able to log in or refresh.
+   (`BANDUP_ADMIN_EMAIL`, `BANDUP_ADMIN_PASSWORD`) when no admin exists. An
+   existing account SHALL never be turned into an admin this way; an invalid
+   configured password SHALL stop startup.
+10. Disabled or deleted users SHALL NOT be able to log in, refresh or use
+    `me`; their refresh SHALL revoke their whole session and issue nothing new.
+11. THE sign-in endpoints (register, login, refresh, logout) SHALL ignore the
+    `Authorization` header, so a stale access token can't block them. On every
+    other endpoint, public ones included, an invalid or expired token SHALL be
+    rejected (`401`) rather than treated as anonymous.
 
 ---
 
@@ -195,8 +237,9 @@ depends on no technology.
    in the graded-attempt response and through admin endpoints.
 2. **Security by endpoint, not by page.** Page shells under `com.bandup.ui` are
    public HTML without data. Data access is decided only by the API's JWT
-   rules. The dev-only `AdminAccessFilter` / `app.admin.dev-allow` SHALL be
-   removed when Identity is in place.
+   rules, which each context declares for its own endpoints; the shared
+   kernel SHALL NOT contain any context's URLs. (The old dev-only
+   `AdminAccessFilter` / `app.admin.dev-allow` have been removed.)
 3. **Stateless API.** The API SHALL NOT use server sessions; every request is
    authorised by its access token (the refresh endpoint by its cookie).
 4. **Testing.** Domain logic SHALL be unit-tested without Spring. Adapters and
@@ -205,3 +248,10 @@ depends on no technology.
 5. **Schema ownership.** The backend SHALL NOT change the schema; Hibernate
    runs with `ddl-auto=validate`. Schema changes are Flyway migrations in the
    database spec.
+6. **No slow work inside transactions.** Password hashing (BCrypt) SHALL never
+   run while a database transaction (and so a pooled connection) is held.
+7. **Aggregate consistency under concurrency.** An aggregate SHALL be loaded
+   and saved as one unit and locked while it's being changed, so concurrent
+   requests can't break its rules.
+8. **Time.** Time SHALL come only from the injected clock, so time-dependent
+   behaviour is testable.

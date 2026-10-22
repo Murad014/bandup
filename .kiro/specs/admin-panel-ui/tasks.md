@@ -9,6 +9,8 @@ Conventions:
 - Author-supplied HTML is sanitized **server-side** on save; the client never
   relies on its own sanitization for safety.
 - Admin objects include answers; the learner read API never does.
+- Note (later): the Node test files (`jstest/`) were removed; the app needs
+  no Node. Frontend checks are MockMvc + headless Chrome (`frontend/tasks.md`).
 - "Verify" = an automated test (Node+jsdom for client logic, MockMvc for
   server routing/authorization) and/or a manual browser check.
 
