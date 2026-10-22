@@ -123,6 +123,23 @@ class SeedDataTest {
     }
 
     @Test
+    void everyWolvesGlossHasAnEnglishDefinitionAwaitingReview() {
+        Map<String, Object> english = jdbc.queryForMap("""
+                select count(*) as total,
+                       count(*) filter (where t.source = 'MACHINE' and not t.reviewed) as unreviewed_machine
+                from passage_gloss g
+                join passage_gloss_translation t on t.gloss_id = g.id and t.language_code = 'en'
+                where g.exercise_id = %s
+                """.formatted(WOLVES));
+        assertThat(english).containsEntry("total", 25L).containsEntry("unreviewed_machine", 25L);
+        assertThat(jdbc.queryForObject("""
+                select t.meaning from passage_gloss g
+                join passage_gloss_translation t on t.gloss_id = g.id and t.language_code = 'en'
+                where g.gloss_key = 'g4' and g.exercise_id = %s
+                """.formatted(WOLVES), String.class)).isEqualTo("a very large kind of deer");
+    }
+
+    @Test
     void passageHtmlAndGlossEvidenceRowsAgree() {
         String html = jdbc.queryForObject("select body_html from reading_passage where exercise_id = " + WOLVES, String.class);
         assertThat(html).doesNotContain("data-az");

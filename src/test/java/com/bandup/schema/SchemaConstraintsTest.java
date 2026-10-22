@@ -28,12 +28,12 @@ class SchemaConstraintsTest {
     // ---------------------------------------------------------------- schema
 
     @Test
-    void createsAll26Tables() {
+    void createsAll28Tables() {
         Integer tables = jdbc.queryForObject("""
                 select count(*) from information_schema.tables
                 where table_schema = 'public' and table_name <> 'flyway_schema_history'
                 """, Integer.class);
-        assertThat(tables).isEqualTo(26);
+        assertThat(tables).isEqualTo(28);
     }
 
     // -------------------------------------------------------------- exercise
@@ -236,7 +236,92 @@ class SchemaConstraintsTest {
                 .hasMessageContaining("app_user_email_lowercase_check");
     }
 
+    // --------------------------------------------------------- login (V3)
+
+    @Test
+    void deletingAUserRemovesTheirCredentialAndRefreshTokens() {
+        long user = user("aysel@example.com");
+        jdbc.update("insert into user_credential (user_id, password_hash) values (?, '$2a$10$hash')", user);
+        refreshToken(user, HASH_A, "now() + interval '14 days'");
+
+        jdbc.update("delete from app_user where id = ?", user);
+
+        assertThat(jdbc.queryForObject("select count(*) from user_credential where user_id = ?", Integer.class, user)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from refresh_token where user_id = ?", Integer.class, user)).isZero();
+    }
+
+    @Test
+    void allowsOnlyOneCredentialPerUser() {
+        long user = user("aysel@example.com");
+        jdbc.update("insert into user_credential (user_id, password_hash) values (?, 'h1')", user);
+        assertThatThrownBy(() -> jdbc.update("insert into user_credential (user_id, password_hash) values (?, 'h2')", user))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void rejectsADuplicateRefreshTokenHash() {
+        long aysel = user("aysel@example.com");
+        long emre = user("emre@example.com");
+        refreshToken(aysel, HASH_A, "now() + interval '14 days'");
+        assertThatThrownBy(() -> refreshToken(emre, HASH_A, "now() + interval '14 days'"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void rejectsARefreshTokenThatExpiresBeforeItIsIssued() {
+        long user = user("aysel@example.com");
+        assertThatThrownBy(() -> refreshToken(user, HASH_A, "now() - interval '1 minute'"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("refresh_token_expiry_check");
+    }
+
+    @Test
+    void rejectsARefreshTokenHashThatIsNotSha256Hex() {
+        long user = user("aysel@example.com");
+        assertThatThrownBy(() -> refreshToken(user, "not-a-hash", "now() + interval '14 days'"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("refresh_token_hash_format_check");
+    }
+
+    @Test
+    void rejectsAnUpperCaseRefreshTokenHash() {
+        long user = user("aysel@example.com");
+        assertThatThrownBy(() -> refreshToken(user, HASH_A.toUpperCase(), "now() + interval '14 days'"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("refresh_token_hash_format_check");
+    }
+
+    @Test
+    void rotationLinksTheOldTokenToTheNewOneInTheSameFamily() {
+        long user = user("aysel@example.com");
+        long old = refreshToken(user, HASH_A, "now() + interval '14 days'");
+        long next = jdbc.queryForObject("""
+                insert into refresh_token (user_id, token_hash, family_id, expires_at)
+                select user_id, ?, family_id, now() + interval '14 days' from refresh_token where id = ?
+                returning id
+                """, Long.class, HASH_B, old);
+        jdbc.update("update refresh_token set replaced_by = ? where id = ?", next, old);
+
+        assertThat(jdbc.queryForObject(
+                "select count(distinct family_id) from refresh_token where id in (?, ?)", Integer.class, old, next)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select replaced_by from refresh_token where id = ?", Long.class, old)).isEqualTo(next);
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    private static final String HASH_A = "a".repeat(64);
+    private static final String HASH_B = "b".repeat(64);
+
+    private long user(String email) {
+        return jdbc.queryForObject(
+                "insert into app_user (email, ui_language, support_language) values (?, 'az', 'az') returning id", Long.class, email);
+    }
+
+    private long refreshToken(long userId, String hash, String expiresAtSql) {
+        return jdbc.queryForObject(
+                "insert into refresh_token (user_id, token_hash, family_id, expires_at) values (?, ?, gen_random_uuid(), "
+                        + expiresAtSql + ") returning id", Long.class, userId, hash);
+    }
 
     private long exercise(String slug, Integer durationSeconds, Integer lowTimeThresholdSeconds) {
         return jdbc.queryForObject("""

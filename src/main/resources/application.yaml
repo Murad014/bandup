@@ -17,10 +17,3 @@ spring:
 
   flyway:
     locations: classpath:db/migration
-
-# DEV ONLY: opens the admin area without authentication so /admin is reachable
-# during development. MUST be false (or removed) before any real deployment —
-# otherwise the admin panel is publicly accessible.
-app:
-  admin:
-    dev-allow: true

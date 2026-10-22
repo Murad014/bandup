@@ -59,11 +59,22 @@ when requested.
     data. All 40 tests green; dev `bandup` at Flyway v2.
   - _Requirements: 1.2, 1.3_
 
-- [ ] 4. (Proposed, not started) `V3__english_gloss_definitions.sql`
-  - The Wolves glosses only have `az` meanings. Every fallback chain ends at
-    `en`, so without English definitions a learner in any other language sees
-    no word help. Add simple English definitions for the 25 glosses
-    (`language_code = 'en'`).
-  - Needs the definitions written/approved by you before it's a migration.
-  - _Verify_: seed test that every Wolves gloss has an `en` meaning.
+- [x] 4. `V3__identity_login_tables.sql`
+  - `user_credential` (one BCrypt hash per user, cascade on user delete) and
+    `refresh_token` (SHA-256 hash, unique; family id for rotation;
+    `replaced_by`, `revoked_at`; named checks `refresh_token_expiry_check` and
+    `refresh_token_hash_format_check`; indexes on user and family). Needed by
+    the backend spec (Identity, R8). 28 tables now.
+  - _Verified_: `SchemaConstraintsTest` (+7): cascade on user delete, one
+    credential per user, duplicate hash rejected, expiry check, hash format
+    (invalid and upper-case), rotation links tokens in one family.
+  - _Requirements: backend R8_
+
+- [x] 5. `V4__english_gloss_definitions.sql`
+  - Simple English definitions for the 25 Wolves glosses, so every language's
+    fallback chain (which ends at `en`) has word help. Drafted, not written by
+    a human translator: stored as `source = 'MACHINE'`, `reviewed = false`.
+  - _Verified_: `SeedDataTest` (+1): 25 `en` meanings, all unreviewed machine
+    rows. 48 tests green; dev `bandup` at Flyway v4.
+  - _Open_: a person should review the 25 definitions and mark them reviewed.
   - _Requirements: 1.4_
