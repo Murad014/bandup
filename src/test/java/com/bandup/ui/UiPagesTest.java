@@ -50,7 +50,7 @@ class UiPagesTest {
         String home = html("/");
 
         assertThat(home).contains("href=\"/reading\"", ">Reading<", ">Grammar<", "soon");
-        assertThat(home).contains("<li class=\"app-nav__item\" data-nav-admin hidden>");
+        assertThat(home).doesNotContain("data-nav-admin").doesNotContain("href=\"/admin\""); // no Admin link: admins type /admin
         // .app-nav__item sets display:flex, which would override [hidden] without this rule (seen in Chrome).
         assertThat(mvc.perform(get("/css/app.css")).andReturn().getResponse().getContentAsString())
                 .contains("[hidden] { display: none !important; }");

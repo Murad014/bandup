@@ -103,11 +103,14 @@ final class HeadlessChrome implements AutoCloseable {
                 process.destroyForcibly();
                 process.waitFor(10, TimeUnit.SECONDS);
             }
-            try (Stream<Path> files = Files.walk(profile)) {
-                files.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
-            }
-        } catch (InterruptedException | IOException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+        // Best effort: Chrome may still be writing or removing files while it quits.
+        try (Stream<Path> files = Files.walk(profile)) {
+            files.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
+        } catch (IOException | java.io.UncheckedIOException leftOver) {
+            // a temp folder left behind is harmless
         }
     }
 

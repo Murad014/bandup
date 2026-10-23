@@ -60,8 +60,9 @@ authorised authors, so that only trusted users can create or change content.
    API THEN the system SHALL deny access with a forbidden response.
 3. WHERE a user has the admin role THE system SHALL grant access to the admin
    area.
-4. WHERE the public top navbar is shown THE Admin entry (the link into the
-   admin area) SHALL be visible only to users with the admin role.
+4. THE public top navbar SHALL NOT show an Admin entry to anyone (user
+   decision): admins open the admin area by its address, `/admin`. The
+   guard (clauses 1–3) is what protects it, never a hidden link.
 5. WHILE the authentication mechanism is not yet implemented THE admin area
    SHALL remain guarded by an explicit access-control layer (not merely hidden
    links), so enabling real auth later does not expose it retroactively.

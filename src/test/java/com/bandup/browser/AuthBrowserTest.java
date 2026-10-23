@@ -20,7 +20,6 @@ class AuthBrowserTest extends BrowserTestBase {
 
         assertThat(tab.text("document.querySelector('[data-nav-signin] a').getAttribute('href')"))
                 .isEqualTo("/login?next=%2Freading%2Fyellowstone-wolves");
-        assertThat(tab.eval("document.querySelector('[data-nav-admin]').hidden").asBoolean()).isTrue();
     }
 
     @Test
@@ -30,7 +29,6 @@ class AuthBrowserTest extends BrowserTestBase {
 
         signIn(tab, email, PASSWORD);
         tab.waitFor(signedInNavbar("Aysel"));
-        assertThat(tab.eval("document.querySelector('[data-nav-admin]').hidden").asBoolean()).isTrue();
 
         // Memory only: nothing in storage, and the refresh cookie is HttpOnly (invisible to scripts).
         assertThat(tab.eval("localStorage.length + sessionStorage.length").asInt()).isZero();
@@ -42,12 +40,15 @@ class AuthBrowserTest extends BrowserTestBase {
     }
 
     @Test
-    void anAdminSeesTheAdminLink() throws Exception {
+    void anAdminSeesNoAdminLinkAndOpensThePanelByItsAddress() throws Exception {
         HeadlessChrome.Tab tab = chrome.newTab(url("/"));
 
         signIn(tab, ADMIN_EMAIL, ADMIN_PASSWORD);
+        tab.waitFor("!document.querySelector('[data-nav-account]').hidden");
+        assertThat(tab.eval("document.querySelector('.app-nav a[href=\"/admin\"]') === null").asBoolean()).isTrue();
 
-        tab.waitFor("!document.querySelector('[data-nav-admin]').hidden");
+        tab.navigate(url("/admin"));
+        tab.waitFor("document.body.classList.contains('admin-ready')");
     }
 
     @Test
