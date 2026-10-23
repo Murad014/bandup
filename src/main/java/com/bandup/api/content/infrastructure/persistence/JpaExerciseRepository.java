@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,15 +86,11 @@ import com.bandup.api.shared.domain.language.Translations;
  * second one is rejected as stale.
  */
 @Repository
+@RequiredArgsConstructor
 class JpaExerciseRepository implements ExerciseRepository {
 
     private final EntityManager em;
     private final Clock clock;
-
-    JpaExerciseRepository(EntityManager em, Clock clock) {
-        this.em = em;
-        this.clock = clock;
-    }
 
     // ------------------------------------------------------------------ ids
 
@@ -193,7 +191,7 @@ class JpaExerciseRepository implements ExerciseRepository {
                 row.durationSeconds == null ? null : new Timer(row.durationSeconds, row.lowTimeThresholdSeconds),
                 row.stageId == null ? null : new Placement(new StageId(row.stageId), row.position), topics,
                 ExerciseStatus.valueOf(row.status), new Revision(row.revision), row.version, row.publishedAt, passage,
-                groups);
+                groups, row.coverMediaId == null ? null : new MediaId(row.coverMediaId));
     }
 
     /** Glosses and evidence in the order they appear in the HTML (as the domain keeps them). */
@@ -319,6 +317,7 @@ class JpaExerciseRepository implements ExerciseRepository {
         row.status = exercise.status().name();
         row.revision = exercise.revision().value();
         row.publishedAt = exercise.publishedAt().orElse(null);
+        row.coverMediaId = exercise.cover().map(MediaId::value).orElse(null);
         row.updatedAt = clock.instant();
     }
 

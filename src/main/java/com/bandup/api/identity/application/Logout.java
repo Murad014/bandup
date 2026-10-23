@@ -2,6 +2,8 @@ package com.bandup.api.identity.application;
 
 import java.time.Clock;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,17 +15,12 @@ import com.bandup.api.identity.domain.session.repository.SessionRepository;
  * presented refresh token. Idempotent: an unknown or missing token is fine.
  */
 @Service
+@RequiredArgsConstructor
 public class Logout {
 
     private final SessionRepository sessions;
     private final TokenGenerator tokenGenerator;
     private final Clock clock;
-
-    public Logout(SessionRepository sessions, TokenGenerator tokenGenerator, Clock clock) {
-        this.sessions = sessions;
-        this.tokenGenerator = tokenGenerator;
-        this.clock = clock;
-    }
 
     @Transactional
     public void logout(String rawRefreshToken) {

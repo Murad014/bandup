@@ -19,11 +19,35 @@ class CatalogBrowserTest extends BrowserTestBase {
         assertThat(tab.text(card + ".querySelector('h2').textContent")).isEqualTo("The Return of the Wolves");
         assertThat(tab.text(card + ".querySelector('.ex-meta').textContent")).contains("B1", "Mini", "5 min", "6 questions");
         assertThat(tab.text(card + ".textContent")).contains("True / False / Not Given · Sentence completion", "Nature");
+        // No uploaded cover: the illustration of its first topic.
+        assertThat(tab.text(card + ".querySelector('.ex-cover img').getAttribute('src')")).isEqualTo("/img/covers/nature.svg");
         assertThat(tab.eval(card + ".querySelector('.ex-progress')").isNull()).isTrue(); // anonymous: no progress
         assertThat(tab.eval("document.getElementById('notDoneLabel').hidden").asBoolean()).isTrue();
 
         tab.eval(card + ".click()");
         tab.waitFor("location.pathname === '/reading/yellowstone-wolves' && document.querySelectorAll('#questions .q').length === 6");
+    }
+
+    @Test
+    void theHomePageAsksForASkillAndShowsNoPassages() throws Exception {
+        HeadlessChrome.Tab tab = chrome.newTab(url("/"));
+        assertThat(tab.eval("document.querySelectorAll('.ex-card').length").asInt()).isZero();
+        assertThat(tab.text("document.querySelector('[data-skill=grammar]').textContent")).contains("Grammar", "soon");
+        assertThat(tab.eval("document.querySelector('[data-skill=grammar]').tagName === 'A'").asBoolean()).isFalse();
+
+        tab.eval("document.querySelector('a[data-skill=reading]').click()");
+        tab.waitFor("location.pathname === '/reading' && document.querySelector('.ex-card') !== null");
+        // Three cards per row on a desktop-wide window.
+        assertThat(tab.text("getComputedStyle(document.getElementById('catalogItems')).gridTemplateColumns.split(' ').length + ''"))
+                .isEqualTo("3");
+    }
+
+    @Test
+    void thePassageShowsItsCover() throws Exception {
+        HeadlessChrome.Tab tab = chrome.newTab(url("/reading/yellowstone-wolves"));
+        tab.waitFor("document.querySelector('#passageCover img') !== null");
+        assertThat(tab.eval("document.getElementById('passageCover').hidden").asBoolean()).isFalse();
+        assertThat(tab.text("document.querySelector('#passageCover img').getAttribute('src')")).isEqualTo("/img/covers/nature.svg");
     }
 
     @Test
@@ -64,7 +88,7 @@ class CatalogBrowserTest extends BrowserTestBase {
         tab.navigate(url("/reading"));
         String card = "document.querySelector('.ex-card[data-id=\"yellowstone-wolves\"]')";
         tab.waitFor(card + " !== null && " + card + ".querySelector('.ex-progress') !== null");
-        assertThat(tab.text(card + ".querySelector('.ex-progress').textContent")).isEqualTo("✓ Done · best 1/6");
+        assertThat(tab.text(card + ".querySelector('.ex-progress').textContent")).isEqualTo("Best score 1/6");
 
         tab.eval("document.getElementById('notDoneFilter').click()");
         tab.waitFor("location.search === '?notDone=true' && " + card + " === null");

@@ -40,3 +40,6 @@ out/
 node_modules/
 npm-debug.log*
 .npm/
+
+# Uploaded images (local storage, bandup.media.dir)
+data/

@@ -2,7 +2,8 @@
    theme.js — persisted light/dark theme.
    Applies the saved theme to <html data-theme> immediately (before paint) to
    avoid a flash, exposes window.BandUpTheme.toggle(), and wires any element
-   with [data-theme-toggle]. With no explicit choice, the OS preference is used.
+   with [data-theme-toggle]. Light unless the learner picked dark (BandUp is
+   bright by default; the OS setting doesn't switch it).
    Loaded synchronously in <head>.
    ========================================================================= */
 (function () {
@@ -13,12 +14,8 @@
     function stored() {
         try { return localStorage.getItem(KEY); } catch (e) { return null; }
     }
-    function systemDark() {
-        return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    }
     function current() {
-        var t = stored();
-        return t === "light" || t === "dark" ? t : (systemDark() ? "dark" : "light");
+        return stored() === "dark" ? "dark" : "light";
     }
     function apply(t) {
         if (t === "light" || t === "dark") root.setAttribute("data-theme", t);

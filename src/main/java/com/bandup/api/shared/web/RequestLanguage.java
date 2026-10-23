@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import lombok.experimental.UtilityClass;
+
 import com.bandup.api.shared.domain.language.LanguageFallbacks;
 
 /**
@@ -15,10 +17,8 @@ import com.bandup.api.shared.domain.language.LanguageFallbacks;
  * <p>The result is the raw requested code; it may be unknown or malformed, and
  * {@link com.bandup.api.shared.domain.language.LanguageFallbacks} handles that safely.
  */
+@UtilityClass
 public final class RequestLanguage {
-
-    private RequestLanguage() {
-    }
 
     /**
      * @param explicit       {@code ?lang=} or the request body's language; may be null

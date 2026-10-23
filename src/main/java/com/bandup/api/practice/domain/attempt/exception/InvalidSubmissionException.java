@@ -3,6 +3,8 @@ package com.bandup.api.practice.domain.attempt.exception;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.Getter;
+
 import com.bandup.api.shared.domain.error.Violation;
 
 /**
@@ -13,6 +15,7 @@ import com.bandup.api.shared.domain.error.Violation;
  */
 public class InvalidSubmissionException extends RuntimeException {
 
+    @Getter
     private final List<Violation> problems;
 
     public InvalidSubmissionException(List<Violation> problems) {
@@ -21,9 +24,5 @@ public class InvalidSubmissionException extends RuntimeException {
             throw new IllegalArgumentException("An invalid submission needs at least one problem");
         }
         this.problems = List.copyOf(problems);
-    }
-
-    public List<Violation> problems() {
-        return problems;
     }
 }

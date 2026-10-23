@@ -24,6 +24,7 @@ class AuthorScenariosTest extends UiTestBase {
         editor.setMeaning("g1", "az", "bəndlər");
         editor.setMeaning("g1", "en", "walls that hold back water");
         ui.step("Passage written, word meaning and evidence marked");
+        editor.doneWithMeaning();
 
         editor.addQuestionGroup();
         editor.setInstruction(0, "Do the statements agree with the information in the text?");

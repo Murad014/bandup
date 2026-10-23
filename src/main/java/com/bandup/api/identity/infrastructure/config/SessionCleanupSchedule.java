@@ -1,7 +1,8 @@
 package com.bandup.api.identity.infrastructure.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -9,15 +10,11 @@ import com.bandup.api.identity.application.PurgeEndedSessions;
 
 /** Runs the session clean-up every night (03:30 server time; {@code bandup.auth.cleanup-cron} to change it). */
 @Component
+@Slf4j
+@RequiredArgsConstructor
 class SessionCleanupSchedule {
 
-    private static final Logger log = LoggerFactory.getLogger(SessionCleanupSchedule.class);
-
     private final PurgeEndedSessions purge;
-
-    SessionCleanupSchedule(PurgeEndedSessions purge) {
-        this.purge = purge;
-    }
 
     @Scheduled(cron = "${bandup.auth.cleanup-cron:0 30 3 * * *}")
     void nightly() {

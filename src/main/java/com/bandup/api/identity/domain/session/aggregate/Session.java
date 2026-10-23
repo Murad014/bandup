@@ -9,6 +9,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import com.bandup.api.identity.domain.session.entity.RefreshToken;
 import com.bandup.api.identity.domain.session.valueobject.SessionId;
 import com.bandup.api.identity.domain.session.valueobject.TokenHash;
@@ -35,6 +38,7 @@ import com.bandup.api.shared.domain.ddd.AggregateRoot;
  * Loaded and saved as one unit; references its user only by {@link UserId}.
  */
 @AggregateRoot
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class Session {
 
     public enum Reason {
@@ -60,7 +64,10 @@ public final class Session {
      */
     public static final Duration REUSE_GRACE = Duration.ofSeconds(30);
 
+    @EqualsAndHashCode.Include
+    @Getter
     private final SessionId id;
+    @Getter
     private final UserId userId;
     private final List<RefreshToken> tokens;
 
@@ -148,27 +155,10 @@ public final class Session {
         return tokens.get(tokens.size() - 1);
     }
 
-    public SessionId id() {
-        return id;
-    }
-
-    public UserId userId() {
-        return userId;
-    }
-
     /** Every token, in the order issued. */
     public List<RefreshToken> tokens() {
         return List.copyOf(tokens);
     }
 
     /** Aggregates are equal by identity. */
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof Session session && id.equals(session.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
 }

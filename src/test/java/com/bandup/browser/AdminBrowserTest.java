@@ -34,11 +34,21 @@ class AdminBrowserTest extends BrowserTestBase {
 
         assertThat(tab.text("document.getElementById('title').value")).isEqualTo("The Return of the Wolves");
         assertThat(tab.text("document.getElementById('statusBadge').textContent")).isEqualTo("published");
+        assertThat(tab.text(field("glosses.g1") + ".textContent")).contains("g1", "eliminated", "az: məhv edilmək");
+        tab.eval("window.__adminEditor.openGlossPanel('g1')");
+        tab.waitFor("document.getElementById('glossPanel') !== null");
         assertThat(tab.text(field("glosses.g1.meanings.az") + ".querySelector('input').value")).isEqualTo("məhv edilmək");
         assertThat(tab.text(field("glosses.g1.meanings.en") + ".querySelector('.machine').textContent")).contains("Machine-written");
         assertThat(tab.text(field("questionGroups[0].questions[0].answer") + ".querySelector('select').value")).isEqualTo("FALSE");
         assertThat(tab.text(field("questionGroups[1].questions[0].answer") + ".querySelector('input').value")).isEqualTo("riverbanks");
         assertThat(tab.text("document.querySelector('.q-num').textContent")).isEqualTo("Q1");
+        // A question group folds to one line and opens again.
+        tab.eval(button("Hide"));
+        assertThat(tab.text("document.querySelector('.group-card.is-folded .group-summary').textContent"))
+                .isEqualTo("True / False / Not Given · 3 questions");
+        assertThat(tab.eval("document.querySelector('.group-card.is-folded select').offsetParent === null").asBoolean()).isTrue();
+        tab.eval(button("Show"));
+        assertThat(tab.eval("document.querySelector('.group-card.is-folded') === null").asBoolean()).isTrue();
         assertThat(tab.eval("window.__adminEditor.isDirty()").asBoolean()).isFalse();
         tab.screenshot(java.nio.file.Path.of("build/screenshots/admin-editor-wolves.png"));
         // Loading and saving back unchanged sends the same content (ids kept).
@@ -58,7 +68,7 @@ class AdminBrowserTest extends BrowserTestBase {
         tab.eval(passage("<p><span class=\"ev\" id=\"e1\">Beavers built dams on the river.</span></p>"));
         tab.eval(select("Beavers"));
         tab.eval("document.getElementById('glossBtn').click()");
-        tab.waitFor("document.querySelector('.gloss-row') !== null");
+        tab.waitFor("document.getElementById('glossPanel') !== null && document.querySelector('.gloss-row') !== null");
         tab.eval(type(fieldSelector("glosses.g1.meanings.az") + " input", "qunduzlar"));
 
         tab.eval(button("+ Add question group"));
@@ -67,14 +77,21 @@ class AdminBrowserTest extends BrowserTestBase {
         tab.eval(type(fieldSelector("questionGroups[0].instruction") + " input", "Do the statements agree with the text?"));
         tab.eval(type(fieldSelector("questionGroups[0].questions[0].stem") + " input", "Beavers built dams."));
         tab.eval(choose(fieldSelector("questionGroups[0].questions[0].answer") + " select", "TRUE"));
-        tab.eval(type(fieldSelector("questionGroups[0].questions[0].evidenceId") + " input", "e1"));
+        tab.eval(choose(fieldSelector("questionGroups[0].questions[0].evidenceId") + " select", "e1"));
         tab.waitFor("document.getElementById('publishHints').hidden");
 
         tab.eval("document.getElementById('saveBtn').click()");
         tab.waitFor("location.pathname === '/admin/sessions/" + slug + "/edit'");
         tab.waitFor("document.getElementById('revisionInfo').textContent === 'Revision 1 · version 0'");
         assertThat(tab.eval("window.__adminEditor.isDirty()").asBoolean()).isFalse();
-        assertThat(tab.text("document.querySelector('.q-num').textContent")).isEqualTo("Q1"); // has its id now
+        assertThat(tab.text("document.querySelector('.q-num').textContent")).isEqualTo("Q1");
+        // A question group folds to one line and opens again.
+        tab.eval(button("Hide"));
+        assertThat(tab.text("document.querySelector('.group-card.is-folded .group-summary').textContent"))
+                .isEqualTo("True / False / Not Given · 1 question");
+        assertThat(tab.eval("document.querySelector('.group-card.is-folded select').offsetParent === null").asBoolean()).isTrue();
+        tab.eval(button("Show"));
+        assertThat(tab.eval("document.querySelector('.group-card.is-folded') === null").asBoolean()).isTrue(); // has its id now
 
         tab.eval("document.getElementById('publishBtn').click()");
         tab.waitFor("document.getElementById('statusBadge').textContent === 'published'");
@@ -183,7 +200,83 @@ class AdminBrowserTest extends BrowserTestBase {
         assertThat(tab.eval("window.__adminEditor.isDirty()").asBoolean()).isTrue();
     }
 
+    @Test
+    void anAuthorClicksAWordToGlossItAndClicksInASentenceToMarkEvidence() throws Exception {
+        HeadlessChrome.Tab tab = adminTab();
+        tab.navigate(url("/admin/sessions/new"));
+        tab.waitFor("document.body.classList.contains('admin-ready')");
+        tab.eval(passage("<p>Beavers built dams on the river. Fish came back soon.</p>"));
+        tab.eval(button("+ Add question group"));
+        tab.waitFor(field("questionGroups[0].questions[0].evidenceId") + " !== null");
+
+        // One click in "dams" (no selection), then the button: the word is glossed and its panel opens.
+        click(tab, wordPoint("dams"));
+        click(tab, centerOf("document.getElementById('glossBtn')"));
+        tab.waitFor("document.getElementById('glossPanel') !== null");
+        assertThat(tab.text("document.querySelector('#passageEdit .w').outerHTML")).isEqualTo("<span class=\"w\" data-g=\"g1\">dams</span>");
+        assertThat(tab.text("document.querySelector('#glossPanel .gloss-panel__head').textContent")).contains("g1", "dams");
+        // The author types the meaning right there (the first meaning box has the focus) and presses Done.
+        assertThat(tab.text("document.activeElement.closest('[data-field]').dataset.field")).isEqualTo("glosses.g1.meanings.az");
+        tab.eval(type(fieldSelector("glosses.g1.meanings.az") + " input", "bəndlər"));
+        click(tab, centerOf("[...document.querySelectorAll('#glossPanel button')].find(b => b.textContent === 'Done')"));
+        assertThat(tab.eval("document.getElementById('glossPanel') === null").asBoolean()).isTrue();
+        assertThat(tab.text(field("glosses.g1") + ".textContent")).contains("dams", "az: bəndlər");
+        // The key shows on the word in the editor.
+        assertThat(tab.text("getComputedStyle(document.querySelector('#passageEdit .w'), '::after').content")).isEqualTo("\"g1\"");
+
+        // Clicking the glossed word again opens its panel with the meaning.
+        click(tab, wordPoint("dams"));
+        tab.waitFor("document.getElementById('glossPanel') !== null");
+        assertThat(tab.text(field("glosses.g1.meanings.az") + ".querySelector('input').value")).isEqualTo("bəndlər");
+        tab.eval("document.getElementById('glossPanel').dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}))");
+        assertThat(tab.eval("document.getElementById('glossPanel') === null").asBoolean()).isTrue();
+
+        // One click in the second sentence, then "Mark evidence": the whole sentence becomes e1, labelled.
+        click(tab, wordPoint("came"));
+        click(tab, centerOf("document.getElementById('evidenceBtn')"));
+        tab.waitFor("document.querySelector('#passageEdit .ev') !== null");
+        assertThat(tab.text("window.__adminEditor._toInput().passageHtml"))
+                .isEqualTo("<p>Beavers built <span class=\"w\" data-g=\"g1\">dams</span> on the river. <span class=\"ev\" id=\"e1\">Fish came back soon.</span></p>");
+        assertThat(tab.text("getComputedStyle(document.querySelector('#passageEdit .ev'), '::before').content")).isEqualTo("\"e1\"");
+        // The question's evidence is a dropdown with the sentence in it.
+        assertThat(tab.text("[..." + field("questionGroups[0].questions[0].evidenceId") + ".querySelectorAll('option')].map(o => o.textContent).join('|')"))
+                .isEqualTo("— none —|e1 — Fish came back soon.");
+
+        // "Add gloss" with the caret nowhere in the passage says what to do.
+        tab.eval("getSelection().removeAllRanges()");
+        tab.eval("document.getElementById('title').focus()");
+        tab.eval(passage("<p>New text.</p>"));
+        click(tab, centerOf("document.getElementById('glossBtn')"));
+        assertThat(tab.text("document.getElementById('editorNotice').textContent")).contains("Click a word in the passage first");
+    }
+
     // ------------------------------------------------------------ helpers
+
+    private static final tools.jackson.databind.json.JsonMapper MAPPER = tools.jackson.databind.json.JsonMapper.builder().build();
+
+    /** The middle of a word in the passage, scrolled into view: "x,y". */
+    private static String wordPoint(String word) {
+        return "(() => { const ed = document.getElementById('passageEdit'); const w = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT); let n;"
+                + " while ((n = w.nextNode())) { const i = n.data.indexOf('" + word + "'); if (i >= 0) {"
+                + " n.parentElement.scrollIntoView({block: 'center'}); const r = document.createRange(); r.setStart(n, i + 1); r.setEnd(n, i + 2);"
+                + " const b = r.getBoundingClientRect(); return (b.left + b.width / 2) + ',' + (b.top + b.height / 2); } } return null; })()";
+    }
+
+    private static String centerOf(String element) {
+        return "(() => { const e = " + element + "; e.scrollIntoView({block: 'center'}); const b = e.getBoundingClientRect();"
+                + " return (b.left + b.width / 2) + ',' + (b.top + b.height / 2); })()";
+    }
+
+    /** A real mouse click (press + release) at the point the expression returns. */
+    private static void click(HeadlessChrome.Tab tab, String pointExpression) throws Exception {
+        String[] xy = tab.text(pointExpression).split(",");
+        for (String type : new String[] {"mousePressed", "mouseReleased"}) {
+            tab.call("Input.dispatchMouseEvent", MAPPER.createObjectNode().put("type", type)
+                    .put("x", Double.parseDouble(xy[0])).put("y", Double.parseDouble(xy[1]))
+                    .put("button", "left").put("clickCount", 1).put("buttons", type.equals("mousePressed") ? 1 : 0));
+        }
+        Thread.sleep(150);
+    }
 
     private HeadlessChrome.Tab adminTab() throws Exception {
         HeadlessChrome.Tab tab = chrome.newTab(url("/"));

@@ -9,9 +9,12 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import com.bandup.api.content.application.port.HtmlSanitizer;
+import com.bandup.api.content.application.port.MediaLibrary;
 import com.bandup.api.content.application.port.MarkupInspector;
 import com.bandup.api.content.application.port.QuestionTypes;
 import com.bandup.api.content.application.port.ReferenceData;
@@ -59,6 +62,7 @@ import com.bandup.api.shared.domain.language.Translations;
  * throws them together (422); the {@link Exercise} then checks its own rules.
  */
 @Service
+@RequiredArgsConstructor
 public class ExerciseContentBuilder {
 
     private final HtmlSanitizer sanitizer;
@@ -67,16 +71,7 @@ public class ExerciseContentBuilder {
     private final ReferenceData references;
     private final LanguageCatalog languages;
     private final ExerciseRepository exercises;
-
-    public ExerciseContentBuilder(HtmlSanitizer sanitizer, MarkupInspector inspector, QuestionTypes questionTypes,
-            ReferenceData references, LanguageCatalog languages, ExerciseRepository exercises) {
-        this.sanitizer = sanitizer;
-        this.inspector = inspector;
-        this.questionTypes = questionTypes;
-        this.references = references;
-        this.languages = languages;
-        this.exercises = exercises;
-    }
+    private final MediaLibrary images;
 
     /**
      * @param existing the exercise being edited (its group and question ids may be reused), or null when creating
@@ -121,8 +116,16 @@ public class ExerciseContentBuilder {
                 groups.add(group);
             }
         }
+        MediaId cover = null;
+        if (in.coverMediaId() != null) {
+            if (in.coverMediaId() > 0 && images.isImage(in.coverMediaId())) {
+                cover = new MediaId(in.coverMediaId());
+            } else {
+                b.add("coverMediaId", "Unknown cover image; upload it again.");
+            }
+        }
         b.throwIfAny();
-        return new ExerciseContent(in.title(), format, level, timer, placement, topics, passage, markup, notes, groups);
+        return new ExerciseContent(in.title(), format, level, timer, placement, topics, passage, markup, notes, groups, cover);
     }
 
     private Timer timer(ExerciseInput in, Build b) {

@@ -2,6 +2,8 @@ package com.bandup.api.identity.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -28,6 +30,7 @@ import com.bandup.api.shared.web.ApiProblems;
 /** Sign-up, sign-in and session endpoints (requirement 8). */
 @RestController
 @RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
 class AuthController {
 
     private final RegisterLearner registerLearner;
@@ -36,16 +39,6 @@ class AuthController {
     private final Logout logout;
     private final GetMe getMe;
     private final CurrentUser currentUser;
-
-    AuthController(RegisterLearner registerLearner, Login login, RefreshSession refreshSession, Logout logout,
-            GetMe getMe, CurrentUser currentUser) {
-        this.registerLearner = registerLearner;
-        this.login = login;
-        this.refreshSession = refreshSession;
-        this.logout = logout;
-        this.getMe = getMe;
-        this.currentUser = currentUser;
-    }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)

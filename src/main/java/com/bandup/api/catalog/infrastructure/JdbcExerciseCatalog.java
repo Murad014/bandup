@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -27,15 +29,13 @@ import com.bandup.api.shared.domain.language.Translations;
  * then small queries for the cards on that page only.
  */
 @Component
+@RequiredArgsConstructor
 class JdbcExerciseCatalog implements ExerciseCatalog {
 
     private final JdbcClient jdbc;
 
-    JdbcExerciseCatalog(JdbcClient jdbc) {
-        this.jdbc = jdbc;
-    }
-
-    private record Row(long id, String slug, String title, String skill, String format, String level, Integer duration) {
+    private record Row(long id, String slug, String title, String skill, String format, String level, Integer duration,
+            String coverUrl) {
     }
 
     @Override
@@ -76,11 +76,13 @@ class JdbcExerciseCatalog implements ExerciseCatalog {
         long total = jdbc.sql("select count(*)" + where).params(params).query(Long.class).single();
         params.put("limit", q.size());
         params.put("offset", (long) q.page() * q.size());
-        List<Row> rows = jdbc.sql("select x.id, x.slug, x.title, x.skill, x.format, x.level, x.duration_seconds" + where
+        List<Row> rows = jdbc.sql("select x.id, x.slug, x.title, x.skill, x.format, x.level, x.duration_seconds,"
+                        + " (select '/media/' || m.public_id from media m where m.id = x.cover_media_id) as cover_url" + where
                         + " order by x.published_at desc nulls last, x.title limit :limit offset :offset")
                 .params(params)
                 .query((rs, i) -> new Row(rs.getLong("id"), rs.getString("slug"), rs.getString("title"), rs.getString("skill"),
-                        rs.getString("format"), rs.getString("level"), rs.getObject("duration_seconds", Integer.class)))
+                        rs.getString("format"), rs.getString("level"), rs.getObject("duration_seconds", Integer.class),
+                        rs.getString("cover_url")))
                 .list();
         return new CatalogPage(cards(rows, userId, help), q.page(), q.size(), total);
     }
@@ -118,7 +120,7 @@ class JdbcExerciseCatalog implements ExerciseCatalog {
                 }));
         return rows.stream().map(r -> new ExerciseCard(r.slug(), r.title(), r.skill(), r.format(), r.level(), r.duration(),
                 numbers.getOrDefault(r.id(), 0), types.getOrDefault(r.id(), List.of()), topics.getOrDefault(r.id(), List.of()),
-                best.containsKey(r.id()), best.get(r.id()))).toList();
+                best.containsKey(r.id()), best.get(r.id()), r.coverUrl())).toList();
     }
 
     private Map<Long, List<ExerciseCard.Topic>> topicsOf(List<Long> ids, LanguageChain help) {

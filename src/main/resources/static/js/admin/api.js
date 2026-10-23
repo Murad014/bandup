@@ -22,4 +22,10 @@ export const api = {
     unpublish: (slug) => apiFetch(one(slug) + "/unpublish", { method: "POST" }),
     /** 204; archived instead when learners have attempts. */
     remove: (slug) => apiFetch(one(slug), { method: "DELETE" }),
+    /** A JPEG/PNG up to 3 MB → {id, url, width, height}; bad file → 422 (field "file"). */
+    uploadImage: (file) => {
+        const form = new FormData();
+        form.append("file", file);
+        return apiFetch("/api/v1/admin/media", { method: "POST", form });
+    },
 };

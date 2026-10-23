@@ -6,8 +6,8 @@ import java.security.SecureRandom;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,9 +28,9 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
  */
 @Configuration
 @EnableConfigurationProperties(JwtProperties.class)
+@Slf4j
 class JwtConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(JwtConfig.class);
     private static final int MIN_SECRET_BYTES = 32;
 
     @Bean

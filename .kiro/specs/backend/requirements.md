@@ -56,8 +56,10 @@ depends on no technology.
    controllers) and `static/`, `templates/`.
 2. `com.bandup.ui` SHALL NOT depend on any class in `com.bandup.api`. The
    frontend reaches the backend only through HTTP calls from the browser.
-3. THE domain layer SHALL use only the JDK. It SHALL NOT depend on Spring,
-   Jakarta Persistence, Hibernate, Jackson, Lombok or any other library.
+3. THE domain layer SHALL use only the JDK at run time. It SHALL NOT depend
+   on Spring, Jakarta Persistence, Hibernate, Jackson or any other library.
+   Lombok MAY be used (compile-time only; nothing of it remains in the
+   compiled classes).
 4. Dependencies SHALL point inwards: `web → application → domain` and
    `infrastructure → domain`. The domain SHALL NOT depend on any other layer;
    `web` SHALL NOT use `infrastructure` directly.
@@ -259,6 +261,22 @@ depends on no technology.
 4. Topic names SHALL follow the help language with fallback (R6).
 5. The endpoint SHALL be public. The filter choices SHALL offer only values
    some published exercise has.
+
+## Requirement 10 — Cover images
+
+1. Authors (ADMIN / AUTHOR) SHALL be able to upload a cover image
+   (`POST /api/v1/admin/media`, multipart `file`). Only real JPEG or PNG
+   images up to 3 MB SHALL be kept: the bytes are decoded; the file name and
+   declared type are not trusted, and files are stored under a random name.
+2. An exercise MAY have one cover (`coverMediaId` in the admin input); an
+   unknown or non-image id SHALL be a field error on `coverMediaId`.
+3. Covers SHALL be public at `GET /media/{publicId}` (cacheable for a year,
+   `nosniff`); an unknown id SHALL be `404`.
+4. The catalog cards and the learner passage SHALL carry `coverUrl` (null
+   without a cover); the passage SHALL also carry its topic slugs.
+5. WHEN an exercise has no cover THEN the pages SHALL show an illustration
+   for its first topic (nature, science, history, society, technology), or a
+   default one.
 
 ---
 

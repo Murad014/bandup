@@ -5,6 +5,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.Getter;
+
 import com.bandup.api.shared.domain.ddd.ValueObject;
 
 /**
@@ -15,8 +17,13 @@ import com.bandup.api.shared.domain.ddd.ValueObject;
 @ValueObject
 public final class GradingRule {
 
+    @Getter
     private final QuestionFamily family;
+    /** The accepted values (gap) or required keys, as stored: the attempt's answer snapshot. */
+    @Getter
     private final List<String> accepted;
+    /** How many keys a "Choose N" question needs; 1 for every other family. */
+    @Getter
     private final int chooseCount;
     private final WordLimit wordLimit;
 
@@ -59,20 +66,6 @@ public final class GradingRule {
     /** Matching / summary box: exactly one key from the group's bank. */
     public static GradingRule match(String key) {
         return new GradingRule(QuestionFamily.MATCH, List.of(key), 1, null);
-    }
-
-    public QuestionFamily family() {
-        return family;
-    }
-
-    /** The accepted values (gap) or required keys, as stored: the attempt's answer snapshot. */
-    public List<String> accepted() {
-        return accepted;
-    }
-
-    /** How many keys a "Choose N" question needs; 1 for every other family. */
-    public int chooseCount() {
-        return chooseCount;
     }
 
     public Optional<WordLimit> wordLimit() {

@@ -10,7 +10,8 @@
 | Domain layout | One module per aggregate, split by building block: `aggregate/`, `entity/`, `valueobject/`, `repository/`, `service/`, `exception/` (§4) |
 | Building blocks in code | Plain-Java markers `@AggregateRoot`, `@Entity`, `@ValueObject`, `@DomainService` (`shared.domain.ddd`) on every domain class |
 | Aggregates | Changed only through their root; reference each other only by id; equal by identity; one repository per aggregate, storing the whole aggregate |
-| Domain purity | Domain = JDK only. No Spring, JPA, Jackson, Lombok |
+| Domain purity | Domain = JDK only at run time. No Spring, JPA, Jackson. **Lombok is used everywhere, domain included** (user decision): compile-time only, and with `lombok.addLombokGeneratedAnnotation = false` the bytecode holds no trace of it |
+| Boilerplate | Lombok (`lombok.config`, fluent getters keep `id()` names): `@RequiredArgsConstructor` for injection, `@Getter` for plain accessors, `@EqualsAndHashCode(onlyExplicitlyIncluded)` + `@Include` for identity, `@Slf4j`, `@UtilityClass`. Records stay records; custom `toString` methods stay (some hide secrets) |
 | Application layer | Use cases; may use only Spring `@Service` / `@Transactional`. Slow work (BCrypt) never runs inside a transaction |
 | Persistence | Separate JPA entities in infrastructure + mapping + repository adapters; entities are unproxied before any field is read or written |
 | Concurrency | An aggregate is also the locking unit (`SELECT … FOR UPDATE`); admin edits carry the exercise's `version`, checked and raised under that lock (stale → 409) |
@@ -827,7 +828,8 @@ tests can reuse it).
 Layering (1–6):
 
 1. `com.bandup.ui..` does not depend on `com.bandup.api..`.
-2. `..api..domain..` depends only on `java..` and `..domain..` classes.
+2. `..api..domain..` depends only on `java..` and `..domain..` classes (Lombok
+   is compile-time only and leaves nothing in the bytecode, so this still holds).
 3. `..api..application..` depends only on `java..`, `..domain..`,
    `..application..`, `org.springframework.stereotype..`,
    `org.springframework.transaction..`.
@@ -895,6 +897,13 @@ Tactical design (7–13):
     aggregate would have nothing to guard (§8b).
 17. **Refresh grace window** (30 s, unused successor) and **login limits**
     (5 per email / 30 per address per 15 min) — approved by the user.
+18. **Cover images** (requirement 10; user choice "uploads + topic
+    fallback"): `Exercise.cover` is an optional `MediaId`; `ImageLibrary`
+    (application) with ports `ImageStore` (files: `FileSystemImageStore`,
+    folder `bandup.media.dir`, default `data/media`, git-ignored; cloud
+    storage later) and `MediaLibrary` (`media` rows, `JdbcMediaLibrary`).
+    Upload `POST /api/v1/admin/media` → `{id, url, width, height}`; serve
+    `GET /media/{publicId}`. V7 adds `exercise.cover_media_id`.
 
 ### Open — product decisions needed
 

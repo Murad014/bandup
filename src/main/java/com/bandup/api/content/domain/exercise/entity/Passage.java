@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import lombok.Getter;
+
 import com.bandup.api.content.domain.exercise.valueobject.EvidenceKey;
 import com.bandup.api.content.domain.exercise.valueobject.GlossKey;
 import com.bandup.api.content.domain.exercise.valueobject.SanitizedHtml;
@@ -21,8 +23,13 @@ import com.bandup.api.shared.domain.ddd.Entity;
 @Entity
 public final class Passage {
 
+    @Getter
     private final SanitizedHtml html;
+    /** In the order they appear in the passage. */
+    @Getter
     private final List<Gloss> glosses;
+    /** In the order they appear in the passage. */
+    @Getter
     private final Set<EvidenceKey> evidence;
 
     public Passage(SanitizedHtml html, List<Gloss> glosses, Set<EvidenceKey> evidence) {
@@ -31,26 +38,12 @@ public final class Passage {
         this.evidence = Collections.unmodifiableSet(new LinkedHashSet<>(evidence));
     }
 
-    public SanitizedHtml html() {
-        return html;
-    }
-
     public int wordCount() {
         return html.wordCount();
     }
 
-    /** In the order they appear in the passage. */
-    public List<Gloss> glosses() {
-        return glosses;
-    }
-
     public Optional<Gloss> gloss(GlossKey key) {
         return glosses.stream().filter(g -> g.key().equals(key)).findFirst();
-    }
-
-    /** In the order they appear in the passage. */
-    public Set<EvidenceKey> evidence() {
-        return evidence;
     }
 
     @Override

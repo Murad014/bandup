@@ -2,6 +2,8 @@ package com.bandup.api.identity.infrastructure.security;
 
 import java.time.Instant;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -21,15 +23,11 @@ import com.bandup.api.shared.infrastructure.security.JwtProperties;
  * {@code iat}, {@code exp}). Never contains the internal id or the email.
  */
 @Component
+@RequiredArgsConstructor
 class JwtAccessTokenIssuer implements AccessTokenIssuer {
 
     private final JwtEncoder encoder;
     private final JwtProperties properties;
-
-    JwtAccessTokenIssuer(JwtEncoder encoder, JwtProperties properties) {
-        this.encoder = encoder;
-        this.properties = properties;
-    }
 
     @Override
     public AccessToken issue(User user, Instant now) {

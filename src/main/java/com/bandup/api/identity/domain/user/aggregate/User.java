@@ -5,6 +5,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import com.bandup.api.identity.domain.user.valueobject.Email;
 import com.bandup.api.identity.domain.user.valueobject.PasswordHash;
 import com.bandup.api.identity.domain.user.valueobject.Role;
@@ -20,18 +23,27 @@ import com.bandup.api.shared.domain.language.LanguageCode;
  * which languages they use.
  */
 @AggregateRoot
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class User {
 
     private static final int MAX_DISPLAY_NAME = 80;
 
+    @EqualsAndHashCode.Include
+    @Getter
     private final UserId id;
+    @Getter
     private final Email email;
+    @Getter
     private PasswordHash passwordHash;
     private final String displayName;
+    @Getter
     private final LanguageCode uiLanguage;
+    @Getter
     private final LanguageCode supportLanguage;
+    @Getter
     private final LanguageCode targetLanguage;
     private final Set<Role> roles;
+    @Getter
     private UserStatus status;
 
     private User(UserId id, Email email, PasswordHash passwordHash, String displayName, LanguageCode uiLanguage,
@@ -97,52 +109,15 @@ public final class User {
         status = UserStatus.DELETED;
     }
 
-    public UserId id() {
-        return id;
-    }
-
-    public Email email() {
-        return email;
-    }
-
-    public PasswordHash passwordHash() {
-        return passwordHash;
-    }
-
     public Optional<String> displayName() {
         return Optional.ofNullable(displayName);
-    }
-
-    public LanguageCode uiLanguage() {
-        return uiLanguage;
-    }
-
-    public LanguageCode supportLanguage() {
-        return supportLanguage;
-    }
-
-    public LanguageCode targetLanguage() {
-        return targetLanguage;
     }
 
     public Set<Role> roles() {
         return Set.copyOf(roles);
     }
 
-    public UserStatus status() {
-        return status;
-    }
-
     /** Aggregates are equal by identity. */
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof User user && id.equals(user.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
 
     /**
      * The display name as it will be stored: trimmed, blank = none.

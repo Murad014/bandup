@@ -3,6 +3,8 @@ package com.bandup.api.content.infrastructure.readmodel;
 import java.util.HashSet;
 import java.util.Set;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -12,13 +14,10 @@ import com.bandup.api.content.domain.exercise.valueobject.QuestionId;
 
 /** {@link AttemptsLookup} with SQL on Practice's {@code attempt} tables (no Practice classes). */
 @Component
+@RequiredArgsConstructor
 class JdbcAttemptsLookup implements AttemptsLookup {
 
     private final JdbcClient jdbc;
-
-    JdbcAttemptsLookup(JdbcClient jdbc) {
-        this.jdbc = jdbc;
-    }
 
     @Override
     public boolean hasAttempts(ExerciseId exercise) {

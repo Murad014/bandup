@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import lombok.experimental.UtilityClass;
+
 import com.bandup.api.content.domain.exercise.aggregate.Exercise;
 import com.bandup.api.content.domain.exercise.entity.Question;
 import com.bandup.api.content.domain.exercise.entity.QuestionGroup;
@@ -19,12 +21,11 @@ import com.bandup.api.content.domain.exercise.valueobject.WordLimit;
 import com.bandup.api.shared.domain.numbering.NumberRange;
 
 /** Builds the admin view of an exercise. */
+@UtilityClass
 final class ExerciseViews {
 
-    private ExerciseViews() {
-    }
-
-    static AdminExerciseView of(Exercise e, long version) {
+    /** @param coverUrl the cover's address, or null */
+    static AdminExerciseView of(Exercise e, long version, String coverUrl) {
         Map<QuestionId, NumberRange> numbers = e.numbering();
         Map<String, AdminExerciseView.GlossView> glosses = new LinkedHashMap<>();
         e.passage().ifPresent(p -> p.glosses().forEach(g -> {
@@ -39,7 +40,7 @@ final class ExerciseViews {
                 e.placement().map(p -> p.stage().value()).orElse(null), e.placement().map(Placement::position).orElse(null),
                 e.topics().stream().map(t -> t.value()).sorted().toList(), e.publishedAt().orElse(null),
                 e.passage().map(p -> p.html().html()).orElse(null), e.passage().map(p -> p.wordCount()).orElse(null),
-                glosses, groups);
+                glosses, groups, e.cover().map(m -> m.value()).orElse(null), coverUrl);
     }
 
     private static AdminExerciseView.GroupView group(QuestionGroup g, Map<QuestionId, NumberRange> numbers) {

@@ -6,6 +6,11 @@
 
    Gloss keys g1, g2… are allocated here and never renumbered (backend
    requirement 5.4): a new mark gets the highest key in the passage + 1.
+
+   Authors don't need a precise selection: clicking in a word is enough for
+   a gloss, clicking in a sentence is enough for evidence. The last caret or
+   selection in the passage is remembered, so pressing a toolbar button
+   (which may take the focus) still marks the right text.
    ========================================================================= */
 
 const ALLOWED_TAGS = new Set(["P", "SPAN", "MARK", "EM", "STRONG", "B", "I", "BR"]);
@@ -17,6 +22,8 @@ export function createPassageEditor(options = {}) {
     const editEl = options.editEl;
     const previewEl = options.previewEl || null;
     let onChange = typeof options.onChange === "function" ? options.onChange : null;
+    const onMarkClick = typeof options.onMarkClick === "function" ? options.onMarkClick : null;
+    let lastRange = null;
 
     function setHtml(html) {
         editEl.innerHTML = html || "";
@@ -67,30 +74,138 @@ export function createPassageEditor(options = {}) {
         changed();
     }
 
-    function currentRange() {
+    /** The selection or caret in the passage now, else the last one it had (or null). */
+    function passageRange() {
         const s = w.getSelection ? w.getSelection() : null;
-        if (!s || !s.rangeCount) return null;
+        if (s && s.rangeCount) {
+            const r = s.getRangeAt(0);
+            if (editEl.contains(r.commonAncestorContainer)) return r.cloneRange();
+        }
+        return lastRange && editEl.contains(lastRange.commonAncestorContainer) ? lastRange.cloneRange() : null;
+    }
+
+    function rememberSelection() {
+        const s = w.getSelection ? w.getSelection() : null;
+        if (!s || !s.rangeCount) return;
         const r = s.getRangeAt(0);
-        if (r.collapsed || !editEl.contains(r.commonAncestorContainer)) return null;
-        return r;
+        if (editEl.contains(r.commonAncestorContainer)) lastRange = r.cloneRange();
     }
 
-    /** Marks the selected word(s) as glossed; returns the new key, or null without a selection. */
+    /** The mark (".w" / ".ev") the range starts in, if any. */
+    function markAt(range, className) {
+        const node = range.startContainer;
+        const el = node.nodeType === 1 ? node : node.parentNode;
+        const mark = el && el.closest ? el.closest("." + className) : null;
+        return mark && editEl.contains(mark) ? mark : null;
+    }
+
+    /** A collapsed caret grows to the word around it; a selection loses its outer spaces. */
+    function wordRange(range) {
+        if (range.collapsed) {
+            const n = range.startContainer;
+            if (n.nodeType !== 3) return null;
+            const text = n.data;
+            let a = range.startOffset;
+            let b = range.startOffset;
+            const isWord = (c) => /[\p{L}\p{N}'’-]/u.test(c);
+            while (a > 0 && isWord(text[a - 1])) a--;
+            while (b < text.length && isWord(text[b])) b++;
+            if (a === b) return null;
+            range.setStart(n, a);
+            range.setEnd(n, b);
+            return range;
+        }
+        return trimmed(range);
+    }
+
+    /** A collapsed caret grows to its sentence (within the same text); a selection loses its outer spaces. */
+    function sentenceRange(range) {
+        if (range.collapsed) {
+            const n = range.startContainer;
+            if (n.nodeType !== 3) return null;
+            const text = n.data;
+            let a = range.startOffset;
+            let b = range.startOffset;
+            while (a > 0 && !/[.!?]/.test(text[a - 1])) a--;
+            while (b < text.length && !/[.!?]/.test(text[b])) b++;
+            if (b < text.length) b++; // keep the full stop
+            range.setStart(n, a);
+            range.setEnd(n, b);
+        }
+        return trimmed(range);
+    }
+
+    function trimmed(range) {
+        const s = range.startContainer;
+        const e = range.endContainer;
+        if (s.nodeType === 3) {
+            let i = range.startOffset;
+            while (i < s.data.length && /\s/.test(s.data[i]) && !(s === e && i >= range.endOffset)) i++;
+            range.setStart(s, i);
+        }
+        if (e.nodeType === 3) {
+            let j = range.endOffset;
+            while (j > 0 && /\s/.test(e.data[j - 1]) && !(s === e && j <= range.startOffset)) j--;
+            range.setEnd(e, j);
+        }
+        return range.collapsed ? null : range;
+    }
+
+    /**
+     * Glosses the word at the caret (or the selected words).
+     * @returns {{key, created}} — the existing key when the caret is already in a gloss; null with nothing to mark
+     */
     function addGloss() {
-        const r = currentRange();
-        return r ? wrap(r, "w", "data-g", nextGlossKey()) : null;
+        const r = passageRange();
+        if (!r) return null;
+        const existing = markAt(r, "w");
+        if (existing) return { key: existing.getAttribute("data-g"), created: false };
+        const range = wordRange(r);
+        if (!range) return null;
+        const key = wrap(range, "w", "data-g", nextGlossKey());
+        lastRange = null;
+        return { key, created: true };
     }
 
-    /** Marks the selection as evidence; returns the new id, or null. */
+    /**
+     * Marks the sentence at the caret (or the selection) as evidence.
+     * @returns {{id, created}} — the existing id when the caret is already in evidence; null with nothing to mark
+     */
     function markEvidence() {
-        const r = currentRange();
-        return r ? wrap(r, "ev", "id", nextEvidenceId()) : null;
+        const r = passageRange();
+        if (!r) return null;
+        const existing = markAt(r, "ev");
+        if (existing) return { id: existing.id, created: false };
+        const range = sentenceRange(r);
+        if (!range) return null;
+        const id = wrap(range, "ev", "id", nextEvidenceId());
+        lastRange = null;
+        return { id, created: true };
+    }
+
+    /** Every glossed word with this key (a key may repeat). */
+    function glossElements(key) {
+        return [...editEl.querySelectorAll(".w[data-g]")].filter((el) => el.getAttribute("data-g") === key);
+    }
+
+    function evidenceElement(id) {
+        return [...editEl.querySelectorAll(".ev[id]")].find((el) => el.id === id) || null;
+    }
+
+    /** Evidence in document order: [{id, text}]. */
+    function evidence() {
+        return [...editEl.querySelectorAll(".ev[id]")].map((el) => ({ id: el.id, text: el.textContent.trim() }));
+    }
+
+    /** Removes every mark of this gloss key (the words stay). */
+    function removeGloss(key) {
+        glossElements(key).forEach((el) => unwrap(el));
     }
 
     function removeMarkAtSelection() {
-        const s = w.getSelection ? w.getSelection() : null;
-        if (!s || !s.rangeCount) return false;
-        const node = s.getRangeAt(0).commonAncestorContainer;
+        const r = passageRange();
+        if (!r) return false;
+        const node = r.commonAncestorContainer;
         const el = node.nodeType === 1 ? node : node.parentNode;
         const mark = el && el.closest ? el.closest(".w, .ev") : null;
         if (mark && editEl.contains(mark)) {
@@ -140,11 +255,16 @@ export function createPassageEditor(options = {}) {
 
     if (editEl && editEl.addEventListener) {
         editEl.addEventListener("input", () => changed());
+        d.addEventListener("selectionchange", rememberSelection);
+        editEl.addEventListener("click", (e) => {
+            const mark = e.target && e.target.closest ? e.target.closest(".w[data-g]") : null;
+            if (mark && onMarkClick && editEl.contains(mark)) onMarkClick(mark.getAttribute("data-g"), mark);
+        });
     }
 
     return {
         setHtml, serialize, addGloss, markEvidence, removeMarkAtSelection, unwrap,
-        glossMarks, evidenceIds, nextGlossKey, nextEvidenceId,
+        glossMarks, evidenceIds, nextGlossKey, nextEvidenceId, glossElements, evidenceElement, evidence, removeGloss,
         setOnChange: (cb) => { onChange = typeof cb === "function" ? cb : null; },
     };
 }

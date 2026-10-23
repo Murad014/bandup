@@ -58,4 +58,7 @@ class ExerciseEntity {
 
     @Column(name = "updated_at", nullable = false)
     Instant updatedAt;
+
+    @Column(name = "cover_media_id")
+    Long coverMediaId;
 }

@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import com.bandup.api.content.domain.exercise.valueobject.AnswerKey;
 import com.bandup.api.content.domain.exercise.valueobject.EvidenceKey;
 import com.bandup.api.content.domain.exercise.valueobject.Explanation;
@@ -20,13 +23,21 @@ import com.bandup.api.shared.domain.language.Translations;
  * @param options its own options (MCQ / MCMA only); matching uses the group's bank
  */
 @Entity
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class Question {
 
+    @EqualsAndHashCode.Include
+    @Getter
     private final QuestionId id;
+    @Getter
     private final Stem stem;
     private final EvidenceKey evidence;
+    @Getter
     private final List<Option> options;
+    @Getter
     private final AnswerKey answer;
+    /** Explanation per help language. */
+    @Getter
     private final Translations<Explanation> explanations;
 
     public Question(QuestionId id, Stem stem, EvidenceKey evidence, List<Option> options, AnswerKey answer,
@@ -39,40 +50,9 @@ public final class Question {
         this.explanations = Objects.requireNonNull(explanations, "explanations");
     }
 
-    public QuestionId id() {
-        return id;
-    }
-
-    public Stem stem() {
-        return stem;
-    }
-
     /** The passage span that proves the answer. */
     public Optional<EvidenceKey> evidence() {
         return Optional.ofNullable(evidence);
-    }
-
-    public List<Option> options() {
-        return options;
-    }
-
-    public AnswerKey answer() {
-        return answer;
-    }
-
-    /** Explanation per help language. */
-    public Translations<Explanation> explanations() {
-        return explanations;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof Question q && id.equals(q.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
     }
 
     @Override

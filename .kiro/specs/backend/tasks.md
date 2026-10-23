@@ -85,6 +85,27 @@ adapter tasks; their API tasks also need Identity (token user, role checks).
 
 ---
 
+## Refactoring
+
+- [x] R1. Lombok instead of boilerplate (asked by the user, domain included)
+  - `lombok.config`: fluent accessors (getters keep `id()` names, no caller
+    changed), `config.stopBubbling`, `addLombokGeneratedAnnotation = false`.
+  - Replaced, only where the code matched exactly: 33 injection constructors
+    → `@RequiredArgsConstructor`; 4 loggers → `@Slf4j`; 8 static-only classes
+    → `@UtilityClass`; 60 plain getters in 17 classes → `@Getter` (their
+    javadoc moved to the field); 11 identity `equals`/`hashCode` →
+    `@EqualsAndHashCode(onlyExplicitlyIncluded = true)` + `@Include`. Records
+    and custom `toString` methods unchanged.
+  - Specs: requirement 1.3 and design §1 / §12 rule 2 now allow Lombok
+    (compile-time only); ArchUnit rule 2 unchanged and green (it first failed
+    on `@lombok.Generated`, hence the config line).
+  - _Verified_: clean build, 419 tests green; 13 Selenium scenarios green.
+
+- [x] R2. No `package-info.java` files (asked by the user)
+  - All 64 removed (main and test). They held only package Javadoc, no
+    annotations; nothing used them. What each layer is for is in design §3–§4.
+  - _Verified_: clean build, 419 tests green (ArchUnit included).
+
 ## Follow-ups outside these lists (need separate approval)
 
 - **UI:** done — [`../frontend/tasks.md`](../frontend/tasks.md)

@@ -3,6 +3,8 @@ package com.bandup.api.catalog.web;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -23,15 +25,11 @@ import com.bandup.api.shared.web.RequestLanguage;
  */
 @RestController
 @RequestMapping("/api/v1/exercises")
+@RequiredArgsConstructor
 class CatalogController {
 
     private final BrowseExercises browse;
     private final CurrentUser currentUser;
-
-    CatalogController(BrowseExercises browse, CurrentUser currentUser) {
-        this.browse = browse;
-        this.currentUser = currentUser;
-    }
 
     @GetMapping
     CatalogPage list(@RequestParam(required = false) String skill, @RequestParam(required = false) String format,

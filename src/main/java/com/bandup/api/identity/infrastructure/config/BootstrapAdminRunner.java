@@ -1,7 +1,8 @@
 package com.bandup.api.identity.infrastructure.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -14,17 +15,12 @@ import com.bandup.api.identity.application.BootstrapAdmin;
  * configured password stops startup with a clear message.
  */
 @Component
+@Slf4j
+@RequiredArgsConstructor
 class BootstrapAdminRunner implements ApplicationRunner {
-
-    private static final Logger log = LoggerFactory.getLogger(BootstrapAdminRunner.class);
 
     private final BootstrapAdmin bootstrapAdmin;
     private final AuthProperties properties;
-
-    BootstrapAdminRunner(BootstrapAdmin bootstrapAdmin, AuthProperties properties) {
-        this.bootstrapAdmin = bootstrapAdmin;
-        this.properties = properties;
-    }
 
     @Override
     public void run(ApplicationArguments args) {

@@ -9,8 +9,11 @@
 <!-- The reading catalog. catalog.js fills it from GET /api/v1/exercises; filters live in the URL. -->
 <main class="wrap catalog" id="catalogRoot">
     <div class="catalog-head">
-        <h1 class="catalog-title">Reading practice</h1>
-        <p class="catalog-sub">Pick a passage. Nothing is locked — start anywhere.</p>
+        <div>
+            <h1 class="catalog-title">Reading practice</h1>
+            <p class="catalog-sub">Pick a passage. Nothing is locked — start anywhere.</p>
+        </div>
+        <img th:src="@{/img/covers/default.svg}" alt="">
     </div>
 
     <form class="catalog-filters" id="catalogFilters" aria-label="Filter exercises">

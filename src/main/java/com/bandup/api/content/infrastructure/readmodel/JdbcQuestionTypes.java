@@ -3,6 +3,8 @@ package com.bandup.api.content.infrastructure.readmodel;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -11,13 +13,10 @@ import com.bandup.api.content.domain.exercise.valueobject.QuestionFamily;
 
 /** {@link QuestionTypes} from the {@code question_type} table (enabled types only). */
 @Component
+@RequiredArgsConstructor
 class JdbcQuestionTypes implements QuestionTypes {
 
     private final JdbcClient jdbc;
-
-    JdbcQuestionTypes(JdbcClient jdbc) {
-        this.jdbc = jdbc;
-    }
 
     @Override
     public Map<String, QuestionFamily> all() {

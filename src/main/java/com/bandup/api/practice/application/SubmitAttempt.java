@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,7 @@ import com.bandup.api.shared.domain.numbering.NumberRange;
  * one it's anonymous.
  */
 @Service
+@RequiredArgsConstructor
 public class SubmitAttempt {
 
     /**
@@ -66,15 +69,6 @@ public class SubmitAttempt {
     private final LanguageCatalog languages;
     private final Clock clock;
     private final Grader grader = new Grader();
-
-    public SubmitAttempt(GradableExercises exercises, AttemptRepository attempts, CurrentUser currentUser,
-            LanguageCatalog languages, Clock clock) {
-        this.exercises = exercises;
-        this.attempts = attempts;
-        this.currentUser = currentUser;
-        this.languages = languages;
-        this.clock = clock;
-    }
 
     /**
      * @throws InvalidRequestException (400) listing every problem: missing time,

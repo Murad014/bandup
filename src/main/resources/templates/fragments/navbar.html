@@ -10,7 +10,15 @@
 -->
 <nav class="app-nav" data-app-nav aria-label="Primary" th:fragment="navbar(navItems, activeKey)">
     <div class="app-nav__inner wrap">
-        <a class="app-nav__brand" th:href="@{/}">Band<span>Up</span></a>
+        <a class="app-nav__brand" th:href="@{/}">
+            <svg class="brand-mark" viewBox="0 0 34 34" aria-hidden="true">
+                <rect width="34" height="34" rx="10" fill="var(--accent)"/>
+                <rect x="8" y="18" width="5" height="9" rx="2" fill="#fff" opacity=".7"/>
+                <rect x="15" y="13" width="5" height="14" rx="2" fill="#fff" opacity=".85"/>
+                <rect x="22" y="7" width="5" height="20" rx="2" fill="#fff"/>
+            </svg>
+            <span class="app-nav__name">Band<span>Up</span></span>
+        </a>
 
         <button class="app-nav__toggle" type="button"
                 data-nav-toggle aria-expanded="false" aria-controls="navMenu"
@@ -42,7 +50,7 @@
             </li>
             <!-- Account: filled in by account-nav.js from auth.js. -->
             <li class="app-nav__item" data-nav-signin>
-                <a class="app-nav__link" th:href="@{/login}">Sign in</a>
+                <a class="app-nav__link app-nav__cta" th:href="@{/login}">Sign in</a>
             </li>
             <li class="app-nav__item app-nav__account" data-nav-account hidden>
                 <span class="app-nav__user" data-nav-username></span>

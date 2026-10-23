@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import com.bandup.api.practice.domain.attempt.exception.InvalidSubmissionException;
 import com.bandup.api.practice.domain.attempt.service.Grader;
 import com.bandup.api.practice.domain.attempt.valueobject.AnswerSheet;
@@ -38,15 +41,26 @@ import com.bandup.api.shared.domain.numbering.NumberRange;
  * exercise and the learner only by id.
  */
 @AggregateRoot
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class Attempt {
 
+    @EqualsAndHashCode.Include
+    @Getter
     private final AttemptId id;
+    @Getter
     private final ExerciseId exercise;
+    @Getter
     private final ExerciseRevision revision;
     private final LearnerId learner;
+    /** The learner's support language (for explanations in the result). */
+    @Getter
     private final LanguageCode language;
+    @Getter
     private final Duration elapsed;
+    @Getter
     private final Instant submittedAt;
+    /** One graded answer per question, in number order. */
+    @Getter
     private final List<GradedAnswer> answers;
 
     private Attempt(AttemptId id, ExerciseId exercise, ExerciseRevision revision, LearnerId learner,
@@ -115,39 +129,9 @@ public final class Attempt {
         return new Attempt(id, exercise, revision, learner.orElse(null), language, elapsed, submittedAt, answers);
     }
 
-    public AttemptId id() {
-        return id;
-    }
-
-    public ExerciseId exercise() {
-        return exercise;
-    }
-
-    public ExerciseRevision revision() {
-        return revision;
-    }
-
     /** Empty for an anonymous attempt. */
     public Optional<LearnerId> learner() {
         return Optional.ofNullable(learner);
-    }
-
-    /** The learner's support language (for explanations in the result). */
-    public LanguageCode language() {
-        return language;
-    }
-
-    public Duration elapsed() {
-        return elapsed;
-    }
-
-    public Instant submittedAt() {
-        return submittedAt;
-    }
-
-    /** One graded answer per question, in number order. */
-    public List<GradedAnswer> answers() {
-        return answers;
     }
 
     public int score() {
@@ -161,16 +145,6 @@ public final class Attempt {
     /** Score as a whole percentage, rounded half up (25 of 40 → 63). */
     public int percent() {
         return (int) Math.round(100.0 * score() / total());
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof Attempt a && id.equals(a.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
     }
 
     @Override

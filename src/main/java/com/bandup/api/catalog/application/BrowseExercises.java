@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ import com.bandup.api.shared.domain.error.Violation;
  * Malformed filters are a 400 listing every problem.
  */
 @Service
+@RequiredArgsConstructor
 public class BrowseExercises {
 
     public static final int MAX_PAGE_SIZE = 50;
@@ -34,12 +37,6 @@ public class BrowseExercises {
     private final ExerciseCatalog catalog;
     private final CurrentUser currentUser;
     private final LanguageCatalog languages;
-
-    public BrowseExercises(ExerciseCatalog catalog, CurrentUser currentUser, LanguageCatalog languages) {
-        this.catalog = catalog;
-        this.currentUser = currentUser;
-        this.languages = languages;
-    }
 
     @Transactional(readOnly = true)
     public CatalogPage browse(CatalogQuery query) {

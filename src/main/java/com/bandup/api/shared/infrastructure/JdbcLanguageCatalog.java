@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -17,13 +19,10 @@ import com.bandup.api.shared.domain.language.LanguageFallbacks;
  * one small query per call.
  */
 @Component
+@RequiredArgsConstructor
 class JdbcLanguageCatalog implements LanguageCatalog {
 
     private final JdbcClient jdbc;
-
-    JdbcLanguageCatalog(JdbcClient jdbc) {
-        this.jdbc = jdbc;
-    }
 
     @Override
     public LanguageFallbacks fallbacks() {

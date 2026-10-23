@@ -2,6 +2,8 @@ package com.bandup.api.content.web;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,13 +27,10 @@ import com.bandup.api.content.application.ExerciseSummary;
  */
 @RestController
 @RequestMapping("/api/v1/admin/passages")
+@RequiredArgsConstructor
 class AdminExerciseController {
 
     private final ExerciseAdmin admin;
-
-    AdminExerciseController(ExerciseAdmin admin) {
-        this.admin = admin;
-    }
 
     @GetMapping
     List<ExerciseSummary> list() {

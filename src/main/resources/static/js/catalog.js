@@ -6,8 +6,9 @@
    ========================================================================= */
 
 import { apiFetch, currentUser } from "./auth.js";
+import { coverImage } from "./covers.js";
 
-const TYPE_NAMES = {
+export const TYPE_NAMES = {
     TFNG: "True / False / Not Given", YNNG: "Yes / No / Not Given", MCQ: "Multiple choice", MCMA: "Choose several",
     FILL: "Sentence completion", SUMMARY: "Summary completion", SHORT: "Short answer", DIAGRAM_LABEL: "Diagram",
     MATCH_HEADINGS: "Matching headings", MATCH_INFO: "Matching information", MATCH_FEATURES: "Matching features",
@@ -98,11 +99,24 @@ function renderFilters(filters, state) {
     els.notDone.checked = state.notDone;
 }
 
-function card(item) {
+export function card(item, signedIn) {
     const a = document.createElement("a");
     a.className = "ex-card";
     a.href = "/reading/" + encodeURIComponent(item.id);
     a.dataset.id = item.id;
+
+    const cover = document.createElement("div");
+    cover.className = "ex-cover";
+    cover.appendChild(coverImage(item.coverUrl, item.topics));
+    if (signedIn && item.done) {
+        const done = document.createElement("span");
+        done.className = "ex-done";
+        done.textContent = "✓ Done";
+        cover.appendChild(done);
+    }
+
+    const body = document.createElement("div");
+    body.className = "ex-body";
     const title = document.createElement("h2");
     title.textContent = item.title;
     const meta = document.createElement("div");
@@ -113,31 +127,32 @@ function card(item) {
         if (cls) s.className = cls;
         meta.appendChild(s);
     };
-    if (item.level) add(item.level, "ex-level");
+    if (item.level) add(item.level, "ex-meta__level");
     add(item.format === "FULL" ? "Full test" : "Mini");
     add(item.durationSeconds ? Math.round(item.durationSeconds / 60) + " min" : "No timer");
     add(item.questionCount + (item.questionCount === 1 ? " question" : " questions"));
-    a.append(title, meta);
-    if (item.types.length) {
-        const types = document.createElement("div");
-        types.className = "ex-topics";
-        types.textContent = item.types.map((t) => TYPE_NAMES[t] || t).join(" · ");
-        a.appendChild(types);
-    }
+    body.append(title, meta);
     if (item.topics.length) {
         const topics = document.createElement("div");
         topics.className = "ex-topics";
         topics.textContent = item.topics.map((t) => t.name).join(", ");
-        a.appendChild(topics);
+        body.appendChild(topics);
+    }
+    if (item.types.length) {
+        const types = document.createElement("div");
+        types.className = "ex-topics";
+        types.textContent = item.types.map((t) => TYPE_NAMES[t] || t).join(" · ");
+        body.appendChild(types);
     }
     if (signedIn) {
         const progress = document.createElement("div");
         progress.className = "ex-progress" + (item.done ? "" : " ex-progress--new");
         progress.textContent = item.done && item.bestScore
-            ? "✓ Done · best " + item.bestScore.score + "/" + item.bestScore.total
+            ? "Best score " + item.bestScore.score + "/" + item.bestScore.total
             : "Not done yet";
-        a.appendChild(progress);
+        body.appendChild(progress);
     }
+    a.append(cover, body);
     return a;
 }
 
@@ -153,7 +168,7 @@ async function load(state) {
         const page = await apiFetch("/api/v1/exercises?" + toParams(state, true));
         const filtered = state.level.length || state.type.length || state.topic.length || state.format || state.maxMinutes || state.notDone;
         showStatus(page.items.length ? "" : filtered ? "No exercises match these filters." : "No exercises yet.");
-        page.items.forEach((item) => els.items.appendChild(card(item)));
+        page.items.forEach((item) => els.items.appendChild(card(item, signedIn)));
         els.count.textContent = page.totalItems === 1 ? "1 exercise" : page.totalItems + " exercises";
         const pages = Math.max(1, Math.ceil(page.totalItems / page.size));
         els.pager.hidden = pages <= 1;
@@ -195,4 +210,4 @@ async function start() {
     await load(state);
 }
 
-start();
+if (document.getElementById("catalogRoot")) start();

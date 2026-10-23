@@ -95,3 +95,8 @@ when requested.
     until) for the login limits (backend requirement 8.12). 29 tables.
   - _Verified_: `SchemaConstraintsTest` counts 29 tables; Hibernate is not
     involved (plain SQL adapter).
+
+- [x] 8. `V7__exercise_cover_image.sql`
+  - `exercise.cover_media_id` → `media(id)`, `on delete set null`: the cover
+    image of an exercise (backend requirement 10). Still 29 tables.
+  - _Verified_: `CoverImageApiTest`, full suite green.

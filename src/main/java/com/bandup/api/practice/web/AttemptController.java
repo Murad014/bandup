@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +28,7 @@ import com.bandup.api.shared.web.RequestLanguage;
  */
 @RestController
 @RequestMapping("/api/v1/attempts")
+@RequiredArgsConstructor
 class AttemptController {
 
     /**
@@ -40,11 +43,6 @@ class AttemptController {
 
     private final SubmitAttempt submitAttempt;
     private final CurrentUser currentUser;
-
-    AttemptController(SubmitAttempt submitAttempt, CurrentUser currentUser) {
-        this.submitAttempt = submitAttempt;
-        this.currentUser = currentUser;
-    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

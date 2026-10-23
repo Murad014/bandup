@@ -4,6 +4,8 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
@@ -18,13 +20,10 @@ import com.bandup.api.identity.domain.throttle.valueobject.ThrottleKey;
  * another.
  */
 @Repository
+@RequiredArgsConstructor
 class JdbcLoginThrottleRepository implements LoginThrottleRepository {
 
     private final JdbcClient jdbc;
-
-    JdbcLoginThrottleRepository(JdbcClient jdbc) {
-        this.jdbc = jdbc;
-    }
 
     @Override
     public Optional<LoginThrottle> find(ThrottleKey key) {

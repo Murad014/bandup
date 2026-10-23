@@ -2,6 +2,8 @@ package com.bandup.api.identity.application;
 
 import java.time.Instant;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import com.bandup.api.identity.application.port.AccessTokenIssuer;
@@ -19,20 +21,13 @@ import com.bandup.api.identity.domain.user.aggregate.User;
  * refresh token for the cookie.
  */
 @Service
+@RequiredArgsConstructor
 public class SessionIssuer {
 
     private final SessionRepository sessions;
     private final AccessTokenIssuer accessTokens;
     private final TokenGenerator tokenGenerator;
     private final AuthSettings settings;
-
-    public SessionIssuer(SessionRepository sessions, AccessTokenIssuer accessTokens, TokenGenerator tokenGenerator,
-            AuthSettings settings) {
-        this.sessions = sessions;
-        this.accessTokens = accessTokens;
-        this.tokenGenerator = tokenGenerator;
-        this.settings = settings;
-    }
 
     /** Starts a new login session and stores it. */
     public SignedIn start(User user, Instant now) {

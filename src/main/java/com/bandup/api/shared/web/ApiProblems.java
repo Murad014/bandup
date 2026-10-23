@@ -2,6 +2,8 @@ package com.bandup.api.shared.web;
 
 import java.util.List;
 
+import lombok.experimental.UtilityClass;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 
@@ -12,10 +14,8 @@ import com.bandup.api.shared.domain.error.Violation;
  * the same, whether it comes from a controller or, later, from the security
  * filters (401/403).
  */
+@UtilityClass
 public final class ApiProblems {
-
-    private ApiProblems() {
-    }
 
     public static ProblemDetail of(HttpStatus status, String title, String detail) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);

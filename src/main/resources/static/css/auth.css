@@ -1,18 +1,27 @@
 /* Sign-in and sign-up pages. */
-.auth { display: flex; justify-content: center; padding: 48px 16px; }
-.auth-card { width: 100%; max-width: 420px; background: var(--paper); border: 1px solid var(--line);
-    border-radius: 16px; padding: 28px; }
-.auth-title { font: 600 1.6rem/1.2 var(--display, serif); margin: 0 0 20px; }
-.auth-error { color: var(--bad); background: var(--bad-soft); border-radius: 10px; padding: 10px 12px; margin: 0 0 16px; }
-.auth-submit { width: 100%; justify-content: center; margin-top: 4px; }
-.auth-alt { color: var(--muted); font-size: .9rem; margin: 18px 0 0; text-align: center; }
-.auth-alt a { color: var(--accent); }
-.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
-.field label { font-weight: 500; font-size: .85rem; color: var(--muted); }
-.field input, .field select { font: 400 .95rem var(--ui, inherit); padding: 10px 12px; border: 1px solid var(--line);
-    border-radius: 10px; background: var(--surface); color: var(--fg); }
-.field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.field .hint { color: var(--muted); font-size: .8rem; }
-.field .err { color: var(--bad); font-size: .8rem; }
+.auth { display: flex; justify-content: center; padding: 56px 16px; }
+.auth-card {
+    width: 100%; max-width: 440px; background: var(--paper); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-2); position: relative; overflow: hidden;
+}
+.auth-card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 8px;
+    background: linear-gradient(90deg, var(--accent), var(--sun), var(--teal));
+}
+.auth-title { font: 800 1.8rem/1.2 var(--display); margin: 4px 0 22px; }
+.auth-error { color: var(--bad); background: var(--bad-soft); border-radius: var(--radius); padding: 10px 14px; margin: 0 0 16px; font-weight: 600; }
+.auth-submit { width: 100%; justify-content: center; margin-top: 6px; padding: 13px 20px; font-size: 1rem; }
+.auth-alt { color: var(--muted); font-size: .95rem; margin: 20px 0 0; text-align: center; }
+.auth-alt a { color: var(--accent); font-weight: 700; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.field label { font-weight: 700; font-size: .9rem; color: var(--fg); }
+.field input, .field select {
+    font: 600 1rem var(--ui); padding: 12px 14px; border: 2px solid var(--line);
+    border-radius: var(--radius); background: var(--paper); color: var(--fg);
+    transition: border-color .15s, box-shadow .15s;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.field .hint { color: var(--muted); font-size: .85rem; }
+.field .err { color: var(--bad); font-size: .85rem; font-weight: 600; }
 .field .err:empty { display: none; }
-.field.has-error input, .field.has-error select { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }
+.field.has-error input, .field.has-error select { border-color: var(--bad); box-shadow: 0 0 0 4px var(--bad-soft); }

@@ -6,25 +6,58 @@
 </head>
 <body>
 <main class="wrap home">
-    <section class="home__hero">
-        <h1 class="home__title">Practice IELTS, one skill at a time.</h1>
-        <p class="home__lead">Focused, timed practice with instant feedback and
-            explanations — so every attempt teaches you something.</p>
-        <div class="home__actions">
-            <a class="btn btn--primary" th:href="@{/reading}">Start Reading</a>
+    <section class="hero">
+        <div>
+            <span class="eyebrow">IELTS practice</span>
+            <h1 class="hero__title">Read more. Score <em>higher</em>.</h1>
+            <p class="hero__lead">Pick the skill you want to work on. Exam-style practice with a timer, help in your
+                language and instant feedback that shows why each answer is right.</p>
+            <div class="hero__actions">
+                <a class="btn btn--primary btn--lg" href="#skills">Choose a skill</a>
+                <a class="btn btn--lg" th:href="@{/register}" data-home-signup>Create a free account</a>
+            </div>
+        </div>
+        <div class="hero__art">
+            <img th:src="@{/img/covers/nature.svg}" alt="">
+            <div class="hero__sticker hero__sticker--a"><i style="background: var(--ok)">✓</i> 13 of 13 correct</div>
+            <div class="hero__sticker hero__sticker--b"><i style="background: var(--sun)">⏱</i> 20:00</div>
         </div>
     </section>
 
-    <div class="card-grid">
-        <a class="feature-card" th:href="@{/reading}">
-            <h3>Reading</h3>
-            <p>Timed passages with every IELTS question type, word help in your language and instant feedback.</p>
-        </a>
-        <div class="feature-card">
-            <h3>Grammar <span class="badge">soon</span></h3>
-            <p>Targeted grammar drills are on the way.</p>
+    <section class="home-section" id="skills" aria-labelledby="skillsTitle">
+        <h2 class="section-title" id="skillsTitle">What do you want to practise?</h2>
+        <p class="section-sub">Choose a skill to start. More skills are on the way.</p>
+        <div class="skills">
+            <a class="skill" th:href="@{/reading}" data-skill="reading">
+                <span class="skill__icon" style="background: var(--accent-soft)">📚</span>
+                <span><h3>Reading</h3><p>Timed passages with every IELTS question type.</p></span>
+                <span class="skill__go" aria-hidden="true">→</span>
+            </a>
+            <div class="skill skill--soon" data-skill="grammar" aria-disabled="true">
+                <span class="skill__icon" style="background: var(--grape-soft)">✍️</span>
+                <span><h3>Grammar <span class="badge">soon</span></h3><p>Targeted grammar drills.</p></span>
+            </div>
         </div>
-    </div>
+    </section>
+
+    <section class="steps" aria-label="How it works">
+        <div class="step">
+            <div class="step__icon" style="background: var(--sky-soft)">📖</div>
+            <h3>Pick a passage</h3>
+            <p>Filter by level, topic, question type or time. Nothing is locked.</p>
+        </div>
+        <div class="step">
+            <div class="step__icon" style="background: var(--sun-soft)">💡</div>
+            <h3>Read with help</h3>
+            <p>Tap an underlined word to see its meaning in your language.</p>
+        </div>
+        <div class="step">
+            <div class="step__icon" style="background: var(--teal-soft)">🎯</div>
+            <h3>Learn from every answer</h3>
+            <p>See your score, the right answers, and the sentence that proves each one.</p>
+        </div>
+    </section>
+
 </main>
 </body>
 </html>
