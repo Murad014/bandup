@@ -29,8 +29,4 @@ final class NavBar {
         ui.waitFor(d -> ui.isShown(By.cssSelector("[data-nav-signin]")) || ui.isShown(By.cssSelector("[data-nav-account]")));
         return ui.isShown(By.cssSelector("[data-nav-signin]"));
     }
-
-    boolean showsAdminLink() {
-        return ui.isShown(By.cssSelector("[data-nav-admin]"));
-    }
 }

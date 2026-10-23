@@ -28,7 +28,6 @@ class LearnerScenariosTest extends UiTestBase {
         reading.waitUntilLoaded();
         ui.step("Back on the reading page, signed in");
         assertThat(nav.userName()).isEqualTo("Aysel");
-        assertThat(nav.showsAdminLink()).isFalse();
     }
 
     @Test

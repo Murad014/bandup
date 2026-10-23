@@ -43,11 +43,6 @@
                     <span th:if="${item.comingSoon()}" class="app-nav__badge">soon</span>
                 </span>
             </li>
-            <!-- Admin entry: hidden until auth.js sees an ADMIN or AUTHOR token (frontend task 2).
-                 Showing it grants nothing: the admin API checks the token itself. -->
-            <li class="app-nav__item" data-nav-admin hidden>
-                <a class="app-nav__link" th:href="@{/admin}">Admin</a>
-            </li>
             <!-- Account: filled in by account-nav.js from auth.js. -->
             <li class="app-nav__item" data-nav-signin>
                 <a class="app-nav__link app-nav__cta" th:href="@{/login}">Sign in</a>

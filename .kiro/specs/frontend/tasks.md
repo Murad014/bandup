@@ -177,7 +177,7 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
 
     | Step | Test | Result |
     |------|------|--------|
-    | Admin signs in, sees the Admin link | `AuthBrowserTest.anAdminSeesTheAdminLink` | ✓ |
+    | Admin signs in, no Admin link; `/admin` opens the panel | `AuthBrowserTest.anAdminSeesNoAdminLinkAndOpensThePanelByItsAddress` | ✓ |
     | Admin writes an exercise in the editor (passage, gloss + az meaning, TFNG, evidence) and saves it | `AdminBrowserTest.anAuthorWritesAndPublishes…` | ✓ |
     | Publish blocked → errors at their fields, still draft | `AdminBrowserTest.publishIsBlockedWithErrorsAtTheirFields` | ✓ |
     | Fix and publish → a learner opens it with the meaning | `AdminBrowserTest.anAuthorWritesAndPublishes…` | ✓ |
@@ -253,3 +253,11 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
 - _Verified_: `CatalogBrowserTest` (cover src, home skill choice with no
   passages, three columns, passage cover), full suite 424 green, 13 Selenium scenarios green;
   screenshots of home, catalog, reading and sign-in checked by eye.
+
+## No Admin link in the navbar (user decision)
+
+- [x] The "Admin" item is gone from `navbar.html` and `account-nav.js` for
+  everyone; admins type `/admin`. Admin requirement 4 updated. The admin
+  guard is unchanged.
+- _Verified_: `UiPagesTest` (no `data-nav-admin`, no `/admin` link),
+  `AuthBrowserTest.anAdminSeesNoAdminLinkAndOpensThePanelByItsAddress`.
