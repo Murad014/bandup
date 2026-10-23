@@ -23,6 +23,12 @@ spring:
   flyway:
     locations: classpath:db/migration
 
+  # Cover image uploads (the app itself allows at most 3 MB).
+  servlet:
+    multipart:
+      max-file-size: 3MB
+      max-request-size: 4MB
+
 # Access tokens (JWT, HS256). Set BANDUP_JWT_SECRET (at least 32 bytes) in every
 # shared or deployed environment; never commit it. Left empty in local dev, a
 # random key is generated at startup (tokens then don't survive a restart).

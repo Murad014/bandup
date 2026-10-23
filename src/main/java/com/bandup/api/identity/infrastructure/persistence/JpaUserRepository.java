@@ -3,6 +3,8 @@ package com.bandup.api.identity.infrastructure.persistence;
 import java.time.Clock;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,15 +23,11 @@ import com.bandup.api.shared.domain.language.LanguageCode;
  * before any field is read or written.
  */
 @Repository
+@RequiredArgsConstructor
 class JpaUserRepository implements UserRepository {
 
     private final UserJpaRepository users;
     private final Clock clock;
-
-    JpaUserRepository(UserJpaRepository users, Clock clock) {
-        this.users = users;
-        this.clock = clock;
-    }
 
     @Override
     public Optional<User> findById(UserId id) {

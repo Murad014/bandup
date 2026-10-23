@@ -140,7 +140,8 @@ export function onChange(fn) {
  * fetch() for /api/v1/** with the access token. JSON bodies: pass `json`.
  * Returns the parsed JSON (null for 204); throws ApiError for 4xx/5xx.
  */
-export async function apiFetch(url, { method = "GET", json, headers = {} } = {}) {
+/** json → a JSON body; form → a FormData body (multipart, e.g. an image upload). */
+export async function apiFetch(url, { method = "GET", json, form, headers = {} } = {}) {
     await init();
     const send = () => {
         const h = { Accept: "application/json", ...headers };
@@ -150,7 +151,7 @@ export async function apiFetch(url, { method = "GET", json, headers = {} } = {})
             method,
             headers: h,
             credentials: "same-origin",
-            body: json === undefined ? undefined : JSON.stringify(json),
+            body: form !== undefined ? form : json === undefined ? undefined : JSON.stringify(json),
         });
     };
     let res = await send();

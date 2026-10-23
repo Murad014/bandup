@@ -1,10 +1,10 @@
 package com.bandup.api.identity.web;
 
-/** JSON bodies accepted by {@link AuthController}. */
-final class AuthRequests {
+import lombok.experimental.UtilityClass;
 
-    private AuthRequests() {
-    }
+/** JSON bodies accepted by {@link AuthController}. */
+@UtilityClass
+final class AuthRequests {
 
     record Register(String email, String password, String displayName, String uiLanguage, String supportLanguage) {
 

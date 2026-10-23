@@ -1,5 +1,7 @@
 package com.bandup.api.practice.application;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,15 +14,11 @@ import com.bandup.api.shared.application.NotFoundException;
  * requested language and item-by-item fallback (backend requirements 2, 6).
  */
 @Service
+@RequiredArgsConstructor
 public class GetLearnerPassage {
 
     private final LearnerPassages passages;
     private final LanguageCatalog languages;
-
-    public GetLearnerPassage(LearnerPassages passages, LanguageCatalog languages) {
-        this.passages = passages;
-        this.languages = languages;
-    }
 
     /**
      * @param requestedLanguage the help language the request asks for (may be

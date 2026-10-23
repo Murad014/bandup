@@ -25,6 +25,7 @@ function blankExercise() {
         id: "", version: 0, status: "DRAFT", revision: 1, skill: "READING", targetLanguage: "en",
         title: "", format: "MINI", level: null, durationSeconds: 300, lowTimeThresholdSeconds: 60,
         stageId: null, position: null, topicIds: [], passageHtml: "", glosses: {}, questionGroups: [],
+        coverMediaId: null, coverUrl: null,
     };
 }
 
@@ -66,13 +67,15 @@ export function createEditor(options = {}) {
         if (!els.root) return;
         ["slugField", "slug", "title", "format", "level", "durationSeconds", "lowTimeThresholdSeconds", "stageId",
             "position", "topicIds", "groups", "glosses", "editorErrors", "editorNotice", "publishHints", "statusBadge",
-            "revisionInfo", "dirtyDot", "evidenceList", "saveBtn", "publishBtn", "unpublishBtn"]
+            "revisionInfo", "dirtyDot", "saveBtn", "publishBtn", "unpublishBtn",
+            "coverPreview", "coverFile", "coverRemove", "coverError"]
             .forEach((id) => (els[id] = byId(id)));
         LEVELS.forEach((l) => els.level.appendChild(option(l, l || "—")));
 
         state.passage = createPassageEditor({
             doc: d, win: w, editEl: byId("passageEdit"), previewEl: byId("passagePreview"),
             onChange: (html) => { state.ex.passageHtml = html; renderGlosses(); refreshEvidenceList(); changed(); },
+            onMarkClick: (key) => openGlossPanel(key),
         });
         wireStaticEvents();
 
@@ -126,6 +129,7 @@ export function createEditor(options = {}) {
             durationSeconds: numberOrNull(ex.durationSeconds), lowTimeThresholdSeconds: numberOrNull(ex.lowTimeThresholdSeconds),
             stageId: numberOrNull(ex.stageId), position: numberOrNull(ex.position),
             topicIds: ex.topicIds || [],
+            coverMediaId: ex.coverMediaId || null,
             passageHtml: ex.passageHtml || "",
             glosses,
             questionGroups: ex.questionGroups.map((g) => {
@@ -170,6 +174,47 @@ export function createEditor(options = {}) {
         els.stageId.value = ex.stageId == null ? "" : ex.stageId;
         els.position.value = ex.position == null ? "" : ex.position;
         els.topicIds.value = (ex.topicIds || []).join(", ");
+        renderCover();
+    }
+
+    /* ---- cover image -------------------------------------------------- */
+    function renderCover() {
+        if (!els.coverPreview) return;
+        els.coverPreview.textContent = "";
+        const ex = state.ex;
+        if (ex.coverUrl) {
+            const img = d.createElement("img");
+            img.src = ex.coverUrl;
+            img.alt = "Cover image";
+            els.coverPreview.appendChild(img);
+        } else {
+            const empty = d.createElement("span");
+            empty.className = "cover-field__empty";
+            empty.textContent = "No cover";
+            els.coverPreview.appendChild(empty);
+        }
+        els.coverRemove.hidden = !ex.coverMediaId;
+    }
+
+    async function uploadCover() {
+        const file = els.coverFile.files && els.coverFile.files[0];
+        els.coverFile.value = "";
+        if (!file) return;
+        els.coverError.textContent = "";
+        if (file.size > 3 * 1024 * 1024) {
+            els.coverError.textContent = "The image is too large (at most 3 MB).";
+            return;
+        }
+        try {
+            const image = await api.uploadImage(file);
+            state.ex.coverMediaId = image.id;
+            state.ex.coverUrl = image.url;
+            renderCover();
+            changed();
+        } catch (e) {
+            const first = e && e.errors && e.errors[0];
+            els.coverError.textContent = first ? first.message : "Couldn't upload the image. Please try again.";
+        }
     }
 
     function renderStatus() {
@@ -191,48 +236,159 @@ export function createEditor(options = {}) {
     }
 
     /* ---- glosses ------------------------------------------------------ */
+    /** The gloss for a key, created empty when it's new. */
+    function glossOf(key) {
+        return state.ex.glosses[key] || (state.ex.glosses[key] = { lemma: null, meanings: {} });
+    }
+
+    /** "Word meanings": one short row per gloss key; "Edit" opens the mini panel at the word. */
     function renderGlosses() {
         if (!els.glosses) return;
         const marks = state.passage.glossMarks();
         els.glosses.textContent = "";
+        const count = byId("glossCount");
+        const keys = [...new Set(marks.map((m) => m.key))];
+        if (count) count.textContent = keys.length ? "(" + keys.length + ")" : "";
         if (!marks.length) {
-            els.glosses.appendChild(text("p", "admin-sub", "Select a word in the passage and press \"Add gloss\" to give it a meaning."));
+            els.glosses.appendChild(text("p", "admin-sub", "No word meanings yet. Click a word in the passage, then press \"Add gloss\"."));
             return;
         }
         const seen = new Set();
         marks.forEach((mark) => {
             if (seen.has(mark.key)) return;
             seen.add(mark.key);
-            const gloss = state.ex.glosses[mark.key] || (state.ex.glosses[mark.key] = { lemma: null, meanings: {} });
+            const gloss = glossOf(mark.key);
             gloss.surface = mark.surface;
             const row = div("gloss-row");
             row.dataset.field = "glosses." + mark.key;
-            const head = div("gloss-head");
-            head.appendChild(text("span", "opt-key", mark.key));
-            head.appendChild(text("b", null, mark.surface));
-            row.appendChild(head);
-            row.appendChild(field("Dictionary form (optional)", textInput(gloss.lemma, (v) => { gloss.lemma = v || null; changed(); })));
+            row.dataset.key = mark.key;
+            row.appendChild(text("span", "opt-key", mark.key));
+            row.appendChild(text("b", "gloss-row__word", mark.surface));
+            const summary = div("gloss-row__meanings");
+            let missing = 0;
             HELP_LANGUAGES.forEach((lang) => {
-                const meaning = gloss.meanings[lang.code];
-                const input = textInput(meaning ? meaning.text : "", (v) => {
-                    if (v.trim()) gloss.meanings[lang.code] = { text: v, source: "HUMAN", reviewed: true };
-                    else delete gloss.meanings[lang.code];
-                    changed();
-                });
-                const f = field("Meaning — " + lang.name, input, "glosses." + mark.key + ".meanings." + lang.code);
-                if (meaning && meaning.source === "MACHINE" && !meaning.reviewed) {
-                    f.appendChild(text("span", "machine", "Machine-written, not reviewed yet — editing it makes it reviewed."));
-                }
-                row.appendChild(f);
+                const m = gloss.meanings[lang.code];
+                if (!m || !m.text.trim()) missing++;
+                const part = text("span", m ? (m.source === "MACHINE" && !m.reviewed ? "is-machine" : "") : "is-missing",
+                    lang.code + ": " + (m ? m.text : "—"));
+                summary.appendChild(part);
             });
+            row.appendChild(summary);
+            if (missing) row.appendChild(text("span", "gloss-row__todo", missing === HELP_LANGUAGES.length ? "no meaning" : "missing " + missing));
+            row.appendChild(button("Edit", () => openGlossPanel(mark.key, true), "btn btn--text", "Edit " + mark.key + " " + mark.surface));
             els.glosses.appendChild(row);
         });
     }
 
+    /** Question groups the author folded (kept across re-renders). */
+    const foldedGroups = new WeakSet();
+
+    /** The mini panel next to a glossed word: dictionary form + one meaning per help language. */
+    let panel = null;
+    let panelKey = null;
+    function openGlossPanel(key, scroll) {
+        const word = state.passage.glossElements(key)[0];
+        if (!word || state.ex.status === "ARCHIVED") return;
+        if (scroll && word.scrollIntoView) word.scrollIntoView({ block: "center" });
+        closeGlossPanel();
+        const gloss = glossOf(key);
+        panelKey = key;
+        panel = div("gloss-panel");
+        panel.id = "glossPanel";
+        panel.setAttribute("role", "dialog");
+        panel.setAttribute("aria-label", "Meaning of " + word.textContent.trim());
+        const head = div("gloss-panel__head");
+        head.appendChild(text("span", "opt-key", key));
+        head.appendChild(text("b", null, word.textContent.trim()));
+        head.appendChild(button("×", closeGlossPanel, "icon-btn gloss-panel__close", "Close"));
+        panel.appendChild(head);
+        const after = () => { changed(); renderGlosses(); };
+        panel.appendChild(field("Dictionary form (optional)", textInput(gloss.lemma, (v) => { gloss.lemma = v || null; after(); }),
+            "glosses." + key + ".lemma"));
+        HELP_LANGUAGES.forEach((lang) => {
+            const meaning = gloss.meanings[lang.code];
+            const input = textInput(meaning ? meaning.text : "", (v) => {
+                if (v.trim()) gloss.meanings[lang.code] = { text: v, source: "HUMAN", reviewed: true };
+                else delete gloss.meanings[lang.code];
+                after();
+            });
+            input.placeholder = "Meaning in " + lang.name;
+            const f = field("Meaning — " + lang.name, input, "glosses." + key + ".meanings." + lang.code);
+            if (meaning && meaning.source === "MACHINE" && !meaning.reviewed) {
+                f.appendChild(text("span", "machine", "Machine-written, not reviewed yet — editing it makes it reviewed."));
+            }
+            panel.appendChild(f);
+        });
+        const actions = div("gloss-panel__actions");
+        actions.appendChild(button("Remove gloss", () => {
+            state.passage.removeGloss(key);
+            delete state.ex.glosses[key];
+            closeGlossPanel();
+        }, "btn btn--danger"));
+        actions.appendChild(button("Done", closeGlossPanel, "btn btn--primary"));
+        panel.appendChild(actions);
+        panel.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeGlossPanel();
+            if (e.key === "Enter" && e.target.tagName === "INPUT") closeGlossPanel();
+        });
+        d.body.appendChild(panel);
+        placePanel(word);
+        const first = panel.querySelector("[data-field$='.meanings." + HELP_LANGUAGES[0].code + "'] input");
+        if (first) first.focus({ preventScroll: true });
+    }
+
+    /** Below the word (above it near the bottom of the screen), inside the window. */
+    /** Just below the word, inside the window; scrolls a little when the panel would end off-screen. */
+    function placePanel(word) {
+        const r = word.getBoundingClientRect();
+        const left = Math.max(12, Math.min(r.left, w.innerWidth - panel.offsetWidth - 12));
+        panel.style.left = left + w.scrollX + "px";
+        panel.style.top = r.bottom + 8 + w.scrollY + "px";
+        const overflow = r.bottom + 8 + panel.offsetHeight + 12 - w.innerHeight;
+        if (overflow > 0) w.scrollBy(0, overflow);
+    }
+
+    function closeGlossPanel() {
+        if (!panel) return;
+        const key = panelKey;
+        panel.remove();
+        panel = null;
+        panelKey = null;
+        const word = key ? state.passage.glossElements(key)[0] : null;
+        if (word) word.classList.remove("is-editing");
+    }
+
+    // Clicking outside the panel (and outside the glossed words) closes it.
+    d.addEventListener("mousedown", (e) => {
+        if (!panel || panel.contains(e.target)) return;
+        if (e.target.closest && (e.target.closest(".w[data-g]") || e.target.closest("#glossBtn"))) return;
+        closeGlossPanel();
+    });
+
+    /** Scrolls to an evidence sentence and flashes it. */
+    function showEvidence(id) {
+        const el = state.passage.evidenceElement(id);
+        if (!el) return;
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        el.classList.remove("is-flash");
+        void el.offsetWidth; // restart the animation
+        el.classList.add("is-flash");
+        w.setTimeout(() => el.classList.remove("is-flash"), 1500);
+    }
+
+    /** Fills every question's evidence dropdown from the passage (keeping each choice). */
     function refreshEvidenceList() {
-        if (!els.evidenceList) return;
-        els.evidenceList.textContent = "";
-        state.passage.evidenceIds().forEach((id) => els.evidenceList.appendChild(option(id, id)));
+        if (!els.root) return;
+        els.root.querySelectorAll("select[data-evidence]").forEach((sel) => fillEvidence(sel, sel.value));
+    }
+
+    function fillEvidence(sel, value) {
+        sel.textContent = "";
+        sel.appendChild(option("", "— none —"));
+        const list = state.passage.evidence();
+        list.forEach((ev) => sel.appendChild(option(ev.id, ev.id + " — " + (ev.text.length > 60 ? ev.text.slice(0, 57) + "…" : ev.text))));
+        if (value && !list.some((ev) => ev.id === value)) sel.appendChild(option(value, value + " — not in the passage any more"));
+        sel.value = value || "";
     }
 
     /* ---- question groups --------------------------------------------- */
@@ -259,7 +415,17 @@ export function createEditor(options = {}) {
         const first = g.questions.length ? labels.get(g.questions[0]) : "";
         const last = g.questions.length ? labels.get(g.questions[g.questions.length - 1]) : "";
         head.appendChild(text("h3", null, g.questions.length ? (first === last ? first : first + " – " + last.replace("Q", "")) : "Empty group"));
+        const folded = foldedGroups.has(g);
+        if (folded) {
+            head.appendChild(text("span", "group-summary",
+                (typeDef(g.type).label || g.type) + " · " + g.questions.length + (g.questions.length === 1 ? " question" : " questions")));
+        }
         head.appendChild(div("admin-spacer"));
+        head.appendChild(button(folded ? "Show" : "Hide", () => {
+            if (folded) foldedGroups.delete(g); else foldedGroups.add(g);
+            renderGroups();
+        }, "btn btn--text", (folded ? "Show " : "Hide ") + "this question group"));
+        card.classList.toggle("is-folded", folded);
         head.appendChild(button("↑", () => move(state.ex.questionGroups, gi, -1), "btn btn--text", "Move group up"));
         head.appendChild(button("↓", () => move(state.ex.questionGroups, gi, 1), "btn btn--text", "Move group down"));
         head.appendChild(button("Remove group", () => { state.ex.questionGroups.splice(gi, 1); changed(); renderGroups(); }, "btn btn--danger"));
@@ -357,9 +523,16 @@ export function createEditor(options = {}) {
         if (usesPerQuestionOptions(g.type)) box.appendChild(optionBank("Options", q.options, path + ".options", false));
         box.appendChild(answerEditor(g, q, path + ".answer"));
 
-        const ev = textInput(q.evidenceId, (v) => { q.evidenceId = v; changed(); });
-        ev.setAttribute("list", "evidenceList");
-        box.appendChild(field("Evidence id (optional)", ev, path + ".evidenceId"));
+        const ev = d.createElement("select");
+        ev.dataset.evidence = "";
+        fillEvidence(ev, q.evidenceId || "");
+        ev.addEventListener("change", () => { q.evidenceId = ev.value || null; changed(); });
+        const evField = field("Evidence — the sentence that proves the answer (optional)", ev, path + ".evidenceId");
+        const evRow = div("evidence-pick");
+        evRow.appendChild(ev);
+        evRow.appendChild(button("Show", () => ev.value && showEvidence(ev.value), "btn btn--text", "Show the evidence in the passage"));
+        evField.appendChild(evRow);
+        box.appendChild(evField);
         HELP_LANGUAGES.forEach((lang) => {
             const x = q.explanations[lang.code];
             const f = field("Explanation — " + lang.name + " (HTML)", textInput(x ? x.text : "", (v) => {
@@ -569,7 +742,7 @@ export function createEditor(options = {}) {
         const ul = d.createElement("ul");
         list.forEach((err) => {
             ul.appendChild(text("li", null, err.message));
-            const target = err.field ? els.root.querySelector('[data-field="' + CSS.escape(err.field) + '"]') : null;
+            const target = err.field ? fieldFor(err.field) : null;
             if (target) {
                 target.classList.add("has-error");
                 target.appendChild(text("span", "err field-err", err.message));
@@ -577,6 +750,18 @@ export function createEditor(options = {}) {
         });
         els.editorErrors.appendChild(ul);
         els.editorErrors.scrollIntoView && els.editorErrors.scrollIntoView({ block: "nearest" });
+    }
+
+    /** The element for an error path, or for its nearest parent path (a closed gloss panel → the gloss row). */
+    function fieldFor(path) {
+        let p = path;
+        while (p) {
+            const el = els.root.querySelector('[data-field="' + CSS.escape(p) + '"]');
+            if (el) return el;
+            const cut = Math.max(p.lastIndexOf("."), p.lastIndexOf("["));
+            p = cut > 0 ? p.slice(0, cut) : "";
+        }
+        return null;
     }
 
     /* ---- signed out mid-edit: keep the work ------------------------- */
@@ -692,19 +877,41 @@ export function createEditor(options = {}) {
         bind(els.topicIds, "topicIds", (v) => v.split(",").map((x) => Number(x.trim())).filter((x) => x > 0));
         els.format.addEventListener("change", () => { state.ex.format = els.format.value; changed(); });
         els.level.addEventListener("change", () => { state.ex.level = els.level.value || null; changed(); });
+        if (els.coverFile) {
+            els.coverFile.addEventListener("change", uploadCover);
+            els.coverRemove.addEventListener("click", () => {
+                state.ex.coverMediaId = null;
+                state.ex.coverUrl = null;
+                renderCover();
+                changed();
+            });
+        }
 
         els.saveBtn.addEventListener("click", save);
         els.publishBtn.addEventListener("click", publish);
         els.unpublishBtn.addEventListener("click", unpublish);
         const on = (id, fn) => { const b = byId(id); if (b) b.addEventListener("click", fn); };
         on("glossBtn", () => {
-            if (!state.passage.addGloss()) notice("Select a word in the passage first, then press \"Add gloss\".");
+            const gloss = state.passage.addGloss();
+            if (!gloss) { notice("Click a word in the passage first, then press \"Add gloss\"."); return; }
+            notice("");
+            openGlossPanel(gloss.key);
         });
         on("evidenceBtn", () => {
-            if (!state.passage.markEvidence()) notice("Select the sentence that proves an answer, then press \"Mark evidence\".");
+            const ev = state.passage.markEvidence();
+            if (!ev) { notice("Click in the sentence that proves an answer, then press \"Mark evidence\"."); return; }
+            notice("");
+            showEvidence(ev.id);
         });
-        on("removeMarkBtn", () => state.passage.removeMarkAtSelection());
+        on("removeMarkBtn", () => { closeGlossPanel(); state.passage.removeMarkAtSelection(); });
+        // Pressing a toolbar button must not move the caret out of the passage.
+        d.querySelectorAll(".passage-toolbar button").forEach((b) => b.addEventListener("mousedown", (e) => e.preventDefault()));
+        // The passage toolbar sticks just under the editor's top bar, whatever its height.
+        const topbar = d.querySelector(".editor-topbar");
+        if (topbar && w.ResizeObserver) {
+            new w.ResizeObserver(() => d.documentElement.style.setProperty("--editor-topbar-h", topbar.offsetHeight + "px")).observe(topbar);
+        }
     }
 
-    return { init, save, publish, unpublish, isDirty, _toInput: toInput, _state: state };
+    return { init, save, publish, unpublish, isDirty, openGlossPanel, closeGlossPanel, _toInput: toInput, _state: state };
 }

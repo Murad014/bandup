@@ -2,6 +2,8 @@ package com.bandup.api.identity.application;
 
 import java.util.UUID;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,13 +14,10 @@ import com.bandup.api.shared.application.UnauthenticatedException;
 
 /** Use case: who am I (requirement 8.6). A token for a removed or disabled user is no longer valid. */
 @Service
+@RequiredArgsConstructor
 public class GetMe {
 
     private final UserRepository users;
-
-    public GetMe(UserRepository users) {
-        this.users = users;
-    }
 
     @Transactional(readOnly = true)
     public UserView get(UUID userId) {

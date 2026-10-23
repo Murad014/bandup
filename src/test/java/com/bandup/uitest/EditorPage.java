@@ -68,8 +68,17 @@ final class EditorPage {
         ui.click(By.id("evidenceBtn"));
     }
 
+    /** Types a meaning in the word's mini panel (opening it from "Word meanings" when it's closed). */
     void setMeaning(String glossKey, String languageCode, String meaning) {
-        ui.type(By.cssSelector("[data-field='glosses." + glossKey + ".meanings." + languageCode + "'] input"), meaning);
+        if (ui.driver().findElements(By.cssSelector("#glossPanel [data-field='glosses." + glossKey + ".lemma']")).isEmpty()) {
+            ui.click(By.cssSelector(".gloss-row[data-key='" + glossKey + "'] button"));
+        }
+        ui.type(By.cssSelector("#glossPanel [data-field='glosses." + glossKey + ".meanings." + languageCode + "'] input"), meaning);
+    }
+
+    /** Closes the word's mini panel with "Done". */
+    void doneWithMeaning() {
+        ui.click(By.xpath("//div[@id='glossPanel']//button[normalize-space(.)='Done']"));
     }
 
     void addQuestionGroup() {
@@ -93,7 +102,7 @@ final class EditorPage {
     }
 
     void setEvidence(int group, int question, String evidenceId) {
-        ui.type(By.cssSelector("[data-field='questionGroups[" + group + "].questions[" + question + "].evidenceId'] input"), evidenceId);
+        ui.chooseValue(By.cssSelector("[data-field='questionGroups[" + group + "].questions[" + question + "].evidenceId'] select"), evidenceId);
     }
 
     void setExplanation(int group, int question, String languageCode, String html) {

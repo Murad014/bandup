@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,7 @@ import com.bandup.api.shared.domain.language.LanguageCode;
  * so Practice never uses Identity's classes.
  */
 @Repository
+@RequiredArgsConstructor
 class JpaAttemptRepository implements AttemptRepository {
 
     private static final String USER_ID = "select id from app_user where public_id = ?";
@@ -35,11 +38,6 @@ class JpaAttemptRepository implements AttemptRepository {
 
     private final EntityManager entityManager;
     private final JdbcClient jdbc;
-
-    JpaAttemptRepository(EntityManager entityManager, JdbcClient jdbc) {
-        this.entityManager = entityManager;
-        this.jdbc = jdbc;
-    }
 
     @Override
     @Transactional

@@ -4,6 +4,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,7 @@ import com.bandup.api.shared.application.UnauthenticatedException;
  * </ul>
  */
 @Service
+@RequiredArgsConstructor
 public class RefreshSession {
 
     static final String SESSION_ENDED = "Your session has ended. Please sign in again.";
@@ -41,16 +44,6 @@ public class RefreshSession {
     private final AuthSettings settings;
     private final SessionIssuer issuer;
     private final Clock clock;
-
-    public RefreshSession(UserRepository users, SessionRepository sessions, TokenGenerator tokenGenerator,
-            AuthSettings settings, SessionIssuer issuer, Clock clock) {
-        this.users = users;
-        this.sessions = sessions;
-        this.tokenGenerator = tokenGenerator;
-        this.settings = settings;
-        this.issuer = issuer;
-        this.clock = clock;
-    }
 
     @Transactional(noRollbackFor = UnauthenticatedException.class)
     public SignedIn refresh(String rawRefreshToken) {

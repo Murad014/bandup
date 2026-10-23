@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import com.bandup.api.shared.domain.ddd.ValueObject;
 
 /**
@@ -15,8 +18,11 @@ import com.bandup.api.shared.domain.ddd.ValueObject;
  * takes the first language in the chain that has it.
  */
 @ValueObject
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class LanguageChain {
 
+    @EqualsAndHashCode.Include
+    @Getter
     private final List<LanguageCode> codes;
 
     private LanguageChain(List<LanguageCode> codes) {
@@ -39,10 +45,6 @@ public final class LanguageChain {
 
     public static LanguageChain englishOnly() {
         return new LanguageChain(List.of(LanguageCode.ENGLISH));
-    }
-
-    public List<LanguageCode> codes() {
-        return codes;
     }
 
     /** The language actually used for this request (first in the chain). */
@@ -69,16 +71,6 @@ public final class LanguageChain {
         Map<K, T> resolved = new LinkedHashMap<>();
         items.forEach((key, translations) -> pick(translations).ifPresent(value -> resolved.put(key, value)));
         return resolved;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof LanguageChain chain && codes.equals(chain.codes);
-    }
-
-    @Override
-    public int hashCode() {
-        return codes.hashCode();
     }
 
     @Override

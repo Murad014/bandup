@@ -13,10 +13,12 @@ import java.util.Map;
  * @param skill          create only (default READING)
  * @param targetLanguage create only (default {@code en})
  * @param glosses        lemma and meanings per gloss key; the words themselves come from {@code passageHtml}
+ * @param coverMediaId   the cover image (the id an upload returned), or null for the topic's illustration
  */
 public record ExerciseInput(String id, Long version, String skill, String targetLanguage, String title, String format,
         String level, Integer durationSeconds, Integer lowTimeThresholdSeconds, Long stageId, Integer position,
-        List<Long> topicIds, String passageHtml, Map<String, GlossInput> glosses, List<GroupInput> questionGroups) {
+        List<Long> topicIds, String passageHtml, Map<String, GlossInput> glosses, List<GroupInput> questionGroups,
+        Long coverMediaId) {
 
     /** @param meanings language → meaning */
     public record GlossInput(String lemma, Map<String, TextInput> meanings) {

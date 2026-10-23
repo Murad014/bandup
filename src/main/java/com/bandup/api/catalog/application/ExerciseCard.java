@@ -10,9 +10,10 @@ import java.util.List;
  * @param types         question type codes, in the order of their groups
  * @param done          the signed-in learner has attempted it (false when anonymous)
  * @param bestScore     their best attempt, or null
+ * @param coverUrl      the cover image, or null (the page shows its first topic's illustration)
  */
 public record ExerciseCard(String id, String title, String skill, String format, String level, Integer durationSeconds,
-        int questionCount, List<String> types, List<Topic> topics, boolean done, Score bestScore) {
+        int questionCount, List<String> types, List<Topic> topics, boolean done, Score bestScore, String coverUrl) {
 
     public ExerciseCard {
         types = List.copyOf(types);

@@ -3,6 +3,8 @@ package com.bandup.api.shared.domain.numbering;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.experimental.UtilityClass;
+
 import com.bandup.api.shared.domain.ddd.DomainService;
 
 /**
@@ -11,10 +13,8 @@ import com.bandup.api.shared.domain.ddd.DomainService;
  * is Q7–8 and the next one is Q9.
  */
 @DomainService
+@UtilityClass
 public final class QuestionNumbering {
-
-    private QuestionNumbering() {
-    }
 
     /**
      * @param pointsInOrder each question's points, in the order the learner sees them

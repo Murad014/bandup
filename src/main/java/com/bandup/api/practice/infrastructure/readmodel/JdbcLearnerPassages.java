@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -28,11 +30,12 @@ import com.bandup.api.shared.domain.numbering.QuestionNumbering;
  * view can't leak answers before submit.
  */
 @Component
+@RequiredArgsConstructor
 class JdbcLearnerPassages implements LearnerPassages {
 
     static final String EXERCISE = """
             select x.id, x.slug, x.title, x.duration_seconds, x.low_time_threshold_seconds, x.stage_id, x.position,
-                   p.body_html
+                   p.body_html, (select '/media/' || m.public_id from media m where m.id = x.cover_media_id) as cover_url
             from exercise x join reading_passage p on p.exercise_id = x.id
             where x.slug = ? and x.status = 'PUBLISHED' and x.skill = 'READING'""";
 
@@ -75,12 +78,8 @@ class JdbcLearnerPassages implements LearnerPassages {
 
     private final JdbcClient jdbc;
 
-    JdbcLearnerPassages(JdbcClient jdbc) {
-        this.jdbc = jdbc;
-    }
-
     private record Exercise(long id, String slug, String title, Integer duration, Integer lowTime, Long stageId,
-            Integer position, String html) {
+            Integer position, String html, String coverUrl) {
     }
 
     private record GroupRow(long id, String type, QuestionFamily family, String instruction, Integer chooseCount,
@@ -98,7 +97,8 @@ class JdbcLearnerPassages implements LearnerPassages {
     public Optional<PassageView> find(String slug, LanguageChain help) {
         return jdbc.sql(EXERCISE).param(slug).query((rs, i) -> new Exercise(rs.getLong("id"), rs.getString("slug"),
                         rs.getString("title"), integer(rs, "duration_seconds"), integer(rs, "low_time_threshold_seconds"),
-                        rs.getObject("stage_id", Long.class), integer(rs, "position"), rs.getString("body_html")))
+                        rs.getObject("stage_id", Long.class), integer(rs, "position"), rs.getString("body_html"),
+                        rs.getString("cover_url")))
                 .optional()
                 .map(exercise -> view(exercise, help));
     }
@@ -165,7 +165,14 @@ class JdbcLearnerPassages implements LearnerPassages {
 
         return new PassageView(exercise.slug(), language.value(), direction, exercise.title(),
                 Optional.ofNullable(exercise.duration()), Optional.ofNullable(exercise.lowTime()), stageTitle,
-                Optional.ofNullable(exercise.position()), exercise.html(), help.pickAll(glosses), groupViews);
+                Optional.ofNullable(exercise.position()), exercise.html(), help.pickAll(glosses), groupViews,
+                exercise.coverUrl(), topicsOf(exercise.id()));
+    }
+
+    private List<String> topicsOf(long exerciseId) {
+        return jdbc.sql("""
+                select t.slug from exercise_topic et join topic t on t.id = et.topic_id
+                where et.exercise_id = ? order by t.position, t.slug""").param(exerciseId).query(String.class).list();
     }
 
     private Translations<String> translations(String sql, long ownerId, String column) {

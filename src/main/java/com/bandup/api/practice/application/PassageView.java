@@ -16,6 +16,8 @@ import java.util.Optional;
  * @param position                the exercise's position in its stage, if any
  * @param passageHtml             sanitized HTML with {@code data-g} gloss keys and {@code ev} spans
  * @param glosses                 gloss key → meaning; keys with no meaning in the chain are left out
+ * @param coverUrl                the cover image, or null
+ * @param topics                  topic slugs (the page's fallback illustration uses the first)
  */
 public record PassageView(
         String slug,
@@ -28,11 +30,14 @@ public record PassageView(
         Optional<Integer> position,
         String passageHtml,
         Map<String, String> glosses,
-        List<Group> groups) {
+        List<Group> groups,
+        String coverUrl,
+        List<String> topics) {
 
     public PassageView {
         glosses = Map.copyOf(glosses);
         groups = List.copyOf(groups);
+        topics = List.copyOf(topics);
     }
 
     /**

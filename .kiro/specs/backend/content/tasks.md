@@ -149,3 +149,16 @@ requested, one at a time, and ends green (`sh gradlew test`).
     400; malformed JSON → 400 without internals. Mutation check: skipping
     the answered-question check and skipping passage sanitizing each failed
     the right test. 354 tests green, twice.
+
+- [x] Cover images (backend requirement 10, design decision 18)
+  - Domain: `Exercise.cover()` / `ExerciseContent.cover` (optional
+    `MediaId`; old constructors kept). Application: `ImageLibrary`, ports
+    `ImageStore`, `MediaLibrary`; `ExerciseContentBuilder` checks the id.
+  - Web: `AdminMediaController` (`POST /api/v1/admin/media`),
+    `MediaController` (`GET /media/{publicId}`); admin view has
+    `coverMediaId` + `coverUrl`; catalog card and passage have `coverUrl`
+    (passage also `topics`). Upload limit 3 MB (`spring.servlet.multipart`).
+  - _Verified_: `CoverImageApiTest` (4): upload + serve with cache and
+    nosniff headers; fake / GIF / empty / too large refused; anonymous 401,
+    learner 403, unknown 404; cover shows in editor, catalog and passage;
+    unknown cover id is a field error.

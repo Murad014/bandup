@@ -1,5 +1,7 @@
 package com.bandup.api.content.infrastructure.readmodel;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -7,13 +9,10 @@ import com.bandup.api.content.application.port.ReferenceData;
 
 /** {@link ReferenceData}: existence checks on {@code stage}, {@code topic} and {@code media}. */
 @Component
+@RequiredArgsConstructor
 class JdbcReferenceData implements ReferenceData {
 
     private final JdbcClient jdbc;
-
-    JdbcReferenceData(JdbcClient jdbc) {
-        this.jdbc = jdbc;
-    }
 
     @Override
     public boolean stageExists(long id) {

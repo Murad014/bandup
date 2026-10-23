@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +31,7 @@ import com.bandup.api.shared.domain.language.Translations;
  * fails loudly instead of being graded wrongly.
  */
 @Component
+@RequiredArgsConstructor
 class JdbcGradableExercises implements GradableExercises {
 
     static final String EXERCISE = """
@@ -55,10 +58,6 @@ class JdbcGradableExercises implements GradableExercises {
             where q.exercise_id = ?""";
 
     private final JdbcClient jdbc;
-
-    JdbcGradableExercises(JdbcClient jdbc) {
-        this.jdbc = jdbc;
-    }
 
     @Override
     public Optional<GradableExercise> findPublished(String slug) {

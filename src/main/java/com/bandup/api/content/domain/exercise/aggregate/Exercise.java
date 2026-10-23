@@ -12,6 +12,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import com.bandup.api.content.domain.exercise.entity.Gloss;
 import com.bandup.api.content.domain.exercise.entity.Passage;
 import com.bandup.api.content.domain.exercise.entity.Question;
@@ -27,6 +30,7 @@ import com.bandup.api.content.domain.exercise.valueobject.GlossNote;
 import com.bandup.api.content.domain.exercise.valueobject.GroupId;
 import com.bandup.api.content.domain.exercise.valueobject.Level;
 import com.bandup.api.content.domain.exercise.valueobject.MarkupKeys;
+import com.bandup.api.content.domain.exercise.valueobject.MediaId;
 import com.bandup.api.content.domain.exercise.valueobject.Option;
 import com.bandup.api.content.domain.exercise.valueobject.OptionKey;
 import com.bandup.api.content.domain.exercise.valueobject.Placement;
@@ -67,24 +71,40 @@ import com.bandup.api.shared.domain.numbering.QuestionNumbering;
  * their ids across edits; new ones get theirs from the repository first.
  */
 @AggregateRoot
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class Exercise {
 
+    @EqualsAndHashCode.Include
+    @Getter
     private final ExerciseId id;
+    @Getter
     private final Slug slug;
+    @Getter
     private final Skill skill;
+    @Getter
     private final LanguageCode targetLanguage;
+    /** The stored version this exercise was loaded with (optimistic locking; 0 for a new one). */
+    @Getter
     private final long version;
+    @Getter
     private String title;
+    @Getter
     private Format format;
     private Level level;
     private Timer timer;
     private Placement placement;
+    @Getter
     private Set<TopicId> topics;
+    @Getter
     private ExerciseStatus status;
+    @Getter
     private Revision revision;
     private Instant publishedAt;
     private Passage passage;
+    /** In display order. */
+    @Getter
     private List<QuestionGroup> groups;
+    private MediaId cover;
 
     private Exercise(ExerciseId id, Slug slug, Skill skill, LanguageCode targetLanguage, long version) {
         this.id = Objects.requireNonNull(id, "id");
@@ -117,6 +137,15 @@ public final class Exercise {
             String title, Format format, Level level, Timer timer, Placement placement, Set<TopicId> topics,
             ExerciseStatus status, Revision revision, long version, Instant publishedAt, Passage passage,
             List<QuestionGroup> groups) {
+        return restore(id, slug, skill, targetLanguage, title, format, level, timer, placement, topics, status, revision,
+                version, publishedAt, passage, groups, null);
+    }
+
+    /** As above, with the cover image (or null). */
+    public static Exercise restore(ExerciseId id, Slug slug, Skill skill, LanguageCode targetLanguage,
+            String title, Format format, Level level, Timer timer, Placement placement, Set<TopicId> topics,
+            ExerciseStatus status, Revision revision, long version, Instant publishedAt, Passage passage,
+            List<QuestionGroup> groups, MediaId cover) {
         List<Violation> violations = structureViolations(title, passage, groups);
         if (!violations.isEmpty()) {
             throw new IllegalArgumentException("Stored exercise " + slug + " is invalid: " + violations);
@@ -133,6 +162,7 @@ public final class Exercise {
         exercise.publishedAt = publishedAt;
         exercise.passage = passage;
         exercise.groups = List.copyOf(groups);
+        exercise.cover = cover;
         return exercise;
     }
 
@@ -336,38 +366,15 @@ public final class Exercise {
         topics = content.topics();
         passage = newPassage;
         groups = content.groups();
+        cover = content.cover();
     }
 
     private Exercise copy() {
         return restore(id, slug, skill, targetLanguage, title, format, level, timer, placement, topics, status,
-                revision, version, publishedAt, passage, groups);
+                revision, version, publishedAt, passage, groups, cover);
     }
 
     // ------------------------------------------------------------- accessors
-
-    public ExerciseId id() {
-        return id;
-    }
-
-    public Slug slug() {
-        return slug;
-    }
-
-    public Skill skill() {
-        return skill;
-    }
-
-    public LanguageCode targetLanguage() {
-        return targetLanguage;
-    }
-
-    public String title() {
-        return title;
-    }
-
-    public Format format() {
-        return format;
-    }
 
     public Optional<Level> level() {
         return Optional.ofNullable(level);
@@ -377,25 +384,13 @@ public final class Exercise {
         return Optional.ofNullable(timer);
     }
 
+    /** The cover image (catalog card, passage header); empty → the page uses its topic's illustration. */
+    public Optional<MediaId> cover() {
+        return Optional.ofNullable(cover);
+    }
+
     public Optional<Placement> placement() {
         return Optional.ofNullable(placement);
-    }
-
-    public Set<TopicId> topics() {
-        return topics;
-    }
-
-    public ExerciseStatus status() {
-        return status;
-    }
-
-    public Revision revision() {
-        return revision;
-    }
-
-    /** The stored version this exercise was loaded with (optimistic locking; 0 for a new one). */
-    public long version() {
-        return version;
     }
 
     public Optional<Instant> publishedAt() {
@@ -404,21 +399,6 @@ public final class Exercise {
 
     public Optional<Passage> passage() {
         return Optional.ofNullable(passage);
-    }
-
-    /** In display order. */
-    public List<QuestionGroup> groups() {
-        return groups;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof Exercise e && id.equals(e.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
     }
 
     @Override

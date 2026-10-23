@@ -3,6 +3,8 @@ package com.bandup.api.content.infrastructure.readmodel;
 import java.sql.Timestamp;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +13,7 @@ import com.bandup.api.content.application.port.ExerciseSummaries;
 
 /** {@link ExerciseSummaries}: one query over {@code exercise} with its stage title and question count. */
 @Component
+@RequiredArgsConstructor
 class JdbcExerciseSummaries implements ExerciseSummaries {
 
     private static final String SQL = """
@@ -21,10 +24,6 @@ class JdbcExerciseSummaries implements ExerciseSummaries {
             order by x.updated_at desc, x.slug""";
 
     private final JdbcClient jdbc;
-
-    JdbcExerciseSummaries(JdbcClient jdbc) {
-        this.jdbc = jdbc;
-    }
 
     @Override
     public List<ExerciseSummary> all() {

@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ import com.bandup.api.shared.domain.numbering.NumberRange;
  * {@link ExerciseRepository#save}, which rejects stale versions (409).
  */
 @Service
+@RequiredArgsConstructor
 public class ExerciseAdmin {
 
     private static final PublishPolicy POLICY = new PublishPolicy();
@@ -45,16 +48,7 @@ public class ExerciseAdmin {
     private final AttemptsLookup attempts;
     private final LanguageCatalog languages;
     private final Clock clock;
-
-    public ExerciseAdmin(ExerciseRepository exercises, ExerciseContentBuilder contentBuilder, ExerciseSummaries summaries,
-            AttemptsLookup attempts, LanguageCatalog languages, Clock clock) {
-        this.exercises = exercises;
-        this.contentBuilder = contentBuilder;
-        this.summaries = summaries;
-        this.attempts = attempts;
-        this.languages = languages;
-        this.clock = clock;
-    }
+    private final ImageLibrary images;
 
     /** ListExercises: every exercise, newest change first. */
     @Transactional(readOnly = true)
@@ -66,7 +60,7 @@ public class ExerciseAdmin {
     @Transactional(readOnly = true)
     public AdminExerciseView get(String slug) {
         Exercise exercise = load(slug);
-        return ExerciseViews.of(exercise, exercise.version());
+        return view(exercise, exercise.version());
     }
 
     /** CreateExercise: a new DRAFT; only the draft rules apply. */
@@ -77,7 +71,7 @@ public class ExerciseAdmin {
         LanguageCode target = targetLanguage(in.targetLanguage());
         ExerciseContent content = contentBuilder.build(in, null);
         Exercise exercise = Exercise.draft(exercises.nextExerciseId(), slug, skill, target, content);
-        return ExerciseViews.of(exercise, exercises.save(exercise));
+        return view(exercise, exercises.save(exercise));
     }
 
     /**
@@ -99,7 +93,7 @@ public class ExerciseAdmin {
         ExerciseContent content = contentBuilder.build(in, exercise);
         refuseRemovingAnsweredQuestions(exercise, content);
         exercise.editContent(content, POLICY);
-        return ExerciseViews.of(exercise, exercises.save(exercise));
+        return view(exercise, exercises.save(exercise));
     }
 
     /** PublishExercise: shows it to learners if it passes every publish rule (422 otherwise). */
@@ -132,10 +126,15 @@ public class ExerciseAdmin {
         return false;
     }
 
+    private AdminExerciseView view(Exercise exercise, long version) {
+        String coverUrl = exercise.cover().flatMap(cover -> images.urlOf(cover.value())).orElse(null);
+        return ExerciseViews.of(exercise, version, coverUrl);
+    }
+
     private AdminExerciseView change(String slug, Consumer<Exercise> change) {
         Exercise exercise = load(slug);
         change.accept(exercise);
-        return ExerciseViews.of(exercise, exercises.save(exercise));
+        return view(exercise, exercises.save(exercise));
     }
 
     private Exercise load(String slug) {

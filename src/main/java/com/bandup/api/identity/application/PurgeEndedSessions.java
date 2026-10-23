@@ -4,6 +4,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import com.bandup.api.identity.domain.throttle.repository.LoginThrottleRepositor
  * grows. Live sessions and active locks are never touched.
  */
 @Service
+@RequiredArgsConstructor
 public class PurgeEndedSessions {
 
     /** Kept a little after they end, so a just-revoked session still answers "revoked". */
@@ -25,12 +28,6 @@ public class PurgeEndedSessions {
     private final SessionRepository sessions;
     private final LoginThrottleRepository throttles;
     private final Clock clock;
-
-    public PurgeEndedSessions(SessionRepository sessions, LoginThrottleRepository throttles, Clock clock) {
-        this.sessions = sessions;
-        this.throttles = throttles;
-        this.clock = clock;
-    }
 
     /** Returns {deleted tokens, deleted counters}. */
     @Transactional

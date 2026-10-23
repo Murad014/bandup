@@ -49,7 +49,7 @@ class ArchitectureTest {
     static final ArchRule domainIsPureJava = classes()
             .that().resideInAPackage("com.bandup.api..domain..")
             .should().onlyDependOnClassesThat().resideInAnyPackage("java..", "com.bandup.api..domain..")
-            .because("the domain must not depend on any technology (no Spring, JPA, Jackson, Lombok)")
+            .because("the domain must not depend on any technology at run time (no Spring, JPA, Jackson; Lombok is compile-time only and leaves nothing in the bytecode)")
             .allowEmptyShould(true);
 
     /** 3. Use cases depend only on the domain, plus Spring's @Service and @Transactional. */

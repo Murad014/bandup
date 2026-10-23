@@ -2,6 +2,8 @@ package com.bandup.api.shared.application;
 
 import java.util.List;
 
+import lombok.Getter;
+
 import com.bandup.api.shared.domain.error.Violation;
 
 /**
@@ -12,6 +14,8 @@ import com.bandup.api.shared.domain.error.Violation;
  */
 public class InvalidRequestException extends RuntimeException {
 
+    /** Each problem, anchored to its field; empty when the message says it all. */
+    @Getter
     private final List<Violation> errors;
 
     public InvalidRequestException(String message) {
@@ -21,10 +25,5 @@ public class InvalidRequestException extends RuntimeException {
     public InvalidRequestException(String message, List<Violation> errors) {
         super(message);
         this.errors = List.copyOf(errors);
-    }
-
-    /** Each problem, anchored to its field; empty when the message says it all. */
-    public List<Violation> errors() {
-        return errors;
     }
 }

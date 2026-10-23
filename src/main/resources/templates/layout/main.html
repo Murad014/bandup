@@ -17,7 +17,7 @@
     <title th:replace="${title}">BandUp</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Roboto:wght@400;500;700&display=swap">
+          href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Nunito:wght@400;600;700;800&display=swap">
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <script th:src="@{/js/theme.js}"></script>
     <th:block th:replace="${headExtra} ?: _"></th:block>
@@ -25,6 +25,10 @@
 <body>
     <nav th:replace="~{fragments/navbar :: navbar(${navItems}, ${activeKey})}"></nav>
     <th:block th:replace="${content}"></th:block>
+    <footer class="site-foot wrap">
+        <span>© BandUp · IELTS practice</span>
+        <span>Made for learners, one passage at a time.</span>
+    </footer>
     <script th:src="@{/js/nav.js}" defer></script>
     <script type="module" th:src="@{/js/account-nav.js}"></script>
 </body>

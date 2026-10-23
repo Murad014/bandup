@@ -3,6 +3,8 @@ package com.bandup.api.practice.infrastructure.persistence;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.experimental.UtilityClass;
+
 import com.bandup.api.practice.domain.attempt.valueobject.GivenAnswer;
 
 import tools.jackson.databind.JsonNode;
@@ -13,12 +15,10 @@ import tools.jackson.databind.json.JsonMapper;
  * ({@code "FALSE"}), given keys a JSON array ({@code ["A","C"]}); the
  * expected snapshot is always an array of the accepted values.
  */
+@UtilityClass
 final class AttemptJson {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
-
-    private AttemptJson() {
-    }
 
     static String given(GivenAnswer given) {
         return switch (given) {

@@ -5,6 +5,9 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import com.bandup.api.identity.domain.throttle.valueobject.ThrottleKey;
 import com.bandup.api.identity.domain.throttle.valueobject.ThrottlePolicy;
 import com.bandup.api.shared.domain.ddd.AggregateRoot;
@@ -16,10 +19,15 @@ import com.bandup.api.shared.domain.ddd.AggregateRoot;
  * password is even checked.
  */
 @AggregateRoot
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class LoginThrottle {
 
+    @EqualsAndHashCode.Include
+    @Getter
     private final ThrottleKey key;
+    @Getter
     private int failures;
+    @Getter
     private Instant windowStartedAt;
     private Instant lockedUntil;
 
@@ -65,29 +73,7 @@ public final class LoginThrottle {
         }
     }
 
-    public ThrottleKey key() {
-        return key;
-    }
-
-    public int failures() {
-        return failures;
-    }
-
-    public Instant windowStartedAt() {
-        return windowStartedAt;
-    }
-
     public Optional<Instant> lockedUntil() {
         return Optional.ofNullable(lockedUntil);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof LoginThrottle t && key.equals(t.key);
-    }
-
-    @Override
-    public int hashCode() {
-        return key.hashCode();
     }
 }

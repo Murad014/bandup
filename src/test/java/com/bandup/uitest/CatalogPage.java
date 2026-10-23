@@ -33,7 +33,7 @@ final class CatalogPage {
     }
 
     private WebElement card(String title) {
-        return ui.find(By.xpath("//a[contains(@class,'ex-card')][h2[normalize-space(.)='" + title + "']]"));
+        return ui.find(By.xpath("//a[contains(@class,'ex-card')][.//h2[normalize-space(.)='" + title + "']]"));
     }
 
     /** Clicks a filter chip (level, question type or topic) by its label. */

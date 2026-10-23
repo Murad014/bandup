@@ -2,6 +2,8 @@ package com.bandup.api.practice.web;
 
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,15 +19,11 @@ import com.bandup.api.shared.web.RequestLanguage;
 /** {@code GET /api/v1/passages/{slug}}: a passage without answers (public). */
 @RestController
 @RequestMapping("/api/v1/passages")
+@RequiredArgsConstructor
 class PassageController {
 
     private final GetLearnerPassage getLearnerPassage;
     private final CurrentUser currentUser;
-
-    PassageController(GetLearnerPassage getLearnerPassage, CurrentUser currentUser) {
-        this.getLearnerPassage = getLearnerPassage;
-        this.currentUser = currentUser;
-    }
 
     @GetMapping("/{slug}")
     PassageResponse get(@PathVariable String slug, @RequestParam(required = false) String lang,

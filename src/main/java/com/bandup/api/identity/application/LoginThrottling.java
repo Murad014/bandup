@@ -5,6 +5,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,15 +22,11 @@ import com.bandup.api.shared.application.TooManyRequestsException;
  * check in {@link Login} never runs inside one.
  */
 @Service
+@RequiredArgsConstructor
 public class LoginThrottling {
 
     private final LoginThrottleRepository throttles;
     private final Clock clock;
-
-    public LoginThrottling(LoginThrottleRepository throttles, Clock clock) {
-        this.throttles = throttles;
-        this.clock = clock;
-    }
 
     /** @throws TooManyRequestsException if the email or the client is locked */
     @Transactional(readOnly = true)

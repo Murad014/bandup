@@ -1,5 +1,7 @@
 package com.bandup.api.identity.application;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import com.bandup.api.identity.application.port.PasswordHasher;
@@ -17,6 +19,7 @@ import com.bandup.api.shared.domain.error.DomainException;
  * database connection; the single insert runs in its own transaction.
  */
 @Service
+@RequiredArgsConstructor
 public class BootstrapAdmin {
 
     public enum Result {
@@ -27,11 +30,6 @@ public class BootstrapAdmin {
 
     private final UserRepository users;
     private final PasswordHasher hasher;
-
-    public BootstrapAdmin(UserRepository users, PasswordHasher hasher) {
-        this.users = users;
-        this.hasher = hasher;
-    }
 
     /** @throws com.bandup.api.shared.domain.error.DomainException if the configured email or password is invalid */
     public Result ensureAdmin(String rawEmail, String rawPassword) {

@@ -18,13 +18,13 @@ import com.bandup.api.practice.application.PassageView;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 record PassageResponse(String id, String language, String direction, String stageLabel, Integer position,
         String title, Integer durationSeconds, Integer lowTimeThresholdSeconds, String passageHtml,
-        Map<String, String> glosses, List<Group> questionGroups) {
+        Map<String, String> glosses, List<Group> questionGroups, String coverUrl, List<String> topics) {
 
     static PassageResponse of(PassageView view) {
         return new PassageResponse(view.slug(), view.language(), view.direction(), view.stageTitle().orElse(null),
                 view.position().orElse(null), view.title(), view.durationSeconds().orElse(null),
                 view.lowTimeThresholdSeconds().orElse(null), view.passageHtml(), view.glosses(),
-                view.groups().stream().map(Group::of).toList());
+                view.groups().stream().map(Group::of).toList(), view.coverUrl(), view.topics());
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

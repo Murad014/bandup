@@ -3,6 +3,8 @@ package com.bandup.api.shared.domain.language;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import lombok.Getter;
+
 import com.bandup.api.shared.domain.ddd.ValueObject;
 import com.bandup.api.shared.domain.error.DomainException;
 
@@ -22,6 +24,8 @@ public final class LanguageCode {
     /** Primary language (2–3 letters), then optional subtags: pt-BR, zh-Hant-TW, es-419. */
     private static final Pattern BCP47 = Pattern.compile("[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*");
 
+    /** The code as created, e.g. {@code pt-BR}. */
+    @Getter
     private final String value;
 
     private LanguageCode(String value) {
@@ -35,11 +39,6 @@ public final class LanguageCode {
             throw DomainException.of("languageCode", "Not a language code: '" + code + "'");
         }
         return new LanguageCode(trimmed);
-    }
-
-    /** The code as created, e.g. {@code pt-BR}. */
-    public String value() {
-        return value;
     }
 
     /** True for codes with a region or script, e.g. {@code pt-BR}. */

@@ -5,6 +5,9 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import com.bandup.api.identity.domain.session.valueobject.TokenHash;
 import com.bandup.api.shared.domain.ddd.Entity;
 
@@ -18,6 +21,7 @@ import com.bandup.api.shared.domain.ddd.Entity;
  * changes nothing).
  */
 @Entity
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class RefreshToken {
 
     /** What a presented token is worth, checked in this order. */
@@ -30,8 +34,12 @@ public final class RefreshToken {
         USABLE
     }
 
+    @EqualsAndHashCode.Include
+    @Getter
     private final TokenHash hash;
+    @Getter
     private final Instant issuedAt;
+    @Getter
     private final Instant expiresAt;
     private final TokenHash replacedBy;
     private final Instant revokedAt;
@@ -85,18 +93,6 @@ public final class RefreshToken {
         return revokedAt != null ? this : new RefreshToken(hash, issuedAt, expiresAt, replacedBy, now);
     }
 
-    public TokenHash hash() {
-        return hash;
-    }
-
-    public Instant issuedAt() {
-        return issuedAt;
-    }
-
-    public Instant expiresAt() {
-        return expiresAt;
-    }
-
     public Optional<TokenHash> replacedBy() {
         return Optional.ofNullable(replacedBy);
     }
@@ -106,13 +102,4 @@ public final class RefreshToken {
     }
 
     /** Entities are equal by identity: the hash. */
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof RefreshToken token && hash.equals(token.hash);
-    }
-
-    @Override
-    public int hashCode() {
-        return hash.hashCode();
-    }
 }

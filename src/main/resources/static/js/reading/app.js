@@ -13,6 +13,7 @@
    there and set with innerHTML; everything else uses textContent.
    ========================================================================= */
 
+import { coverImage } from "../covers.js";
 import { FAMILY, FIXED_CHOICES, formatClock, isLowTime, numberLabel, wordLimitHint } from "./core.js";
 
 export function createReadingApp(options = {}) {
@@ -132,6 +133,11 @@ export function createReadingApp(options = {}) {
             els.stageLabel.textContent = parts.join(" · ");
         }
         if (els.title) els.title.textContent = session.title || "";
+        const cover = byId("passageCover");
+        if (cover && !cover.firstChild) {
+            cover.appendChild(coverImage(session.coverUrl, session.topics));
+            cover.hidden = false;
+        }
     }
 
     function renderPassage(session) {

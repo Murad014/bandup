@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.EqualsAndHashCode;
+
 import com.bandup.api.practice.domain.attempt.exception.InvalidSubmissionException;
 import com.bandup.api.shared.domain.ddd.ValueObject;
 import com.bandup.api.shared.domain.error.Violation;
@@ -18,8 +20,10 @@ import com.bandup.api.shared.domain.error.Violation;
  * exist is checked against the exercise by {@code Attempt.grade}.
  */
 @ValueObject
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class AnswerSheet {
 
+    @EqualsAndHashCode.Include
     private final Map<Integer, GivenAnswer> answers;
 
     private AnswerSheet(Map<Integer, GivenAnswer> answers) {
@@ -41,16 +45,6 @@ public final class AnswerSheet {
     /** Every answered number with its answer, in submission order. */
     public Map<Integer, GivenAnswer> asMap() {
         return answers;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof AnswerSheet s && answers.equals(s.answers);
-    }
-
-    @Override
-    public int hashCode() {
-        return answers.hashCode();
     }
 
     @Override

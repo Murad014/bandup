@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import com.bandup.api.identity.application.port.PasswordHasher;
@@ -28,17 +30,12 @@ import com.bandup.api.shared.domain.language.LanguageFallbacks;
  * unique constraint (409).
  */
 @Service
+@RequiredArgsConstructor
 public class RegisterLearner {
 
     private final UserRepository users;
     private final PasswordHasher hasher;
     private final LanguageCatalog languages;
-
-    public RegisterLearner(UserRepository users, PasswordHasher hasher, LanguageCatalog languages) {
-        this.users = users;
-        this.hasher = hasher;
-        this.languages = languages;
-    }
 
     /**
      * @param uiLanguage      language of menus; English if blank

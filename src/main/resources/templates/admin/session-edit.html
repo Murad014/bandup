@@ -24,13 +24,16 @@
             <button id="unpublishBtn" type="button" class="btn" hidden>Unpublish</button>
             <button id="publishBtn" type="button" class="btn btn--primary">Publish</button>
         </div>
+        <nav class="editor-jump" aria-label="Editor sections">
+            <a href="#secDetails">Details</a><a href="#secPassage">Passage</a><a href="#secMeanings">Word meanings</a><a href="#secQuestions">Questions</a>
+        </nav>
     </div>
 
     <div id="editorNotice" class="admin-notice" role="status" hidden></div>
     <div id="editorErrors" class="admin-error" role="alert" hidden></div>
     <div id="publishHints" class="admin-hints" hidden></div>
 
-    <div class="card">
+    <div class="card" id="secDetails">
         <h3>Details</h3>
         <div class="field" id="slugField" data-field="id">
             <label for="slug">Address (lower-case words and hyphens, e.g. yellowstone-wolves)</label>
@@ -53,16 +56,31 @@
             <div class="field" data-field="position"><label for="position">Position in the stage</label><input id="position" type="number" min="1"></div>
         </div>
         <div class="field" data-field="topicIds"><label for="topicIds">Topic ids (comma-separated, optional)</label><input id="topicIds" type="text"></div>
+        <div class="field cover-field" data-field="coverMediaId">
+            <span class="cover-field__label">Cover image (JPEG or PNG, up to 3 MB; wide 16:9 looks best)</span>
+            <div class="cover-field__row">
+                <div class="cover-field__preview" id="coverPreview"></div>
+                <div class="cover-field__actions">
+                    <label class="btn" for="coverFile">Upload image</label>
+                    <input id="coverFile" type="file" accept="image/jpeg,image/png" hidden>
+                    <button class="btn btn--danger" type="button" id="coverRemove" hidden>Remove</button>
+                    <p class="hint" id="coverHint">Without a cover, learners see an illustration for the first topic.</p>
+                    <p class="err" id="coverError" role="alert"></p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card" data-field="passageHtml">
+    <div class="card" data-field="passageHtml" id="secPassage">
         <h3>Passage</h3>
         <div class="editor-split">
             <div>
                 <div class="passage-toolbar">
                     <button id="glossBtn" type="button" class="btn">Add gloss</button>
                     <button id="evidenceBtn" type="button" class="btn">Mark evidence</button>
-                    <button id="removeMarkBtn" type="button" class="btn">Remove mark</button>
+                    <button id="removeMarkBtn" type="button" class="btn btn--text">Remove mark</button>
+                    <p class="passage-toolbar__tip">Click a word → <b>Add gloss</b>. Click in a sentence → <b>Mark evidence</b>.
+                        Click an underlined word to edit its meaning.</p>
                 </div>
                 <div id="passageEdit" class="passage-edit" contenteditable="true" aria-label="Passage editor"></div>
             </div>
@@ -73,17 +91,15 @@
         </div>
     </div>
 
-    <div class="card">
-        <h3>Word meanings</h3>
+    <div class="card" id="secMeanings">
+        <h3>Word meanings <span id="glossCount" class="admin-sub"></span></h3>
         <div id="glosses"></div>
     </div>
 
-    <div class="card" data-field="questions">
+    <div class="card" data-field="questions" id="secQuestions">
         <h3>Questions</h3>
         <div id="groups"></div>
     </div>
-
-    <datalist id="evidenceList"></datalist>
 
     <script type="module" th:src="@{/js/admin/editor-page.js}"></script>
 </main>

@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import com.bandup.api.content.domain.exercise.valueobject.GroupId;
 import com.bandup.api.content.domain.exercise.valueobject.MediaId;
 import com.bandup.api.content.domain.exercise.valueobject.Option;
@@ -25,17 +28,28 @@ import com.bandup.api.shared.domain.language.Translations;
  * @param bank            the shared options of a matching group, else empty
  */
 @Entity
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class QuestionGroup {
 
+    @EqualsAndHashCode.Include
+    @Getter
     private final GroupId id;
+    @Getter
     private final QuestionType type;
+    /** The official instruction in the target language. */
+    @Getter
     private final SanitizedHtml instruction;
+    /** Helper translations shown beside the official instruction. */
+    @Getter
     private final Translations<SanitizedHtml> instructionTranslations;
     private final Integer chooseCount;
     private final WordLimit wordLimit;
+    @Getter
     private final boolean optionsReusable;
     private final MediaId media;
+    @Getter
     private final List<Option> bank;
+    @Getter
     private final List<Question> questions;
 
     public QuestionGroup(GroupId id, QuestionType type, SanitizedHtml instruction,
@@ -53,24 +67,6 @@ public final class QuestionGroup {
         this.questions = List.copyOf(questions);
     }
 
-    public GroupId id() {
-        return id;
-    }
-
-    public QuestionType type() {
-        return type;
-    }
-
-    /** The official instruction in the target language. */
-    public SanitizedHtml instruction() {
-        return instruction;
-    }
-
-    /** Helper translations shown beside the official instruction. */
-    public Translations<SanitizedHtml> instructionTranslations() {
-        return instructionTranslations;
-    }
-
     public Optional<Integer> chooseCount() {
         return Optional.ofNullable(chooseCount);
     }
@@ -79,35 +75,13 @@ public final class QuestionGroup {
         return Optional.ofNullable(wordLimit);
     }
 
-    public boolean optionsReusable() {
-        return optionsReusable;
-    }
-
     public Optional<MediaId> media() {
         return Optional.ofNullable(media);
-    }
-
-    public List<Option> bank() {
-        return bank;
-    }
-
-    public List<Question> questions() {
-        return questions;
     }
 
     /** Points (and numbers) each question takes: N for "Choose N", else 1. */
     public int pointsPerQuestion() {
         return chooseCount != null && chooseCount > 0 ? chooseCount : 1;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof QuestionGroup g && id.equals(g.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
     }
 
     @Override

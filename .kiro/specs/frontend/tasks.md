@@ -226,3 +226,30 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
 - [x] `/reading` is the reading catalog — see `../backend/catalog/tasks.md`
   (built together with its API). Navbar "Reading" and home link to it; the
   passage page stays at `/reading/{slug}`.
+
+## Redesign: bright & friendly (user choice)
+
+- [x] Design system in `app.css`: cream background, coral primary, teal /
+  sun / sky / grape accents, Nunito for the interface (Literata stays for
+  passages), rounded pill buttons, soft shadows. Light by default; dark only
+  when picked with the toggle (`theme.js` no longer follows the OS).
+- [x] Navbar logo mark, "Sign in" as the main button, footer on every page
+  (hidden on the reading page).
+- [x] Home: hero with illustration, then "What do you want to practise?" —
+  the learner picks a skill first (Reading → `/reading`; Grammar "soon", not
+  a link), then "how it works" steps. No passages on the home page (user
+  request; "Fresh passages" and `home.js` removed).
+- [x] Catalog: header banner, chip filters, cards with a cover image, a
+  "✓ Done" badge and "Best score n/m".
+- [x] Passage cards three per row on desktop (two under 960 px, one under
+  600 px), user request.
+- [x] Reading: cover banner above the passage; restyled bar, timer,
+  questions and result.
+- [x] Sign in / sign up cards; admin sidebar, cards and fields restyled.
+- [x] Covers (backend requirement 10): `covers.js` picks the uploaded cover
+  or the topic illustration (`static/img/covers/*.svg`, five topics +
+  default). Admin editor: "Upload image" with preview, "Remove", errors from
+  the server; `apiFetch` accepts a `form` (multipart) body.
+- _Verified_: `CatalogBrowserTest` (cover src, home skill choice with no
+  passages, three columns, passage cover), full suite 424 green, 13 Selenium scenarios green;
+  screenshots of home, catalog, reading and sign-in checked by eye.

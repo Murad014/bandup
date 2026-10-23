@@ -168,3 +168,32 @@ The answer-key integrity and HTML sanitization this UI assumes are enforced by
 the **backend spec** (persistence, server-side sanitizer per reading §9,
 authorization, and the admin endpoints). The admin UI is built against the stub
 until that lands; flipping `USE_STUB` off switches to the real API.
+
+- [x] Cover image field in the editor (upload with preview, remove; backend requirement 10) — see `../frontend/tasks.md` "Redesign".
+
+## Editor made easy (user request: "simple, user-friendly")
+
+- [x] Click a word → "Add gloss": the word gets the next key (g1, g2, g3…)
+  and a mini panel opens right under it (dictionary form + one meaning per
+  help language, first meaning focused; Enter / Done / Esc / click outside
+  closes it; "Remove gloss" unmarks the word). Clicking an underlined word
+  opens its panel again. A real selection still works; outer spaces are
+  trimmed. The last caret in the passage is remembered, and the toolbar
+  buttons don't steal it.
+- [x] Click in a sentence → "Mark evidence": the whole sentence becomes the
+  next e-id. Keys show on the marks in the editor (g1 after a word, an e1
+  label before a sentence); the learner preview stays clean.
+- [x] Question evidence is a dropdown ("e1 — Fish came back soon.") with a
+  "Show" button that scrolls to the sentence and flashes it; an id no longer
+  in the passage is listed as such. No more typing ids.
+- [x] "Word meanings" is a short list (key, word, meanings, what's missing,
+  Edit). A server error on a gloss field lands on its row when the panel is
+  closed (nearest parent path).
+- [x] Passage toolbar sticks under the editor's top bar; top bar has
+  section jumps (Details, Passage, Word meanings, Questions); question
+  groups fold to one line ("Hide" / "Show").
+- _Verified_: `AdminBrowserTest.anAuthorClicksAWordToGlossItAndClicksInASentenceToMarkEvidence`
+  uses real mouse clicks (mutation check: turning off click-to-word fails
+  it); the other editor tests and `AuthorScenariosTest` use the panel and
+  the dropdown; 426 tests and 13 Selenium scenarios green; screenshots
+  checked by eye.

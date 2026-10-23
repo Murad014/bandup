@@ -11,7 +11,8 @@ import java.util.Map;
 public record AdminExerciseView(String id, long version, String status, int revision, String skill,
         String targetLanguage, String title, String format, String level, Integer durationSeconds,
         Integer lowTimeThresholdSeconds, Long stageId, Integer position, List<Long> topicIds, Instant publishedAt,
-        String passageHtml, Integer wordCount, Map<String, GlossView> glosses, List<GroupView> questionGroups) {
+        String passageHtml, Integer wordCount, Map<String, GlossView> glosses, List<GroupView> questionGroups,
+        Long coverMediaId, String coverUrl) {
 
     public record GlossView(String surface, String lemma, Map<String, TextView> meanings) {
     }

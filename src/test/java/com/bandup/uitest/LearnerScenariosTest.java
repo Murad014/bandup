@@ -139,7 +139,7 @@ class LearnerScenariosTest extends UiTestBase {
         new CatalogPage(ui).open();
         ui.waitFor(d -> catalog.cardText("The Return of the Wolves").contains("Done"));
         ui.step("Marked as done, with the best score");
-        assertThat(catalog.cardText("The Return of the Wolves")).contains("✓ Done · best 1/6");
+        assertThat(catalog.cardText("The Return of the Wolves")).contains("✓ Done", "Best score 1/6");
 
         catalog.hideDone();
         ui.step("Done exercises hidden");
