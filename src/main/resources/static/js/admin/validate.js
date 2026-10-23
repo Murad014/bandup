@@ -1,102 +1,99 @@
 /* =========================================================================
-   validate.js — pure validation for an admin session (design §6), now
-   catalog-driven so every IELTS question family is covered.
-   Draft save relaxes content rules; publish enforces all.
-   Returns { errors: [{field,message}], warnings: [...], ok }.
+   validate.js — publish hints for the editor. Same rules and messages as the
+   server's PublishPolicy (backend design §8.1), so authors see problems
+   while they write. Hints only: the server decides on save and publish.
+
+   publishHints(exercise) → [{field, message}] for the editor's model
+   (the AdminExerciseView shape: questionGroups[].questions[]).
    ========================================================================= */
 
-import { typeDef, familyOf } from "./questionTypes.js";
+import { familyOf, typeDef } from "./questionTypes.js";
 
-/** Extract evidence ids (eN) present in the passage HTML. */
-export function evidenceIdsIn(passageHtml) {
-    const ids = [];
-    const re = /class="ev"[^>]*\bid="([^"]+)"|id="([^"]+)"[^>]*class="ev"/g;
-    let m;
-    while ((m = re.exec(String(passageHtml || ""))) !== null) ids.push(m[1] || m[2]);
-    return ids;
+const NUMBER = /^\d+([.,:/-]\d+)*$/;
+
+function words(answer, numbersAllowed) {
+    return String(answer).trim().split(/\s+/).filter((w) => w && !(numbersAllowed && NUMBER.test(w))).length;
 }
 
-function nonEmptyList(value) {
-    const list = Array.isArray(value) ? value : [value];
-    return list.filter((v) => v != null && String(v).trim() !== "");
+function blankHtml(html) {
+    return String(html || "").replace(/<[^>]*>/g, "").trim() === "";
 }
 
-export function validate(session, options = {}) {
-    const forPublish = options.forPublish === true;
-    const errors = [];
-    const warnings = [];
-    const add = (field, message) => errors.push({ field, message });
-
-    // Metadata (always).
-    if (!session.title || !String(session.title).trim()) add("title", "Title is required.");
-    if (!session.stageLabel || !String(session.stageLabel).trim()) add("stageLabel", "Stage label is required.");
-    const dur = Number(session.durationSeconds);
-    const low = Number(session.lowTimeThresholdSeconds);
-    if (!(dur > 0)) add("durationSeconds", "Duration must be greater than 0.");
-    if (!(low > 0)) add("lowTimeThresholdSeconds", "Low-time threshold must be greater than 0.");
-    else if (dur > 0 && low > dur) add("lowTimeThresholdSeconds", "Low-time threshold cannot exceed the duration.");
-
-    const groups = session.questionGroups || [];
-    const answerByN = new Map((session.answerKey || []).map((a) => [a.n, a]));
-    const evidenceIds = new Set(evidenceIdsIn(session.passageHtml));
-    const allQuestions = [];
-    groups.forEach((g) => (g.questions || []).forEach((q) => allQuestions.push(q)));
-
-    if (forPublish) {
-        if (allQuestions.length === 0) add("questions", "Add at least one question before publishing.");
-
-        // Unique, contiguous numbering 1..N.
-        const numbers = allQuestions.map((q) => q.n).sort((a, b) => a - b);
-        numbers.forEach((n, i) => { if (n !== i + 1) add("questions", "Question numbers must be unique and contiguous (1..N)."); });
-
-        groups.forEach((g) => {
-            const fam = familyOf(g.type);
-            const def = typeDef(g.type);
-            const F = "group(" + g.type + ")";
-
-            if (fam === "match") {
-                const opts = nonEmptyList((g.options || []).map((o) => o.label));
-                if ((g.options || []).length < 2 || opts.length < 2) add(F + ".options", (def.optionsLabel || "Options") + " need at least two labelled entries.");
-            }
-
-            (g.questions || []).forEach((q) => {
-                const key = answerByN.get(q.n);
-                const qf = "answerKey[" + q.n + "]";
-                if (!key) { add(qf, "Question " + q.n + " has no answer."); return; }
-
-                if (fam === "choiceFixed") {
-                    if (!def.choices.includes(key.answer)) add(qf + ".answer", "Q" + q.n + " answer must be one of " + def.choices.join(" / ") + ".");
-                } else if (fam === "gap") {
-                    if (nonEmptyList(key.answer).length === 0) add(qf + ".answer", "Q" + q.n + " needs at least one accepted answer.");
-                } else if (fam === "mcSingle") {
-                    const keys = (q.options || []).map((o) => o.key);
-                    if (keys.length < 2) add("questions", "Q" + q.n + " needs at least two options.");
-                    if (!key.answer || !keys.includes(key.answer)) add(qf + ".answer", "Q" + q.n + " must select one of its options.");
-                } else if (fam === "mcMulti") {
-                    const keys = (q.options || []).map((o) => o.key);
-                    const chosen = nonEmptyList(key.answer);
-                    if (keys.length < 2) add("questions", "Q" + q.n + " needs at least two options.");
-                    if (chosen.length === 0) add(qf + ".answer", "Q" + q.n + " must select at least one option.");
-                    if (chosen.some((c) => !keys.includes(c))) add(qf + ".answer", "Q" + q.n + " selects an option that doesn't exist.");
-                    if (g.chooseCount && chosen.length !== Number(g.chooseCount)) add(qf + ".answer", "Q" + q.n + " must select exactly " + g.chooseCount + " options.");
-                } else if (fam === "match") {
-                    const keys = (g.options || []).map((o) => o.key);
-                    if (!key.answer || !keys.includes(key.answer)) add(qf + ".answer", "Q" + q.n + " must match one of the " + (def.optionsLabel || "options") + ".");
-                }
-
-                if (key.evidenceId && !evidenceIds.has(key.evidenceId)) add(qf + ".evidenceId", "Q" + q.n + " references missing evidence '" + key.evidenceId + "'.");
-            });
+/** "Q7" / "Q7–8" per question, numbered like the server (a "Choose N" question takes N numbers). */
+export function questionLabels(exercise) {
+    const labels = new Map();
+    let next = 1;
+    (exercise.questionGroups || []).forEach((g) => {
+        const points = familyOf(g.type) === "mcMulti" && Number(g.chooseCount) > 0 ? Number(g.chooseCount) : 1;
+        (g.questions || []).forEach((q) => {
+            labels.set(q, "Q" + (points > 1 ? next + "–" + (next + points - 1) : next));
+            next += points;
         });
-    } else {
-        // Draft: flag dangling evidence as a non-blocking warning.
-        (session.answerKey || []).forEach((key) => {
-            if (key.evidenceId && !evidenceIds.has(key.evidenceId)) warnings.push({ field: "answerKey[" + key.n + "].evidenceId", message: "References missing evidence '" + key.evidenceId + "'." });
-        });
+    });
+    return labels;
+}
+
+export function publishHints(exercise) {
+    const hints = [];
+    const add = (field, message) => hints.push({ field, message });
+    const groups = exercise.questionGroups || [];
+    if ((exercise.skill || "READING") === "READING" && blankHtml(exercise.passageHtml)) {
+        add("passageHtml", "Add the passage text before publishing.");
     }
-
-    // Warning: evidence spans referenced by no question.
-    const referenced = new Set((session.answerKey || []).map((a) => a.evidenceId).filter(Boolean));
-    evidenceIds.forEach((id) => { if (!referenced.has(id)) warnings.push({ field: "passageHtml", message: "Evidence '" + id + "' is not used by any question." }); });
-
-    return { errors, warnings, ok: errors.length === 0 };
+    if (groups.every((g) => !(g.questions || []).length)) {
+        add("questions", "Add at least one question before publishing.");
+    }
+    const labels = questionLabels(exercise);
+    groups.forEach((g, gi) => {
+        const field = "questionGroups[" + gi + "]";
+        const family = familyOf(g.type);
+        const def = typeDef(g.type);
+        const questions = g.questions || [];
+        const bank = (g.options || []).map((o) => o.key);
+        const n = Number(g.chooseCount) || 0;
+        if (!questions.length) add(field, "This group has no questions.");
+        if (blankHtml(g.instruction)) add(field + ".instruction", "Write the instruction.");
+        if (g.type === "DIAGRAM_LABEL" && !g.mediaId) add(field + ".media", "A diagram question needs its picture.");
+        if (family === "mcMulti" && !n) add(field + ".chooseCount", "Say how many answers to choose.");
+        if (family === "match" && bank.length < 2) add(field + ".options", "Add at least two options to choose from.");
+        const usedBy = new Map();
+        questions.forEach((q, qi) => {
+            const qf = field + ".questions[" + qi + "]";
+            const label = labels.get(q);
+            const answer = (q.answer || []).filter((a) => String(a).trim() !== "");
+            const own = (q.options || []).map((o) => o.key);
+            const stemBlank = q.pre != null ? !String(q.pre).trim() && !String(q.post || "").trim() : !String(q.text || "").trim();
+            if (stemBlank) add(qf + ".stem", label + " has no text.");
+            if (family === "choiceFixed") {
+                if (answer.length !== 1 || !def.choices.includes(answer[0])) {
+                    add(qf + ".answer", label + " must be one of " + def.choices.join(" / ") + ".");
+                }
+            } else if (family === "gap") {
+                if (!answer.length) add(qf + ".answer", label + " needs at least one accepted answer.");
+                if (Number(g.maxWords) > 0) {
+                    answer.filter((a) => words(a, g.numbersAllowed) > Number(g.maxWords))
+                        .forEach((a) => add(qf + ".answer", label + ": '" + a + "' is longer than the word limit."));
+                }
+            } else if (family === "mcSingle") {
+                if (own.length < 2) add(qf + ".options", label + " needs at least two options.");
+                if (answer.length !== 1 || !own.includes(answer[0])) add(qf + ".answer", label + " must select one of its options.");
+            } else if (family === "mcMulti" && n) {
+                if (own.length <= n) add(qf + ".options", label + " needs more than " + n + " options.");
+                if (answer.length !== n) add(qf + ".answer", label + " must select exactly " + n + " options.");
+                if (!answer.every((a) => own.includes(a))) add(qf + ".answer", label + " selects an option that doesn't exist.");
+            } else if (family === "match") {
+                if (answer.length !== 1 || !bank.includes(answer[0])) {
+                    add(qf + ".answer", label + " must match one of the group's options.");
+                } else if (!g.optionsReusable) {
+                    const earlier = usedBy.get(answer[0]);
+                    if (earlier) {
+                        add(qf + ".answer", label + " uses '" + answer[0] + "', already used by " + earlier + "; each option can be used once.");
+                    } else {
+                        usedBy.set(answer[0], label);
+                    }
+                }
+            }
+        });
+    });
+    return hints;
 }

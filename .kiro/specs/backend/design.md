@@ -134,6 +134,11 @@ com.bandup
 │   │       │                 JpaAttemptRepository
 │   │       └── security/     PracticeAccessRules
 │   │   └── web/              PassageController, PassageResponse, AttemptController, AttemptResponse
+│   ├── catalog/              (§8b; read-only, no domain layer)
+│   │   ├── application/      BrowseExercises, CatalogQuery, CatalogPage, ExerciseCard, CatalogFilters
+│   │   │   └── port/         ExerciseCatalog
+│   │   ├── infrastructure/   JdbcExerciseCatalog, CatalogAccessRules
+│   │   └── web/              CatalogController
 │   └── content/              (§8; built: domain, persistence, HTML adapters, use cases, admin API)
 │       └── domain/
 │           └── exercise/
@@ -162,9 +167,9 @@ com.bandup
 │           │                 JdbcExerciseSummaries
 │           └── security/     ContentAccessRules
 │       └── web/              AdminExerciseController
-└── ui/                       page shells (frontend task 1): HomeController, ReadingPageController,
-                              NavItem, NavigationAdvice; admin/: AdminPageController, AdminNavItem,
-                              AdminNavigationAdvice — no data, no API imports
+└── ui/                       page shells: HomeController, ReadingPageController, AuthPageController
+                              (/login, /register), NavItem, NavigationAdvice; admin/: AdminPageController,
+                              AdminNavItem, AdminNavigationAdvice — no data, no API imports
 ```
 
 The former dev guard (`AdminAccess`, `AdminAccessFilter`,
@@ -678,6 +683,41 @@ refused by the database (`attempt_answer` → `question` is RESTRICT) → generi
 
 ---
 
+## 8b. Catalog context (phase 2, built)
+
+Browsing and filtering published exercises (database requirement 7, design
+§5.0). **Read-only:** nothing is changed and there are no business rules to
+protect, so there is no domain layer and no aggregate — a query use case and
+an SQL read model (CQRS-lite), like Practice's `LearnerPassages`. Approved by
+the user.
+
+| Piece | Notes |
+|-------|-------|
+| `BrowseExercises.browse(CatalogQuery)` | checks the filters (known skill / format / levels, type codes and topic slugs well-formed, `maxMinutes` ≥ 1, page ≥ 0, size 1–50) → 400 listing every problem; the learner from `CurrentUser` (optional) |
+| `BrowseExercises.filters(lang)` | the choices worth offering: only skills, formats, levels, question types and topics that some PUBLISHED exercise has |
+| `ExerciseCatalog` → `JdbcExerciseCatalog` | one filtered count + page query (values always bound), then small queries for the cards on the page; PUBLISHED only; never reads answers or explanations |
+
+```
+GET /api/v1/exercises?skill=&format=&level=…&type=…&topic=…&maxMinutes=&notDone=&page=&size=&lang=
+  → {items: [{id, title, skill, format, level, durationSeconds, questionCount, types[], topics[{slug, name}],
+              done, bestScore{score, total} | null}], page, size, totalItems}
+GET /api/v1/exercises/filters?lang=  → {skills[], formats[], levels[], types[], topics[{slug, name}]}
+```
+
+- Filters combine with AND; several values of one filter with OR. A type
+  matches an exercise with at least one group of that type; an exercise
+  without a timer always fits `maxMinutes`.
+- `questionCount` counts question numbers ("Choose TWO" = 2), as the page shows.
+- Topic names in the help language (`?lang=` → token → `Accept-Language`),
+  per item with fallback, else the slug.
+- Signed in: `done`, `bestScore` (best score/total ratio) and `notDone`
+  (hide attempted ones); anonymous: `done` false, `bestScore` null, `notDone`
+  ignored.
+- Order: newest published first, then title.
+- Public (`CatalogAccessRules`); a valid token adds the learner's progress.
+
+---
+
 ## 9. REST API summary
 
 | Method | Path | Access | Success |
@@ -687,6 +727,8 @@ refused by the database (`attempt_answer` → `question` is RESTRICT) → generi
 | POST | `/api/v1/auth/refresh` | refresh cookie | 200 + new cookie |
 | POST | `/api/v1/auth/logout` | refresh cookie | 204 |
 | GET | `/api/v1/auth/me` | token | 200 |
+| GET | `/api/v1/exercises?…filters` | public (token optional) | 200 |
+| GET | `/api/v1/exercises/filters?lang=` | public | 200 |
 | GET | `/api/v1/passages/{slug}?lang=` | public | 200 |
 | POST | `/api/v1/attempts` | public (token optional) | 201 |
 | GET | `/api/v1/admin/passages` | ADMIN/AUTHOR | 200 |
@@ -717,7 +759,10 @@ unknown URLs are covered too).
 
 ## 10. What the frontend will need (UI tasks, not in this spec)
 
-Planned as tasks in `.kiro/specs/frontend/` (foundation, reading, admin).
+**Done** — `.kiro/specs/frontend/` (foundation, reading, admin, final pass):
+`auth.js` + sign-in pages + admin guard, the reading page on §7.4, the
+admin editor on §8.4, both public fixtures deleted, browser-tested in
+headless Chrome.
 
 - `auth.js`: login form handling, access token kept in memory, silent
   `POST /api/v1/auth/refresh` on page load, `apiFetch()` adding the Bearer
@@ -819,6 +864,8 @@ Tactical design (7–13):
     the JSON key.
 15. **A question learners have answered can't be removed** (422 with its
     number); archive the exercise instead.
+16. **Catalog has no domain layer**: browsing is a read-only query; an
+    aggregate would have nothing to guard (§8b).
 
 ### Open — product decisions needed
 
@@ -829,12 +876,10 @@ Tactical design (7–13):
 - `refresh_token` rows are never cleaned up (one new row per page load).
 - Two tabs refreshing at the same moment end the session (the session lock
   makes this deterministic). Recommended fix: `auth.js` lets one tab refresh
-  and the others reuse its result. Planned: frontend foundation task 2.
+  and the others reuse its result. **Done** in frontend foundation task 2 (Web Locks), browser-tested.
 
-### Open — UI side (separate tasks)
+### UI side — closed
 
-- The admin editor still writes `data-az` and has no per-language meanings; it
-  needs a UI update to use this API.
-- `static/js/reading/fixtures.js` and `static/js/admin/fixtures.js` contain
-  answer keys and are publicly served; remove them when the UIs switch to the
-  API.
+- The admin editor uses `data-g` with meanings per language (frontend admin
+  task 3); both public fixtures with answer keys are deleted (reading task 5,
+  admin task 7; `GET` on them is 404, browser-tested).

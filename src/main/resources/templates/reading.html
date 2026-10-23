@@ -7,10 +7,9 @@
 </head>
 <body>
 <!--
-  Reading practice shell. All dynamic content (title, passage, questions, timer)
-  is filled by reading.js from the REST API. Only the session id + API base are
-  embedded here. Reading aids (gloss popover, highlight button) are present but
-  inert until later tasks wire the behaviour.
+  Reading practice shell. All dynamic content (title, passage, questions, timer,
+  word meanings) is filled by reading.js from the learner API. Only the slug and
+  the API base are embedded here; answers arrive only after submitting.
 -->
 <main class="reading" id="reading-root"
       th:attr="data-session-id=${sessionId}" data-api-base="/api/v1">
@@ -21,6 +20,10 @@
                 <small id="stageLabel">Loading…</small>
                 <span id="passageTitle">&nbsp;</span>
             </h1>
+            <label class="help-lang">
+                <span>Help</span>
+                <select id="helpLang" aria-label="Help language (word meanings and explanations)"></select>
+            </label>
             <span class="timer" id="timer" aria-live="off">--:--</span>
             <button class="btn btn--primary" id="submit" type="button" disabled>Submit</button>
         </div>
@@ -31,7 +34,7 @@
             <p class="label">Reading passage</p>
             <div id="passage" class="panel__status">Loading passage…</div>
             <details class="vocab" hidden>
-                <summary>Word list (Azərbaycanca)</summary>
+                <summary id="vocabTitle">Word list</summary>
                 <div class="vlist" id="vlist"></div>
             </details>
         </section>

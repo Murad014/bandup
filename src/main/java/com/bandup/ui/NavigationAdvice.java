@@ -20,7 +20,7 @@ public class NavigationAdvice {
     @ModelAttribute("navItems")
     public List<NavItem> navItems() {
         return List.of(
-                new NavItem(READING, "Reading", "/reading/yellowstone-wolves", true, false),
+                new NavItem(READING, "Reading", "/reading", true, false),
                 new NavItem(GRAMMAR, "Grammar", "#", false, true));
     }
 }

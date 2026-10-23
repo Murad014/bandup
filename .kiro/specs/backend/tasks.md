@@ -17,6 +17,7 @@ This file holds the **foundation** (architecture + shared kernel) and the
 | 2 | Identity 1–3: users, login, JWT | [`identity/tasks.md`](identity/tasks.md) |
 | 3 | Practice 1–3: learner passage, attempts, grading | [`practice/tasks.md`](practice/tasks.md) |
 | 4 | Content 1–4: authoring, publish rules, sanitizer, admin API | [`content/tasks.md`](content/tasks.md) |
+| 5 | Catalog 1 (phase 2): browse and filter + catalog page | [`catalog/tasks.md`](catalog/tasks.md) |
 
 Practice and Content depend only on the foundation for their domain and
 adapter tasks; their API tasks also need Identity (token user, role checks).
@@ -86,11 +87,11 @@ adapter tasks; their API tasks also need Identity (token user, role checks).
 
 ## Follow-ups outside these lists (need separate approval)
 
-- **UI:** planned in [`../frontend/tasks.md`](../frontend/tasks.md)
+- **UI:** done — [`../frontend/tasks.md`](../frontend/tasks.md)
   (foundation: page shells, `auth.js`, sign-in, admin guard),
   [`../frontend/reading/tasks.md`](../frontend/reading/tasks.md) and
   [`../frontend/admin/tasks.md`](../frontend/admin/tasks.md).
-- **Phase 2:** Catalog (browse/filter), Google sign-in, email verification /
+- **Phase 2:** ~~Catalog (browse/filter)~~ done (`catalog/tasks.md`); Google sign-in, email verification /
   password reset.
 - **After first production:** Media (images/audio; diagram questions, Listening).
 
@@ -99,5 +100,5 @@ adapter tasks; their API tasks also need Identity (token user, role checks).
 - Registration reveals whether an email exists (409) while login hides it.
 - No rate limiting of login attempts (a lockout needs a new table).
 - `refresh_token` rows are never cleaned up.
-- Two tabs refreshing at once end the session; fix planned in `auth.js`
+- ~~Two tabs refreshing at once end the session~~: fixed in `auth.js`
   (frontend foundation task 2: single-flight refresh across tabs).

@@ -510,7 +510,9 @@ GET /api/v1/exercises?skill=READING&format=MINI&level=B1&type=TFNG
 
 Only PUBLISHED exercises are listed. `topics[].name` is resolved in `lang`
 with fallback. `bestScore` is present only for logged-in users who have
-attempted it. The response never includes answers.
+attempted it. The response never includes answers. Built in backend
+phase 2 (backend design §8b), which also adds `done` per card and
+`GET /api/v1/exercises/filters` for the page's filter choices.
 
 ### 5.1 Learner `GET /api/v1/passages/{slug}?lang=az`
 

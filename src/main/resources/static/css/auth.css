@@ -1,0 +1,18 @@
+/* Sign-in and sign-up pages. */
+.auth { display: flex; justify-content: center; padding: 48px 16px; }
+.auth-card { width: 100%; max-width: 420px; background: var(--paper); border: 1px solid var(--line);
+    border-radius: 16px; padding: 28px; }
+.auth-title { font: 600 1.6rem/1.2 var(--display, serif); margin: 0 0 20px; }
+.auth-error { color: var(--bad); background: var(--bad-soft); border-radius: 10px; padding: 10px 12px; margin: 0 0 16px; }
+.auth-submit { width: 100%; justify-content: center; margin-top: 4px; }
+.auth-alt { color: var(--muted); font-size: .9rem; margin: 18px 0 0; text-align: center; }
+.auth-alt a { color: var(--accent); }
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+.field label { font-weight: 500; font-size: .85rem; color: var(--muted); }
+.field input, .field select { font: 400 .95rem var(--ui, inherit); padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--surface); color: var(--fg); }
+.field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.field .hint { color: var(--muted); font-size: .8rem; }
+.field .err { color: var(--bad); font-size: .8rem; }
+.field .err:empty { display: none; }
+.field.has-error input, .field.has-error select { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }

@@ -39,6 +39,10 @@
                 <button class="admin-nav__link admin-nav__theme" type="button" data-theme-toggle aria-label="Toggle theme">
                     <span data-theme-icon aria-hidden="true">☾</span> <span>Theme</span>
                 </button>
+                <p class="admin-account" data-admin-account hidden>
+                    <span class="admin-account__name" data-admin-username></span>
+                    <button class="admin-nav__link admin-account__signout" type="button" data-admin-signout>Sign out</button>
+                </p>
                 <a class="admin-nav__link" th:href="@{/}">↩ Exit to app</a>
             </div>
         </aside>
@@ -49,5 +53,6 @@
     </div>
 
     <script th:src="@{/js/admin/sidebar.js}" defer></script>
+    <script type="module" th:src="@{/js/admin/guard.js}"></script>
 </body>
 </html>
