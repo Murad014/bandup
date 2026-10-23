@@ -11,6 +11,7 @@ import com.bandup.api.identity.domain.user.repository.UserRepository;
 import com.bandup.api.identity.domain.user.valueobject.Email;
 import com.bandup.api.identity.domain.user.valueobject.NewPassword;
 import com.bandup.api.identity.domain.user.valueobject.PasswordHash;
+import com.bandup.api.shared.application.TooManyRequestsException;
 import com.bandup.api.shared.application.UnauthenticatedException;
 import com.bandup.api.shared.domain.error.DomainException;
 
@@ -33,17 +34,25 @@ public class Login {
     private final PasswordHasher hasher;
     private final SessionIssuer sessions;
     private final Clock clock;
+    private final LoginThrottling throttling;
     private final PasswordHash timingDummy;
 
-    public Login(UserRepository users, PasswordHasher hasher, SessionIssuer sessions, Clock clock) {
+    public Login(UserRepository users, PasswordHasher hasher, SessionIssuer sessions, Clock clock,
+            LoginThrottling throttling) {
         this.users = users;
         this.hasher = hasher;
         this.sessions = sessions;
         this.clock = clock;
+        this.throttling = throttling;
         this.timingDummy = hasher.hash(NewPassword.of("timing-dummy-password"));
     }
 
-    public record Command(String email, String password) {
+    /** @param clientAddress the caller's network address (for the per-client limit); may be null */
+    public record Command(String email, String password, String clientAddress) {
+
+        public Command(String email, String password) {
+            this(email, password, null);
+        }
 
         @Override
         public String toString() {
@@ -51,12 +60,20 @@ public class Login {
         }
     }
 
+    /**
+     * @throws TooManyRequestsException (429) while the email or the client is locked after too many
+     *         failures — checked before the password, for any email, so it reveals nothing
+     * @throws UnauthenticatedException (401) for any wrong combination
+     */
     public SignedIn login(Command command) {
+        throttling.checkAllowed(command.email(), command.clientAddress());
         Optional<User> found = parseEmail(command.email()).flatMap(users::findByEmail);
         boolean passwordMatches = hasher.matches(command.password(), found.map(User::passwordHash).orElse(timingDummy));
         if (found.isEmpty() || !passwordMatches || !found.get().canAuthenticate()) {
+            throttling.recordFailure(command.email(), command.clientAddress());
             throw new UnauthenticatedException(WRONG_CREDENTIALS);
         }
+        throttling.recordSuccess(command.email());
         return sessions.start(found.get(), clock.instant());
     }
 

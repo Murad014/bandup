@@ -1,5 +1,6 @@
 package com.bandup.api.identity.domain.session.repository;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import com.bandup.api.identity.domain.session.aggregate.Session;
@@ -17,4 +18,11 @@ public interface SessionRepository {
 
     /** Inserts new tokens and updates changed ones. */
     void save(Session session);
+
+    /**
+     * Deletes whole sessions that ended before {@code cutoff}: every token is
+     * replaced, or expired / revoked before the cutoff. Live sessions are never
+     * touched. Returns how many tokens were deleted.
+     */
+    int deleteEndedBefore(Instant cutoff);
 }

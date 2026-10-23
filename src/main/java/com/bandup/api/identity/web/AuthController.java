@@ -1,5 +1,7 @@
 package com.bandup.api.identity.web;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -53,8 +55,9 @@ class AuthController {
     }
 
     @PostMapping("/login")
-    ResponseEntity<AuthResponse> login(@RequestBody AuthRequests.Login body) {
-        return signedIn(login.login(new Login.Command(body.email(), body.password())));
+    ResponseEntity<AuthResponse> login(@RequestBody AuthRequests.Login body, HttpServletRequest request) {
+        // The direct peer's address. Behind a reverse proxy, configure forwarded headers (see the deployment notes).
+        return signedIn(login.login(new Login.Command(body.email(), body.password(), request.getRemoteAddr())));
     }
 
     /** Called on every page load: the access token lives only in the page's memory. */

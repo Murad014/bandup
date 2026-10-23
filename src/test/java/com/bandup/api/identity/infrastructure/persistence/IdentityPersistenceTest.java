@@ -151,6 +151,28 @@ class IdentityPersistenceTest {
     }
 
     @Test
+    void aGraceRotationIsStoredAsAChain() {
+        User aysel = savedLearner();
+        Session session = Session.start(aysel.id(), hash('a'), NOW, LIFETIME);
+        session.present(hash('a'), hash('b'), NOW, LIFETIME);
+        sessions.save(session);
+        em.flush();
+        em.clear();
+
+        Session again = sessions.findByTokenHash(hash('a')).orElseThrow();
+        var outcome = again.present(hash('a'), hash('c'), NOW.plusSeconds(5), LIFETIME); // the reply to a → b was lost
+        sessions.save(again);
+        em.flush();
+        em.clear();
+
+        assertThat(outcome).isInstanceOf(Session.Rotated.class);
+        Session stored = sessions.findByTokenHash(hash('c')).orElseThrow();
+        assertThat(stored.token(hash('b')).orElseThrow().replacedBy()).contains(hash('c'));
+        assertThat(stored.token(hash('c')).orElseThrow().isUsable(NOW.plusSeconds(5))).isTrue();
+        assertThat(stored.isRevoked()).isFalse();
+    }
+
+    @Test
     void reuseRevokesTheWholeStoredSession() {
         User aysel = savedLearner();
         Session session = Session.start(aysel.id(), hash('a'), NOW, LIFETIME);
@@ -160,7 +182,8 @@ class IdentityPersistenceTest {
         em.clear();
 
         Session copied = sessions.findByTokenHash(hash('a')).orElseThrow();
-        var outcome = copied.present(hash('a'), hash('c'), NOW.plusSeconds(5), LIFETIME);
+        // After the grace window: theft, not a lost reply.
+        var outcome = copied.present(hash('a'), hash('c'), NOW.plus(Session.REUSE_GRACE).plusSeconds(1), LIFETIME);
         sessions.save(copied);
         em.flush();
         em.clear();

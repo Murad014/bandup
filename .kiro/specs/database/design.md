@@ -127,6 +127,9 @@ create table user_role (
 );
 ```
 
+**Login limits (V6):** `login_throttle(throttle_key pk, failures, window_started_at,
+locked_until)` — one row per email or client address (backend requirement 8.12).
+
 **Login tables (V3, for email/password sign-in with JWT):**
 
 ```sql

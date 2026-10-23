@@ -22,6 +22,7 @@ form.addEventListener("submit", async (event) => {
     } catch (e) {
         busy(form, false);
         showFormError(form, e.status === 401 ? "Wrong email or password."
+                : e.status === 429 ? e.message // "Too many sign-in attempts. Try again in N minutes."
                 : "Couldn't sign in right now. Please try again.");
         form.password.value = "";
         form.password.focus();
