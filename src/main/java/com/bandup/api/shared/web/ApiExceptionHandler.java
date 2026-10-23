@@ -3,7 +3,9 @@ package com.bandup.api.shared.web;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -15,6 +17,7 @@ import com.bandup.api.shared.application.ConflictException;
 import com.bandup.api.shared.application.ForbiddenException;
 import com.bandup.api.shared.application.InvalidRequestException;
 import com.bandup.api.shared.application.NotFoundException;
+import com.bandup.api.shared.application.TooManyRequestsException;
 import com.bandup.api.shared.application.UnauthenticatedException;
 import com.bandup.api.shared.domain.error.DomainException;
 
@@ -55,6 +58,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UnauthenticatedException.class)
     ProblemDetail unauthenticated(UnauthenticatedException e) {
         return ApiProblems.unauthenticated(e.getMessage());
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    ResponseEntity<ProblemDetail> tooMany(TooManyRequestsException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, e.retryAfter().toSeconds())))
+                .body(ApiProblems.of(HttpStatus.TOO_MANY_REQUESTS, "Too many attempts", e.getMessage()));
     }
 
     @ExceptionHandler(ForbiddenException.class)

@@ -98,7 +98,7 @@ adapter tasks; their API tasks also need Identity (token user, role checks).
 ## Open product decisions (Identity; see design §13)
 
 - Registration reveals whether an email exists (409) while login hides it.
-- No rate limiting of login attempts (a lockout needs a new table).
-- `refresh_token` rows are never cleaned up.
+- ~~No rate limiting of login attempts~~: done (identity task 11).
+- ~~`refresh_token` rows are never cleaned up~~: done (identity task 12).
 - ~~Two tabs refreshing at once end the session~~: fixed in `auth.js`
   (frontend foundation task 2: single-flight refresh across tabs).

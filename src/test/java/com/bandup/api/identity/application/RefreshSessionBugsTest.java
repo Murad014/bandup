@@ -70,9 +70,16 @@ class RefreshSessionBugsTest {
         }
         pool.shutdown();
 
-        assertThat(succeeded).isLessThanOrEqualTo(1);
-        // The first token has at most one successor: the session was never forked.
-        assertThat(jdbc.queryForObject("select count(*) from refresh_token", Integer.class)).isLessThanOrEqualTo(2);
+        // The 1st rotates; the 2nd counts as a lost reply (grace window) and rotates once more; any further
+        // copy is theft and ends the session. The chain never forks: each token has at most one successor.
+        assertThat(succeeded).isLessThanOrEqualTo(2);
+        assertThat(jdbc.queryForObject("select count(*) from refresh_token", Integer.class)).isLessThanOrEqualTo(3);
+        assertThat(jdbc.queryForObject("select count(distinct replaced_by) = count(replaced_by) from refresh_token", Boolean.class))
+                .isTrue();
+        if (succeeded == 2) {
+            assertThat(jdbc.queryForObject("select count(*) from refresh_token where revoked_at is null", Integer.class))
+                    .as("8 copies at once: the session ends").isZero();
+        }
     }
 
     /**
@@ -87,6 +94,8 @@ class RefreshSessionBugsTest {
         for (int round = 0; round < 10; round++) {
             String old = login.login(new Login.Command("aysel@example.com", PASSWORD)).refreshToken();
             String current = refreshSession.refresh(old).refreshToken();
+            // Outside the grace window: within 30 s a replayed old token can't be told from a lost reply.
+            jdbc.update("update refresh_token set issued_at = issued_at - interval '60 seconds' where replaced_by is null");
             CountDownLatch start = new CountDownLatch(1);
             List<Future<?>> both = new ArrayList<>();
             for (String token : List.of(old, current)) {

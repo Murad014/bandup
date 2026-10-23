@@ -203,7 +203,9 @@ depends on no technology.
    the API SHALL return a new access token and **rotate** the refresh token
    (the old one stops working). IF an already-used refresh token is presented
    THEN the whole login session (every token from that sign-in, including the
-   newest) SHALL be revoked. Concurrent uses of one session SHALL be processed
+   newest) SHALL be revoked — except within 30 seconds of its rotation while
+   the token that replaced it was never used (the browser lost the reply,
+   e.g. it left the page mid-refresh): then it SHALL rotate again. Concurrent uses of one session SHALL be processed
    one after another. A failed refresh SHALL answer `401` and clear the cookie,
    and its revocations SHALL still be saved.
 5. WHEN `POST /api/v1/auth/logout` is called THEN the whole session of that
@@ -228,6 +230,15 @@ depends on no technology.
     `Authorization` header, so a stale access token can't block them. On every
     other endpoint, public ones included, an invalid or expired token SHALL be
     rejected (`401`) rather than treated as anonymous.
+12. Sign-in attempts SHALL be limited: 5 wrong passwords for one email within
+    15 minutes, or 30 failures from one client address within 15 minutes,
+    lock that email / address for 15 minutes. While locked, sign-in SHALL be
+    refused with `429` and `Retry-After` before the password is checked —
+    for any email, with or without an account, so it reveals nothing. A
+    successful sign-in clears the email's count.
+13. Ended login sessions (every token expired or revoked) and idle sign-in
+    counters SHALL be deleted after a day by a nightly job; live sessions and
+    active locks SHALL never be touched.
 
 ---
 

@@ -24,7 +24,10 @@ import com.bandup.api.shared.domain.ddd.AggregateRoot;
  *   <li>Presenting a usable token rotates it: the token is marked replaced and
  *       a new one is added.</li>
  *   <li>Presenting a replaced token means it was copied: the whole session is
- *       revoked, including the newest token (the real user signs in again).</li>
+ *       revoked, including the newest token (the real user signs in again).
+ *       Except within {@link #REUSE_GRACE} of its rotation while the token
+ *       that replaced it is still unused: the browser lost the reply to its
+ *       refresh (e.g. it left the page), so the session rotates again.</li>
  *   <li>Expired or revoked tokens are rejected and nothing changes.</li>
  *   <li>Logging out revokes the whole session.</li>
  * </ul>
@@ -49,6 +52,13 @@ public final class Session {
 
     public record Rejected(Reason reason) implements Outcome {
     }
+
+    /**
+     * How long a replaced token may come back without counting as theft, as
+     * long as the token that replaced it was never used: a browser that left a
+     * page mid-refresh never stored the new token (approved by the user).
+     */
+    public static final Duration REUSE_GRACE = Duration.ofSeconds(30);
 
     private final SessionId id;
     private final UserId userId;
@@ -101,6 +111,17 @@ public final class Session {
                 yield new Rotated(successor);
             }
             case REPLACED -> {
+                Optional<RefreshToken> unusedSuccessor = token.replacedBy().flatMap(this::token)
+                        .filter(successor -> successor.isUsable(now))
+                        .filter(successor -> !now.isAfter(successor.issuedAt().plus(REUSE_GRACE)));
+                if (unusedSuccessor.isPresent()) {
+                    // The browser lost the reply to its last refresh: hand out a new token instead.
+                    RefreshToken successor = unusedSuccessor.get();
+                    RefreshToken fresh = RefreshToken.issue(next, now, lifetime);
+                    tokens.set(tokens.indexOf(successor), successor.withReplacedBy(next));
+                    tokens.add(fresh);
+                    yield new Rotated(fresh);
+                }
                 revoke(now);
                 yield new Rejected(Reason.REUSED);
             }

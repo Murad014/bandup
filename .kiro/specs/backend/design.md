@@ -223,7 +223,9 @@ session/                                      ← Session aggregate (one login s
     start(userId, firstHash, now, lifetime) · restore(id, userId, tokens)
     present(hash, nextHash, now, lifetime) → Rotated(next) | Rejected(EXPIRED | REVOKED | REUSED)
         USABLE   → token copy marked replaced, new token added
-        REPLACED → token was copied: revoke the WHOLE session (incl. the newest token)
+        REPLACED → token was copied: revoke the WHOLE session (incl. the newest token) —
+                   except within REUSE_GRACE (30 s) of its rotation while its successor is
+                   unused: the browser lost the reply → rotate again (successor → fresh)
         EXPIRED / REVOKED → rejected, nothing changes
     revoke(now) · isRevoked() · token(hash) · newestToken()
     invariants: ≥ 1 token, no duplicate hashes, every successor inside the session
@@ -268,7 +270,26 @@ locks every row of the session twice: a `FOR UPDATE` that had to wait can't
 see rows inserted meanwhile (READ COMMITTED), but once the session's rows are
 held no one can add more, so the second read is complete. This makes
 concurrent uses of one session run one after another (a copied old token
-racing the real user's new one always ends with the whole session revoked).
+racing the real user's new one always ends with the whole session revoked,
+once the grace window has passed — within 30 s a replayed old token can't be
+told from a lost reply, a trade-off approved by the user).
+
+**Login limits** (`LoginThrottling`, module `domain.throttle`: aggregate
+`LoginThrottle`, value objects `ThrottleKey`, `ThrottlePolicy`, repository
+`LoginThrottleRepository` → `JdbcLoginThrottleRepository`, table
+`login_throttle` from V6): before the password check, the email key and the
+client-address key must not be locked (else `TooManyRequestsException` →
+429 + `Retry-After`). A wrong password counts for both keys (rows locked, so
+concurrent failures all count); 5 per email / 30 per address within 15 min
+lock for 15 min. Success deletes the email's counter. Each step is its own
+short transaction; BCrypt stays outside. The client address is
+`request.getRemoteAddr()` — **behind a reverse proxy, forwarded headers must
+be configured**, or every user shares the proxy's address.
+
+**Clean-up** (`PurgeEndedSessions`, `SessionCleanupSchedule`, nightly at
+03:30, `bandup.auth.cleanup-cron`): deletes whole sessions whose tokens are
+all replaced / expired / revoked for over a day
+(`SessionRepository.deleteEndedBefore`), and counters idle for a day.
 
 **Logout** (`Logout`, 204): revokes the whole session, clears the cookie;
 idempotent (missing or unknown cookie is fine).
@@ -866,14 +887,19 @@ Tactical design (7–13):
     number); archive the exercise instead.
 16. **Catalog has no domain layer**: browsing is a read-only query; an
     aggregate would have nothing to guard (§8b).
+17. **Refresh grace window** (30 s, unused successor) and **login limits**
+    (5 per email / 30 per address per 15 min) — approved by the user.
 
 ### Open — product decisions needed
 
 - The admin editor must switch to the §8.4 contract (ids, nested answers,
   `data-g`, meanings per language); a UI task.
 - Registration reveals whether an email exists (409), while login hides it.
-- No rate limiting of login attempts (a lockout would need a new table).
-- `refresh_token` rows are never cleaned up (one new row per page load).
+- ~~No rate limiting of login attempts~~ — done (requirement 8.12).
+- ~~`refresh_token` rows are never cleaned up~~ — done (requirement 8.13).
+- ~~Leaving a page mid-refresh can end the session~~ — done: 30 s grace (8.4).
+- Deployment: configure forwarded headers behind a proxy (login limits use
+  the client address).
 - Two tabs refreshing at the same moment end the session (the session lock
   makes this deterministic). Recommended fix: `auth.js` lets one tab refresh
   and the others reuse its result. **Done** in frontend foundation task 2 (Web Locks), browser-tested.

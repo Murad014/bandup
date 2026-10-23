@@ -1,10 +1,14 @@
 package com.bandup.api.identity.infrastructure.persistence;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import jakarta.persistence.EntityManager;
 
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Repository;
@@ -32,8 +36,10 @@ class JpaSessionRepository implements SessionRepository {
 
     private final RefreshTokenJpaRepository tokens;
     private final UserJpaRepository users;
+    private final EntityManager entityManager;
 
-    JpaSessionRepository(RefreshTokenJpaRepository tokens, UserJpaRepository users) {
+    JpaSessionRepository(RefreshTokenJpaRepository tokens, UserJpaRepository users, EntityManager entityManager) {
+        this.entityManager = entityManager;
         this.tokens = tokens;
         this.users = users;
     }
@@ -100,5 +106,17 @@ class JpaSessionRepository implements SessionRepository {
     /** The real entity behind a possible lazy proxy (null stays null). */
     private static RefreshTokenEntity real(RefreshTokenEntity entity) {
         return (RefreshTokenEntity) Hibernate.unproxy(entity);
+    }
+
+    @Override
+    @Transactional
+    public int deleteEndedBefore(Instant cutoff) {
+        // One statement per call: replaced_by points inside the same session, and the whole session goes at once.
+        return entityManager.createNativeQuery("""
+                delete from refresh_token where family_id in (
+                    select family_id from refresh_token group by family_id
+                    -- coalesce: a never-revoked token gives NULL here, and bool_and would skip it (deleting live sessions)
+                    having bool_and(replaced_by is not null or coalesce(revoked_at < ?1, false) or expires_at < ?1))""")
+                .setParameter(1, Timestamp.from(cutoff)).executeUpdate();
     }
 }

@@ -250,3 +250,38 @@ requested, one at a time, and ends green (`sh gradlew test`).
     collected by `RegisterLearner` with email, password and languages.
   - _Verified_: regression test failed first, then passed;
     `AuthApiTest` 13 green.
+
+- [x] 10. Fix: leaving a page mid-refresh signed the user out
+  - Found by a Selenium scenario (1 in 10 in an experiment): the browser
+    dropped the reply to a refresh, sent the replaced token again, and reuse
+    detection ended the session. `Session.present`: a replaced token within
+    `REUSE_GRACE` (30 s) whose successor is unused rotates again; otherwise
+    still theft. Approved by the user.
+  - _Verified_: 3 domain tests first (the grace one failed), persistence
+    test of a grace rotation, API test "a refresh whose reply was lost can be
+    repeated"; theft tests now replay after the real user moved on or after
+    the window (`AuthApiTest`, `IdentityPersistenceTest`,
+    `RefreshSessionBugsTest`: 8 copies at once → ≤ 2 through, chain never
+    forks, session ends).
+
+- [x] 11. Login limits (requirement 8.12)
+  - Migration V6 `login_throttle`; module `domain.throttle`
+    (`LoginThrottle`, `ThrottleKey`, `ThrottlePolicy`,
+    `LoginThrottleRepository`); `LoginThrottling`; `JdbcLoginThrottleRepository`;
+    `TooManyRequestsException` → 429 + `Retry-After`; `Login.Command` carries
+    the client address; the sign-in page shows the 429 message.
+  - _Verified_: `LoginThrottleTest` (4); `AuthApiTest` +4: 5 wrong → even the
+    right password gets 429 (Retry-After ≈ 900, message), other emails fine;
+    an email without an account locks the same way; success clears the count;
+    30 failures from one address lock it, another address is fine. Mutation
+    check: without the check 3 tests fail.
+
+- [x] 12. Nightly clean-up (requirement 8.13)
+  - `PurgeEndedSessions` + `SessionCleanupSchedule` (`@EnableScheduling`);
+    `SessionRepository.deleteEndedBefore`, `LoginThrottleRepository.deleteIdleSince`.
+  - **Bug found by the test before it shipped:** `bool_and` skips NULL, so a
+    never-revoked token didn't count and live sessions would have been
+    deleted; fixed with `coalesce`.
+  - _Verified_: `PurgeEndedSessionsTest`: live and just-revoked sessions
+    kept, long-expired and long-revoked ones deleted whole; idle counter
+    deleted, active lock and recent counter kept.

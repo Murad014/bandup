@@ -65,6 +65,49 @@ class SessionTest {
         assertThat(session.token(hash('c'))).isEmpty();
     }
 
+    /**
+     * The browser left a page while its refresh was in flight: the server
+     * rotated a → b, but the browser never stored b and sends a again. Within
+     * the grace window, with b never used, that's not theft: rotate again.
+     */
+    @Test
+    void aReplacedTokenComingBackWithinTheGraceWindowRotatesAgainWhenItsSuccessorWasNeverUsed() {
+        Session session = Session.start(AYSEL, hash('a'), NOW, LIFETIME);
+        session.present(hash('a'), hash('b'), LATER, LIFETIME);
+
+        var outcome = session.present(hash('a'), hash('c'), LATER.plus(Session.REUSE_GRACE), LIFETIME);
+
+        assertThat(outcome).isEqualTo(new Rotated(session.token(hash('c')).orElseThrow()));
+        assertThat(session.isRevoked()).isFalse();
+        assertThat(session.token(hash('b')).orElseThrow().replacedBy()).contains(hash('c')); // b can't be used any more
+        assertThat(session.token(hash('c')).orElseThrow().isUsable(LATER.plus(Session.REUSE_GRACE))).isTrue();
+        assertThat(session.tokens()).extracting(RefreshToken::hash).containsExactly(hash('a'), hash('b'), hash('c'));
+    }
+
+    @Test
+    void aReplacedTokenComingBackAfterTheGraceWindowIsTheft() {
+        Session session = Session.start(AYSEL, hash('a'), NOW, LIFETIME);
+        session.present(hash('a'), hash('b'), LATER, LIFETIME);
+
+        var outcome = session.present(hash('a'), hash('c'), LATER.plus(Session.REUSE_GRACE).plusSeconds(1), LIFETIME);
+
+        assertThat(outcome).isEqualTo(new Rejected(Reason.REUSED));
+        assertThat(session.isRevoked()).isTrue();
+    }
+
+    @Test
+    void aReplacedTokenComingBackAfterItsSuccessorWasUsedIsTheftEvenWithinTheGraceWindow() {
+        Session session = Session.start(AYSEL, hash('a'), NOW, LIFETIME);
+        session.present(hash('a'), hash('b'), LATER, LIFETIME);
+        session.present(hash('b'), hash('c'), LATER.plusSeconds(5), LIFETIME); // b was really used
+
+        var outcome = session.present(hash('a'), hash('d'), LATER.plusSeconds(10), LIFETIME);
+
+        assertThat(outcome).isEqualTo(new Rejected(Reason.REUSED));
+        assertThat(session.isRevoked()).isTrue();
+        assertThat(session.token(hash('d'))).isEmpty();
+    }
+
     @Test
     void anExpiredTokenIsRejectedAndNothingChanges() {
         Session session = Session.start(AYSEL, hash('a'), NOW, LIFETIME);
@@ -88,9 +131,10 @@ class SessionTest {
     void reuseAfterTheSessionWasAlreadyRevokedIsJustRejected() {
         Session session = Session.start(AYSEL, hash('a'), NOW, LIFETIME);
         session.present(hash('a'), hash('b'), LATER, LIFETIME);
-        session.present(hash('a'), hash('c'), LATER, LIFETIME); // theft → revoked
+        session.present(hash('b'), hash('c'), LATER, LIFETIME);  // the real user used b
+        session.present(hash('a'), hash('d'), LATER, LIFETIME); // theft → revoked
 
-        assertThat(session.present(hash('a'), hash('d'), LATER.plusSeconds(1), LIFETIME)).isEqualTo(new Rejected(Reason.REVOKED));
+        assertThat(session.present(hash('a'), hash('e'), LATER.plusSeconds(1), LIFETIME)).isEqualTo(new Rejected(Reason.REVOKED));
     }
 
     @Test

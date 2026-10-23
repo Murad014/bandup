@@ -89,3 +89,9 @@ when requested.
     sequence, and rows without an id still get a new one; other tables (e.g.
     `topic`) still reject chosen ids. Dev `bandup` gets V5 at next app start.
   - _Requirements: 4.5_
+
+- [x] 7. `V6__login_throttle.sql`
+  - `login_throttle` (key `email:…` / `ip:…`, failures, window start, locked
+    until) for the login limits (backend requirement 8.12). 29 tables.
+  - _Verified_: `SchemaConstraintsTest` counts 29 tables; Hibernate is not
+    involved (plain SQL adapter).

@@ -49,6 +49,7 @@ class AuthApiTest {
 
     @BeforeEach
     void cleanAccounts() {
+        jdbc.update("delete from login_throttle"); // all tests sign in from the same test address
         jdbc.update("delete from refresh_token");
         jdbc.update("delete from app_user");
     }
@@ -171,6 +172,7 @@ class AuthApiTest {
         registerAysel();
         String first = refreshCookie(login("aysel@example.com", PASSWORD).andReturn());
         String second = refreshCookie(refresh(first).andReturn());
+        String third = refreshCookie(refresh(second).andReturn()); // the real user keeps going
 
         // Someone replays the first (copied) token.
         refresh(first)
@@ -178,9 +180,76 @@ class AuthApiTest {
                 .andExpect(header().string("Set-Cookie", containsString("Max-Age=0")))
                 .andExpect(jsonPath("$.title").value("Not signed in"));
 
-        // The revocation was committed despite the 401: the real user's newer token is dead too.
-        refresh(second).andExpect(status().isUnauthorized());
+        // The revocation was committed despite the 401: the real user's newest token is dead too.
+        refresh(third).andExpect(status().isUnauthorized());
         assertThat(jdbc.queryForObject("select count(*) from refresh_token where revoked_at is null", Integer.class)).isZero();
+    }
+
+    /** The browser left the page mid-refresh and never stored the new cookie: sending the old one again still works. */
+    @Test
+    void aRefreshWhoseReplyWasLostCanBeRepeated() throws Exception {
+        registerAysel();
+        String first = refreshCookie(login("aysel@example.com", PASSWORD).andReturn());
+        refresh(first).andExpect(status().isOk()); // reply lost: its cookie never reached the browser
+
+        String again = refreshCookie(refresh(first).andExpect(status().isOk()).andReturn());
+
+        refresh(again).andExpect(status().isOk());
+    }
+
+    // ------------------------------------------------------------ login limits
+
+    @Test
+    void fiveWrongPasswordsLockTheEmailEvenForTheRightPassword() throws Exception {
+        registerAysel();
+        for (int i = 0; i < 5; i++) {
+            login("aysel@example.com", "wrong-password-" + i).andExpect(status().isUnauthorized());
+        }
+
+        login("aysel@example.com", PASSWORD)
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", org.hamcrest.Matchers.matchesPattern("8\\d\\d|900")))
+                .andExpect(jsonPath("$.detail").value("Too many sign-in attempts. Try again in 15 minutes."));
+        // The lock is for that email only.
+        register(Map.of("email", "leyla@example.com", "password", PASSWORD, "displayName", "Leyla"));
+        login("leyla@example.com", PASSWORD).andExpect(status().isOk());
+    }
+
+    @Test
+    void anEmailWithoutAnAccountIsLockedTheSameWaySoNothingIsRevealed() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            login("nobody@example.com", "wrong-password-" + i).andExpect(status().isUnauthorized());
+        }
+        login("nobody@example.com", "wrong-password-x").andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void aSuccessfulSignInClearsTheCount() throws Exception {
+        registerAysel();
+        for (int i = 0; i < 4; i++) {
+            login("aysel@example.com", "wrong-password-" + i).andExpect(status().isUnauthorized());
+        }
+        login("aysel@example.com", PASSWORD).andExpect(status().isOk());
+        for (int i = 0; i < 4; i++) {
+            login("aysel@example.com", "wrong-password-" + i).andExpect(status().isUnauthorized());
+        }
+        login("aysel@example.com", PASSWORD).andExpect(status().isOk());
+    }
+
+    @Test
+    void oneMachineTryingManyEmailsIsLockedToo() throws Exception {
+        registerAysel();
+        for (int i = 0; i < 30; i++) {
+            loginFrom("10.0.0.7", "user" + i + "@example.com", "wrong-password").andExpect(status().isUnauthorized());
+        }
+        loginFrom("10.0.0.7", "aysel@example.com", PASSWORD).andExpect(status().isTooManyRequests());
+        loginFrom("10.0.0.8", "aysel@example.com", PASSWORD).andExpect(status().isOk()); // another machine is fine
+    }
+
+    private ResultActions loginFrom(String address, String email, String password) throws Exception {
+        return mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .with(request -> { request.setRemoteAddr(address); return request; })
+                .content(json.writeValueAsString(Map.of("email", email, "password", password))));
     }
 
     @Test
