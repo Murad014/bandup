@@ -35,11 +35,19 @@ public class BootstrapAdmin {
 
     /** @throws com.bandup.api.shared.domain.error.DomainException if the configured email or password is invalid */
     public Result ensureAdmin(String rawEmail, String rawPassword) {
+        return ensureAdmin(rawEmail, rawPassword, false);
+    }
+
+    /**
+     * @param localDevelopment the {@code local} profile: a short password (e.g. "admin") is allowed
+     * @throws com.bandup.api.shared.domain.error.DomainException if the configured email or password is invalid
+     */
+    public Result ensureAdmin(String rawEmail, String rawPassword, boolean localDevelopment) {
         if (users.existsWithRole(Role.ADMIN)) {
             return Result.ADMIN_ALREADY_EXISTS;
         }
         Email email = Email.of(rawEmail);
-        NewPassword password = NewPassword.of(rawPassword);
+        NewPassword password = localDevelopment ? NewPassword.forLocalDevelopment(rawPassword) : NewPassword.of(rawPassword);
         if (users.existsByEmail(email)) {
             return Result.EMAIL_TAKEN_BY_NON_ADMIN;
         }

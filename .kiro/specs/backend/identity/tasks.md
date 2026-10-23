@@ -285,3 +285,19 @@ requested, one at a time, and ends green (`sh gradlew test`).
   - _Verified_: `PurgeEndedSessionsTest`: live and just-revoked sessions
     kept, long-expired and long-revoked ones deleted whole; idle counter
     deleted, active lock and recent counter kept.
+
+- [x] 13. Local admin login: `admin@a.az` / `admin`
+  - Asked by the user: no settings to look up for local runs. `local`
+    profile is the default (`spring.profiles.default: local`);
+    `application-local.yaml` sets the admin and
+    `bandup.auth.allow-short-admin-password: true`;
+    `BootstrapAdmin.ensureAdmin(…, localDevelopment)` uses
+    `NewPassword.forLocalDevelopment` (non-blank, ≤ 72 bytes). Every other
+    password keeps the 10-character rule. Tests and `uiTest` run with the
+    `test` profile.
+  - The existing dev database admin (`admin@bandup.local`) was changed to
+    `admin@a.az` / `admin` directly (BCrypt hash made with the project's
+    Spring Security).
+  - _Verified_: `NewPasswordTest` +1, `BootstrapAdminTest` +1 (short password
+    refused unless local); the real app on the dev database: login
+    `admin@a.az` / `admin` → 200. 419 tests green.

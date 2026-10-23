@@ -33,6 +33,21 @@ public final class NewPassword {
         return new NewPassword(raw);
     }
 
+    /**
+     * Local development only (the {@code local} profile's first admin, e.g.
+     * "admin"): any non-blank password up to 72 bytes. Never used for accounts
+     * people register.
+     */
+    public static NewPassword forLocalDevelopment(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw DomainException.of("password", "Password is required.");
+        }
+        if (raw.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) {
+            throw DomainException.of("password", "Password is too long (at most " + MAX_BYTES + " bytes).");
+        }
+        return new NewPassword(raw);
+    }
+
     /** The raw password, only for the hasher. */
     public String reveal() {
         return value;

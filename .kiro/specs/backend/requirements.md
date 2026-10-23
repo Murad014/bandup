@@ -223,7 +223,9 @@ depends on no technology.
 9. THE first admin SHALL be created at startup from configuration
    (`BANDUP_ADMIN_EMAIL`, `BANDUP_ADMIN_PASSWORD`) when no admin exists. An
    existing account SHALL never be turned into an admin this way; an invalid
-   configured password SHALL stop startup.
+   configured password SHALL stop startup. Exception for local development
+   only: the `local` profile (the default when no profile is set) creates
+   `admin@a.az` / `admin`, and only there may the admin password be short.
 10. Disabled or deleted users SHALL NOT be able to log in, refresh or use
     `me`; their refresh SHALL revoke their whole session and issue nothing new.
 11. THE sign-in endpoints (register, login, refresh, logout) SHALL ignore the

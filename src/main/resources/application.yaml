@@ -1,6 +1,11 @@
 spring:
   application:
     name: bandup
+  # Without SPRING_PROFILES_ACTIVE the app runs with the "local" profile
+  # (application-local.yaml: the local admin login). Deployed environments set
+  # their own profile, so the local defaults never apply there.
+  profiles:
+    default: local
 
   # Local dev defaults; override with env vars in any shared/deployed environment.
   datasource:

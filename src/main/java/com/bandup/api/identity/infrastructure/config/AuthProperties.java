@@ -12,9 +12,11 @@ import com.bandup.api.identity.application.port.AuthSettings;
  * @param refreshTokenLifetime how long a login session lasts without being refreshed
  * @param adminEmail           first admin's email ({@code BANDUP_ADMIN_EMAIL}); blank = don't create one
  * @param adminPassword        first admin's password ({@code BANDUP_ADMIN_PASSWORD}); never committed
+ * @param allowShortAdminPassword only in the {@code local} profile: the first admin may have a short password
  */
 @ConfigurationProperties("bandup.auth")
-record AuthProperties(Duration refreshTokenLifetime, String adminEmail, String adminPassword) implements AuthSettings {
+record AuthProperties(Duration refreshTokenLifetime, String adminEmail, String adminPassword,
+        boolean allowShortAdminPassword) implements AuthSettings {
 
     AuthProperties {
         refreshTokenLifetime = refreshTokenLifetime == null ? Duration.ofDays(14) : refreshTokenLifetime;

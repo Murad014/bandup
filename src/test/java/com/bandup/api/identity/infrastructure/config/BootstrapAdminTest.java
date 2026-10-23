@@ -1,14 +1,17 @@
 package com.bandup.api.identity.infrastructure.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bandup.TestcontainersConfiguration;
+import com.bandup.api.shared.domain.error.DomainException;
 import com.bandup.api.identity.application.BootstrapAdmin;
 import com.bandup.api.identity.application.Login;
 
@@ -38,5 +41,15 @@ class BootstrapAdminTest {
     void theAdminCanSignIn() {
         var signedIn = login.login(new Login.Command("murad@example.com", "a-strong-admin-password"));
         assertThat(signedIn.user().roles()).containsExactly("ADMIN");
+    }
+
+    @Test
+    @Transactional
+    void onlyTheLocalProfileAllowsAShortAdminPassword() {
+        jdbc.update("delete from user_role where role = 'ADMIN'"); // as on a fresh database (rolled back)
+
+        assertThatThrownBy(() -> bootstrapAdmin.ensureAdmin("admin@a.az", "admin")).isInstanceOf(DomainException.class);
+        assertThat(bootstrapAdmin.ensureAdmin("admin@a.az", "admin", true)).isEqualTo(BootstrapAdmin.Result.CREATED);
+        assertThat(bootstrapAdmin.ensureAdmin("admin@a.az", "admin", true)).isEqualTo(BootstrapAdmin.Result.ADMIN_ALREADY_EXISTS);
     }
 }
