@@ -46,6 +46,7 @@ tasks.named('test') {
 	useJUnitPlatform {
 		excludeTags 'ui'   // the visible Selenium scenarios run with: sh gradlew uiTest
 	}
+	systemProperty 'spring.profiles.active', 'test'   // not "local": tests set up their own accounts
 }
 
 // Selenium UI scenarios in a visible Chrome (slowed down, steps highlighted).
@@ -60,6 +61,7 @@ tasks.register('uiTest', Test) {
 	useJUnitPlatform {
 		includeTags 'ui'
 	}
+	systemProperty 'spring.profiles.active', 'test'
 	systemProperty 'ui.headless', project.hasProperty('headless')
 	systemProperty 'ui.slowMs', project.findProperty('slowMs') ?: '700'
 	outputs.upToDateWhen { false }

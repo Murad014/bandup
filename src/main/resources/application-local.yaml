@@ -1,0 +1,9 @@
+# Local development only (the default profile when no other is set).
+# Admin login on a local machine: admin@a.az / admin — created at startup when
+# the database has no admin yet. Never used in a deployed environment, which
+# sets SPRING_PROFILES_ACTIVE and BANDUP_ADMIN_EMAIL / BANDUP_ADMIN_PASSWORD.
+bandup:
+  auth:
+    admin-email: ${BANDUP_ADMIN_EMAIL:admin@a.az}
+    admin-password: ${BANDUP_ADMIN_PASSWORD:admin}
+    allow-short-admin-password: true

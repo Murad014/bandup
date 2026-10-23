@@ -39,4 +39,13 @@ class NewPasswordTest {
     void isNeverPrinted() {
         assertThat(NewPassword.of("correct horse battery").toString()).doesNotContain("horse");
     }
+
+    @Test
+    void theLocalDevelopmentAdminMayHaveAShortPasswordButNobodyElse() {
+        assertThat(NewPassword.forLocalDevelopment("admin").reveal()).isEqualTo("admin");
+        assertThatThrownBy(() -> NewPassword.of("admin")).isInstanceOf(DomainException.class);
+        assertThatThrownBy(() -> NewPassword.forLocalDevelopment(" ")).isInstanceOf(DomainException.class);
+        assertThatThrownBy(() -> NewPassword.forLocalDevelopment(null)).isInstanceOf(DomainException.class);
+        assertThatThrownBy(() -> NewPassword.forLocalDevelopment("a".repeat(73))).isInstanceOf(DomainException.class);
+    }
 }

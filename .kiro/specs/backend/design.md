@@ -336,6 +336,12 @@ CSRF is off (stateless; the refresh cookie is SameSite=Strict and only sent to
 
 ### 6.5 First admin
 
+**Local development:** without `SPRING_PROFILES_ACTIVE` the app runs with the
+`local` profile (`application-local.yaml`): admin `admin@a.az` / `admin`,
+created at startup when no admin exists, short password allowed only there
+(`NewPassword.forLocalDevelopment`). Deployed environments set their own
+profile and the env vars. Tests run with the `test` profile.
+
 `BootstrapAdminRunner` calls `BootstrapAdmin` at startup when
 `BANDUP_ADMIN_EMAIL` is set: creates that admin (`BANDUP_ADMIN_PASSWORD`,
 same password rules) only if no ADMIN exists; never turns an existing account
