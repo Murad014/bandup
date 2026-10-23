@@ -2,37 +2,60 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{admin/layout :: layout(~{::title}, ~{::#pageCss}, ~{::main}, 'sessions')}">
 <head>
-    <title>Edit session · BandUp Admin</title>
+    <title>Edit exercise · BandUp Admin</title>
     <link id="pageCss" rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
+<!--
+  Exercise editor shell (admin API, backend design §8.4). editor.js fills it.
+  Every field's wrapper has data-field = the API's error path, so a 422 error
+  is shown right at its field.
+-->
 <main id="editorRoot" th:attr="data-session-id=${sessionId}">
     <div class="editor-topbar">
         <div class="editor-topbar__title">
-            <h1 class="admin-h1">Session editor</h1>
+            <h1 class="admin-h1">Exercise editor</h1>
             <span id="statusBadge" class="badge badge--draft">draft</span>
+            <span id="revisionInfo" class="admin-sub editor-revision"></span>
             <span id="dirtyDot" class="dirty-dot" hidden title="Unsaved changes">●</span>
         </div>
         <div class="editor-actions">
             <button id="saveBtn" type="button" class="btn">Save draft</button>
-            <button id="unpublishBtn" type="button" class="btn">Unpublish</button>
+            <button id="unpublishBtn" type="button" class="btn" hidden>Unpublish</button>
             <button id="publishBtn" type="button" class="btn btn--primary">Publish</button>
         </div>
     </div>
 
-    <div id="editorErrors" class="admin-error" hidden></div>
+    <div id="editorNotice" class="admin-notice" role="status" hidden></div>
+    <div id="editorErrors" class="admin-error" role="alert" hidden></div>
+    <div id="publishHints" class="admin-hints" hidden></div>
 
     <div class="card">
-        <h3>Metadata</h3>
-        <div class="field"><label for="title">Title</label><input id="title" type="text"></div>
-        <div class="field"><label for="stageLabel">Stage label</label><input id="stageLabel" type="text"></div>
-        <div class="grid-2">
-            <div class="field"><label for="durationSeconds">Duration (seconds)</label><input id="durationSeconds" type="number" min="1"></div>
-            <div class="field"><label for="lowThresholdSeconds">Low-time threshold (seconds)</label><input id="lowThresholdSeconds" type="number" min="1"></div>
+        <h3>Details</h3>
+        <div class="field" id="slugField" data-field="id">
+            <label for="slug">Address (lower-case words and hyphens, e.g. yellowstone-wolves)</label>
+            <input id="slug" type="text" autocomplete="off" spellcheck="false">
         </div>
+        <div class="field" data-field="title"><label for="title">Title</label><input id="title" type="text"></div>
+        <div class="grid-2">
+            <div class="field" data-field="format"><label for="format">Format</label>
+                <select id="format"><option value="MINI">Mini</option><option value="FULL">Full</option></select></div>
+            <div class="field" data-field="level"><label for="level">Level</label><select id="level"></select></div>
+        </div>
+        <div class="grid-2">
+            <div class="field" data-field="durationSeconds"><label for="durationSeconds">Time limit in seconds (empty = no timer)</label>
+                <input id="durationSeconds" type="number" min="1"></div>
+            <div class="field" data-field="lowTimeThresholdSeconds"><label for="lowTimeThresholdSeconds">Low-time warning (seconds left)</label>
+                <input id="lowTimeThresholdSeconds" type="number" min="1"></div>
+        </div>
+        <div class="grid-2">
+            <div class="field" data-field="stageId"><label for="stageId">Stage id (optional)</label><input id="stageId" type="number" min="1"></div>
+            <div class="field" data-field="position"><label for="position">Position in the stage</label><input id="position" type="number" min="1"></div>
+        </div>
+        <div class="field" data-field="topicIds"><label for="topicIds">Topic ids (comma-separated, optional)</label><input id="topicIds" type="text"></div>
     </div>
 
-    <div class="card">
+    <div class="card" data-field="passageHtml">
         <h3>Passage</h3>
         <div class="editor-split">
             <div>
@@ -44,13 +67,18 @@
                 <div id="passageEdit" class="passage-edit" contenteditable="true" aria-label="Passage editor"></div>
             </div>
             <div>
-                <p class="admin-sub">Preview</p>
+                <p class="admin-sub">Preview (what learners get)</p>
                 <div id="passagePreview" class="passage-preview"></div>
             </div>
         </div>
     </div>
 
     <div class="card">
+        <h3>Word meanings</h3>
+        <div id="glosses"></div>
+    </div>
+
+    <div class="card" data-field="questions">
         <h3>Questions</h3>
         <div id="groups"></div>
     </div>

@@ -1,8 +1,8 @@
 /* =========================================================================
-   sessions.js — admin "content library" controller for reading sessions.
-   Loads from api.list() once, then filters/searches/sorts client-side.
-   Supports edit, preview (published), publish/unpublish, and delete (with
-   confirmation). Dependencies injectable for jsdom tests.
+   sessions.js — the admin list of exercises (admin API, backend §8.4).
+   Loads api.list() once, then filters/searches/sorts in the browser.
+   Edit, preview (published), publish/unpublish and delete; an exercise with
+   learner attempts is archived instead of deleted and can't be edited.
    ========================================================================= */
 
 export function createSessionsPage(options = {}) {
@@ -39,7 +39,7 @@ export function createSessionsPage(options = {}) {
     }
 
     async function load() {
-        showStatus("Loading sessions…");
+        showStatus("Loading exercises…");
         try {
             state.sessions = await api.list();
             render();
@@ -59,7 +59,7 @@ export function createSessionsPage(options = {}) {
         if (!els.status) return;
         els.status.hidden = false;
         els.status.className = "admin-error";
-        els.status.textContent = "Couldn't load sessions. ";
+        els.status.textContent = "Couldn't load exercises. ";
         const retry = d.createElement("button");
         retry.type = "button"; retry.className = "btn"; retry.id = "sessionsRetry"; retry.textContent = "Retry";
         retry.addEventListener("click", () => load());
@@ -71,7 +71,8 @@ export function createSessionsPage(options = {}) {
         let rows = state.sessions.filter((s) => {
             if (state.status !== "all" && s.status !== state.status) return false;
             if (!q) return true;
-            return (s.title || "").toLowerCase().includes(q) || (s.stageLabel || "").toLowerCase().includes(q);
+            return (s.title || "").toLowerCase().includes(q) || stageOf(s).toLowerCase().includes(q)
+                || (s.id || "").includes(q);
         });
         const by = state.sort;
         rows = rows.slice().sort((a, b) => {
@@ -100,7 +101,7 @@ export function createSessionsPage(options = {}) {
 
         if (rows.length === 0) {
             if (els.table) els.table.hidden = true;
-            if (els.note) { els.note.hidden = false; els.note.textContent = "No sessions match your search."; }
+            if (els.note) { els.note.hidden = false; els.note.className = "admin-status"; els.note.textContent = "No exercises match your search."; }
             return;
         }
         if (els.note) els.note.hidden = true;
@@ -109,23 +110,41 @@ export function createSessionsPage(options = {}) {
         rows.forEach((s) => els.tbody.appendChild(row(s)));
     }
 
+    function stageOf(s) {
+        return [s.stageTitle, s.position ? "Passage " + s.position : null].filter(Boolean).join(" · ");
+    }
+
+    function updatedOf(s) {
+        if (!s.updatedAt) return "";
+        const at = new Date(s.updatedAt);
+        return Number.isNaN(at.getTime()) ? "" : at.toLocaleString();
+    }
+
     function row(s) {
         const tr = d.createElement("tr");
         tr.dataset.id = s.id;
         tr.appendChild(cell(s.title));
-        tr.appendChild(cell(s.stageLabel));
+        tr.appendChild(cell(stageOf(s)));
 
         const statusTd = d.createElement("td");
         const badge = d.createElement("span");
-        badge.className = "badge badge--" + (s.status === "published" ? "published" : "draft");
-        badge.textContent = s.status;
+        const status = String(s.status || "DRAFT").toLowerCase();
+        badge.className = "badge badge--" + status;
+        badge.textContent = status;
         statusTd.appendChild(badge);
+        if (s.revision > 1) statusTd.appendChild(d.createTextNode(" r" + s.revision));
         tr.appendChild(statusTd);
 
         tr.appendChild(cell(String(s.questionCount)));
+        tr.appendChild(cell(updatedOf(s)));
 
         const actions = d.createElement("td");
         actions.className = "row-actions";
+        if (status === "archived") {
+            actions.appendChild(d.createTextNode("Kept for learners' attempts"));
+            tr.appendChild(actions);
+            return tr;
+        }
 
         const edit = d.createElement("a");
         edit.className = "btn";
@@ -134,7 +153,7 @@ export function createSessionsPage(options = {}) {
         edit.setAttribute("data-admin-nav-link", "");
         actions.appendChild(edit);
 
-        if (s.status === "published") {
+        if (status === "published") {
             const preview = d.createElement("a");
             preview.className = "btn btn--text";
             preview.href = "/reading/" + encodeURIComponent(s.id);
@@ -147,8 +166,8 @@ export function createSessionsPage(options = {}) {
         const pub = d.createElement("button");
         pub.type = "button";
         pub.className = "btn btn--text";
-        pub.dataset.action = s.status === "published" ? "unpublish" : "publish";
-        pub.textContent = s.status === "published" ? "Unpublish" : "Publish";
+        pub.dataset.action = status === "published" ? "unpublish" : "publish";
+        pub.textContent = status === "published" ? "Unpublish" : "Publish";
         actions.appendChild(pub);
 
         const del = d.createElement("button");
@@ -178,7 +197,7 @@ export function createSessionsPage(options = {}) {
         const action = btn.dataset.action;
         try {
             if (action === "delete") {
-                if (!w.confirm('Delete "' + (s ? s.title : id) + '"? This cannot be undone.')) return;
+                if (!w.confirm('Delete "' + (s ? s.title : id) + '"? If learners have attempts on it, it will be archived instead.')) return;
                 await api.remove(id);
             } else if (action === "publish") {
                 await api.publish(id);
@@ -186,9 +205,24 @@ export function createSessionsPage(options = {}) {
                 await api.unpublish(id);
             }
             await load();
+            const after = state.sessions.find((x) => x.id === id);
+            if (action === "delete" && after) {
+                note('"' + after.title + '" was archived instead of deleted: learners have attempts on it.');
+            }
         } catch (err) {
-            showError();
+            if (err && err.status === 422 && err.errors && err.errors.length) {
+                note("Can't publish yet — " + err.errors.map((e) => e.message).join(" ") + " Open it in the editor to fix this.");
+            } else {
+                showError();
+            }
         }
+    }
+
+    function note(text) {
+        if (!els.note) return;
+        els.note.hidden = false;
+        els.note.className = "admin-notice";
+        els.note.textContent = text;
     }
 
     return { init, load, render, _state: state };

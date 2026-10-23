@@ -33,11 +33,14 @@ class UiPagesTest {
     void everyPageRendersForAnonymousVisitors() throws Exception {
         for (String[] route : List.of(
                 new String[] {"/", "index"},
+                new String[] {"/reading", "catalog"},
                 new String[] {"/reading/yellowstone-wolves", "reading"},
                 new String[] {"/admin", "admin/index"},
                 new String[] {"/admin/sessions", "admin/sessions"},
                 new String[] {"/admin/sessions/new", "admin/session-edit"},
-                new String[] {"/admin/sessions/yellowstone-wolves/edit", "admin/session-edit"})) {
+                new String[] {"/admin/sessions/yellowstone-wolves/edit", "admin/session-edit"},
+                new String[] {"/login", "login"},
+                new String[] {"/register", "register"})) {
             mvc.perform(get(route[0])).andExpect(status().isOk()).andExpect(view().name(route[1]));
         }
     }
@@ -46,7 +49,7 @@ class UiPagesTest {
     void theNavbarHasItsItemsAndAHiddenAdminLink() throws Exception {
         String home = html("/");
 
-        assertThat(home).contains("href=\"/reading/yellowstone-wolves\"", ">Reading<", ">Grammar<", "soon");
+        assertThat(home).contains("href=\"/reading\"", ">Reading<", ">Grammar<", "soon");
         assertThat(home).contains("<li class=\"app-nav__item\" data-nav-admin hidden>");
         // .app-nav__item sets display:flex, which would override [hidden] without this rule (seen in Chrome).
         assertThat(mvc.perform(get("/css/app.css")).andReturn().getResponse().getContentAsString())

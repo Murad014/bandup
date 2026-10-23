@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>Reading practice · BandUp</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/catalog.css}">
+</head>
+<body>
+<!-- The reading catalog. catalog.js fills it from GET /api/v1/exercises; filters live in the URL. -->
+<main class="wrap catalog" id="catalogRoot">
+    <div class="catalog-head">
+        <h1 class="catalog-title">Reading practice</h1>
+        <p class="catalog-sub">Pick a passage. Nothing is locked — start anywhere.</p>
+    </div>
+
+    <form class="catalog-filters" id="catalogFilters" aria-label="Filter exercises">
+        <fieldset class="filter" data-filter="level">
+            <legend>Level</legend>
+            <div class="chips" data-chips="level"></div>
+        </fieldset>
+        <fieldset class="filter" data-filter="type">
+            <legend>Question type</legend>
+            <div class="chips" data-chips="type"></div>
+        </fieldset>
+        <fieldset class="filter" data-filter="topic">
+            <legend>Topic</legend>
+            <div class="chips" data-chips="topic"></div>
+        </fieldset>
+        <div class="filter-row">
+            <label class="filter-select">Length
+                <select id="formatFilter">
+                    <option value="">Any</option>
+                    <option value="MINI">Mini</option>
+                    <option value="FULL">Full test</option>
+                </select>
+            </label>
+            <label class="filter-select">Time
+                <select id="timeFilter">
+                    <option value="">Any</option>
+                    <option value="5">Up to 5 min</option>
+                    <option value="10">Up to 10 min</option>
+                    <option value="20">Up to 20 min</option>
+                    <option value="60">Up to 60 min</option>
+                </select>
+            </label>
+            <label class="filter-check" id="notDoneLabel" hidden>
+                <input type="checkbox" id="notDoneFilter"> Not done yet
+            </label>
+            <button type="button" class="btn btn--text" id="clearFilters">Clear filters</button>
+        </div>
+    </form>
+
+    <p class="catalog-count" id="catalogCount" aria-live="polite"></p>
+    <p class="catalog-status" id="catalogStatus" hidden></p>
+    <div class="catalog-grid" id="catalogItems"></div>
+    <nav class="catalog-pager" id="catalogPager" aria-label="Pages" hidden>
+        <button type="button" class="btn" id="prevPage">← Newer</button>
+        <span id="pageInfo"></span>
+        <button type="button" class="btn" id="nextPage">Older →</button>
+    </nav>
+
+    <script type="module" th:src="@{/js/catalog.js}"></script>
+</main>
+</body>
+</html>

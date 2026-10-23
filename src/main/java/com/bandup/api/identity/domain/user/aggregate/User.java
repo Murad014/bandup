@@ -144,6 +144,15 @@ public final class User {
         return id.hashCode();
     }
 
+    /**
+     * The display name as it will be stored: trimmed, blank = none.
+     *
+     * @throws DomainException ({@code displayName}) if it's longer than 80 characters
+     */
+    public static String displayName(String raw) {
+        return normaliseDisplayName(raw);
+    }
+
     private static String normaliseDisplayName(String raw) {
         if (raw == null || raw.isBlank()) {
             return null;

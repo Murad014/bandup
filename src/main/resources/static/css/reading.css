@@ -212,3 +212,28 @@ details.vocab summary { cursor: pointer; font-weight: 600; }
 @media (prefers-reduced-motion: no-preference) {
     .q { transition: background .25s, border-color .25s; }
 }
+
+/* ---- Learner API: help language, every question family, results ------ */
+[hidden] { display: none !important; }
+.help-lang { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--muted); }
+.help-lang select, .pick { font: 500 .9rem var(--ui); padding: 4px 8px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--paper); color: var(--fg); }
+.w.nogloss { border-bottom: 0; cursor: text; }
+.instr--help { font-style: italic; }
+.limit { font-size: .75rem; font-weight: 700; letter-spacing: .03em; color: var(--muted); margin: 0 0 10px; }
+.opts .limit { flex-basis: 100%; margin: 4px 0 0; }
+.opts--list { flex-direction: column; align-items: stretch; }
+.opts--list label { border-radius: 10px; font-weight: 500; }
+.opts--list .key { margin-right: 6px; }
+.opts input:disabled + * , .opts label:has(input:disabled:not(:checked)) { opacity: .55; cursor: not-allowed; }
+.num--range { width: auto; padding: 0 8px; border-radius: 13px; }
+.match { padding-left: 36px; margin-top: 6px; }
+.bank { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0 0 12px; padding: 10px 12px;
+    border: 1px solid var(--line); border-radius: 10px; font-size: .88rem; }
+.bank dt { font-weight: 700; }
+.bank dd { margin: 0; }
+.q.partial { border-color: var(--accent); background: var(--accent-soft); }
+.q.partial .tag { color: var(--accent); }
+.fb .also { color: var(--muted); }
+.fb .why { margin-top: 4px; }
+.result--error { color: var(--bad); }

@@ -241,3 +241,12 @@ requested, one at a time, and ends green (`sh gradlew test`).
   - _Verified_: 212 tests green (incl. a new "copies never change the
     original" test); probe run: a value object in `aggregate/` and a loose
     class in `user/` were both caught by rule 13 only; no unused imports.
+
+- [x] 9. Fix: display name checked with the other registration fields
+  - Found by the sign-up page in Chrome (frontend task 3): a too-long display
+    name was only checked inside `User.registerLearner`, after the other
+    checks and after BCrypt, so it wasn't reported together with them
+    (requirement 8.1). `User.displayName(raw)` (domain rule, public) is now
+    collected by `RegisterLearner` with email, password and languages.
+  - _Verified_: regression test failed first, then passed;
+    `AuthApiTest` 13 green.

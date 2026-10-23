@@ -231,6 +231,24 @@ depends on no technology.
 
 ---
 
+## Requirement 9 — Catalog: browse and filter (phase 2)
+
+1. `GET /api/v1/exercises` SHALL list PUBLISHED exercises only, newest
+   first, in pages (size 1–50), with title, skill, format, level, duration,
+   question count, question types and topics — never answers.
+2. Learners SHALL be able to filter by skill, format, level, question type,
+   topic and maximum duration (database requirement 7.4); filters combine
+   with AND, several values of one filter with OR; malformed filters SHALL be
+   a `400` listing every problem.
+3. WHEN a valid token is sent THEN each card SHALL say whether the learner
+   has attempted it and their best score, and `notDone=true` SHALL hide the
+   attempted ones; anonymous browsing SHALL work without any of this.
+4. Topic names SHALL follow the help language with fallback (R6).
+5. The endpoint SHALL be public. The filter choices SHALL offer only values
+   some published exercise has.
+
+---
+
 ## Non-functional requirements
 
 1. **No answer leakage.** Answers and explanations SHALL only leave the server

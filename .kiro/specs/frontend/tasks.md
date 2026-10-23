@@ -70,14 +70,7 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
     page and the editor render (still on their stubs until reading /
     admin task 1). 360 tests green.
 
-- [ ] 2. `auth.js` — tokens in the browser
-  - _In progress_: `static/js/auth.js` (memory-only token, silent refresh,
-    single-flight refresh with Web Locks + BroadcastChannel, `apiFetch` with
-    one retry, login/register/logout, `safeNext`) and `account-nav.js`
-    (Sign in / name + Sign out / Admin link) are written and wired into
-    `layout/main.html` and `navbar.html`. Not yet verified in Chrome; next:
-    a JUnit browser test driving headless Chrome over the DevTools protocol
-    (JDK WebSocket, no new dependencies), then tasks 3–4.
+- [x] 2. `auth.js` — tokens in the browser
   - Access token kept **in memory only** (never `localStorage`); on page load
     one silent `POST /api/v1/auth/refresh` (cookie) restores the session.
   - `apiFetch(url, options)`: adds `Authorization: Bearer …`, on `401`
@@ -97,8 +90,24 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
     Manual: reload keeps you signed in; two tabs reloading together stay
     signed in.
   - _Requirements: backend 8.2, 8.4, 8.5, 8.6_
+  - _Done_: `static/js/auth.js` (memory-only token, silent refresh on load,
+    refresh a minute before expiry, single-flight refresh: Web Locks across
+    tabs + BroadcastChannel to share the new token / sign-out, `apiFetch` with
+    one retry, `login`, `register`, `logout`, `safeNext`, `ApiError` with
+    `errors[]`); `account-nav.js` + navbar markup (Sign in with `?next=`,
+    name + Sign out, Admin link for ADMIN/AUTHOR).
+  - _Verified_: `AuthBrowserTest` (6, headless Chrome over the DevTools
+    protocol with the JDK's WebSocket client — `HeadlessChrome` test helper,
+    no new dependency; skipped without Chrome): anonymous navbar + `next`
+    link; learner signs in, stays signed in after reload, `apiFetch` works,
+    nothing in storage, refresh cookie invisible to scripts; admin sees the
+    Admin link; two tabs reloading at once (3 rounds) stay signed in —
+    mutation check: without the Web Lock this test fails (the server sees a
+    reused refresh token); sign-out ends the session in both tabs; wrong
+    password → one 401 message; `safeNext` rejects `//evil.com`,
+    `https://…`, `/\evil`, relative paths. Stable over 3 runs.
 
-- [ ] 3. Login and register pages
+- [x] 3. Login and register pages
   - `templates/login.html`, `templates/register.html` in the main layout;
     `login.js`, `register.js` using `auth.js`.
   - Login: email + password; `401` → "Wrong email or password." (one
@@ -112,23 +121,49 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
     open-redirect guard (`//evil.com`, `https://…` rejected). Manual: sign
     up, sign out, sign in, wrong password.
   - _Requirements: backend 8.1–8.3_
+  - _Done_: `AuthPageController` (`/login`, `/register`), `login.html`,
+    `register.html`, `auth.css`, `login.js`, `register.js`, `auth-forms.js`.
+    Help-language choices are the enabled support languages (az, en) written
+    in the template; the browser's language is preselected. Page scripts sit
+    inside `<main>` (the layout keeps only that element — a first version
+    put them after it and they never loaded).
+  - **Backend bug found and fixed:** a too-long display name was checked only
+    after email/password/languages (and after BCrypt), so it wasn't reported
+    with the other fields (requirement 8.1). Failing test first
+    (`AuthApiTest.aTooLongDisplayNameIsReportedTogetherWithTheOtherFields`),
+    then `User.displayName(raw)` is collected with the other checks.
+  - _Verified_: `SignInPagesBrowserTest` (5, Chrome): sign-up signs in and
+    returns to `next`, support language saved; every field error under its
+    field, input kept; taken email at the email field; wrong password → one
+    message, password cleared, then sign-in → `next`; foreign `next`
+    (`https://…`, `//…`) → home, links keep `next`.
 
-- [ ] 4. Admin guard in the browser
+- [x] 4. Admin guard in the browser
   - Admin pages start with `currentUser()`: not signed in → redirect to
     `/login?next=<this page>`; signed in without ADMIN/AUTHOR → "You don't
     have access" message (no admin UI rendered).
-  - Any admin API `401` after a failed refresh → same redirect, unsaved
-    editor content kept in `sessionStorage` and offered back after sign-in.
+  - Any admin API `401` after a failed refresh → same redirect (keeping
+    unsaved editor content: admin task 5).
   - _Verify_: headless Chrome for the decision logic; manual with LEARNER and ADMIN
     accounts (the first admin comes from `BANDUP_ADMIN_EMAIL` /
     `BANDUP_ADMIN_PASSWORD`).
   - _Requirements: backend 4.7_
+  - _Done_: `static/js/admin/guard.js` loaded by `admin/layout.html` (every
+    admin page, dashboard included); `adminReady` awaited by the page
+    scripts; admin content hidden until checked; account name + Sign out in
+    the sidebar; signing out in any tab leaves the admin area. Keeping
+    unsaved editor content across a forced sign-in moved to admin task 5
+    (the editor is rewritten there).
+  - _Verified_: `AdminGuardBrowserTest` (4, Chrome): signed out → login with
+    `next` → back to `/admin/sessions` as admin; learner → "You don't have
+    access", no admin UI; content hidden until the check passes; sidebar
+    sign-out → home, signed out. 376 tests green.
 
 ---
 
 ## Final
 
-- [ ] 1. End-to-end pass
+- [x] 1. End-to-end pass
   - Real app + dev database: admin signs in → creates an exercise with every
     supported question type → publish blocked with errors → fixes → publishes
     → learner (anonymous and signed in) opens it in az and en → submits →
@@ -137,3 +172,57 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
   - Accessibility and responsive re-check of the new pages and controls
     (keyboard, focus, labels, narrow widths).
   - _Verify_: written checklist with results in this task; all suites green.
+  - _Done_ — checklist, each step run in headless Chrome against the real
+    app and database (browser tests in `src/test/java/com/bandup/browser/`):
+
+    | Step | Test | Result |
+    |------|------|--------|
+    | Admin signs in, sees the Admin link | `AuthBrowserTest.anAdminSeesTheAdminLink` | ✓ |
+    | Admin writes an exercise in the editor (passage, gloss + az meaning, TFNG, evidence) and saves it | `AdminBrowserTest.anAuthorWritesAndPublishes…` | ✓ |
+    | Publish blocked → errors at their fields, still draft | `AdminBrowserTest.publishIsBlockedWithErrorsAtTheirFields` | ✓ |
+    | Fix and publish → a learner opens it with the meaning | `AdminBrowserTest.anAuthorWritesAndPublishes…` | ✓ |
+    | Every supported question type (made through the admin API) renders and is graded | `ReadingBrowserTest.everyQuestionFamilyRendersAndIsGradedByTheServer` | ✓ 6/8 with the partial |
+    | Learner anonymous and signed in, az and en help | `ReadingBrowserTest` (Wolves az, switch to en, signed-in attempt stored) | ✓ |
+    | Results with explanations and evidence, restart | `ReadingBrowserTest.aPerfectWolvesAttempt…` | ✓ |
+    | Admin edits a published exercise → revision 2 | `AdminBrowserTest.savingAPublishedExercise…` | ✓ |
+    | Delete with attempts → archived, attempts kept | `AdminBrowserTest.deletingAnExerciseWithAttemptsArchivesIt` | ✓ |
+    | Two authors at once → the second gets "reload" | `AdminBrowserTest.aStaleSaveOffersAReload` | ✓ |
+    | Signed out mid-edit → work restored after sign-in | `AdminBrowserTest.unsavedWorkSurvivesBeingSignedOut` | ✓ |
+    | Accessibility: every visible control on every page has a name, images have alt text; the reading page fits a 375 px phone without sideways scrolling | `AccessibilityBrowserTest` | ✓ after a fix |
+
+  - Fixed on the way: the editor's generated inputs weren't linked to their
+    labels (screen readers announced nameless inputs) — `field()` now sets
+    `label.htmlFor`, option inputs got `aria-label`s. The word-limit hint is
+    hidden when the instruction already says it.
+  - Browser tests block Google Fonts (tests must not depend on the
+    internet: a slow font host made one run hang) and give Chrome 60 s to
+    start. `SeedDataTest` now requires the editor's type catalog to equal
+    the database's (all 13 types).
+  - **393 tests green** (33 of them in Chrome), no Node, no new dependency.
+
+---
+
+## UI scenarios you can watch (Selenium)
+
+- `sh gradlew uiTest` opens a **visible Chrome** and runs 12 user scenarios,
+  slowed down (`-PslowMs=700` by default), outlining every element before it
+  is used. `sh gradlew uiTest -Pheadless` runs them without a window.
+  `sh gradlew test` doesn't run them (tag `ui`).
+- Every step saves a screenshot: `build/ui-screenshots/<Class>/<scenario>/`;
+  report: `build/reports/tests/uiTest/index.html`.
+- Code: `src/test/java/com/bandup/uitest/` — `Ui` (highlight, pause,
+  screenshot), `UiTestBase` (real app + Chrome per scenario), page objects
+  `NavBar`, `LoginPage`, `RegisterPage`, `ReadingPage`, `AdminListPage`,
+  `EditorPage`, scenarios `LearnerScenariosTest` (6) and
+  `AuthorScenariosTest` (6).
+- Dependency: `selenium-java` (test only, version from Spring Boot, chosen by
+  the user); Selenium Manager fetches the matching ChromeDriver itself.
+- _Verified_: 12/12 pass headless; visible run checked.
+
+---
+
+## Catalog page (phase 2)
+
+- [x] `/reading` is the reading catalog — see `../backend/catalog/tasks.md`
+  (built together with its API). Navbar "Reading" and home link to it; the
+  passage page stays at `/reading/{slug}`.

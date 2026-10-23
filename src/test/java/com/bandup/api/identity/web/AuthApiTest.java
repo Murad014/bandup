@@ -90,6 +90,15 @@ class AuthApiTest {
                         "email", "password", "supportLanguage")));
     }
 
+    /** Regression (found by the sign-up page in Chrome): the name was only checked after everything else. */
+    @Test
+    void aTooLongDisplayNameIsReportedTogetherWithTheOtherFields() throws Exception {
+        register(Map.of("email", "not-an-email", "password", "short", "displayName", "x".repeat(81)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.errors[*].field").value(org.hamcrest.Matchers.containsInAnyOrder(
+                        "email", "password", "displayName")));
+    }
+
     @Test
     void anEmailCanOnlyBeRegisteredOnce() throws Exception {
         registerAysel().andExpect(status().isCreated());

@@ -59,13 +59,14 @@ public class RegisterLearner {
         NewPassword password = collect(violations, () -> NewPassword.of(command.password()));
         LanguageCode ui = collect(violations, () -> knownLanguage(known, "uiLanguage", command.uiLanguage()));
         LanguageCode support = collect(violations, () -> knownLanguage(known, "supportLanguage", command.supportLanguage()));
+        String displayName = collect(violations, () -> User.displayName(command.displayName()));
         if (!violations.isEmpty()) {
             throw new DomainException(violations);
         }
         if (users.existsByEmail(email)) {
             throw new ConflictException("An account with this email already exists.");
         }
-        User user = User.registerLearner(email, hasher.hash(password), command.displayName(), ui, support);
+        User user = User.registerLearner(email, hasher.hash(password), displayName, ui, support);
         users.save(user);
         return UserView.of(user);
     }

@@ -22,8 +22,10 @@ import com.bandup.TestcontainersConfiguration;
 
 /**
  * Checks the V2 seed: reference data is complete, and the Yellowstone exercise
- * is a faithful conversion of static/js/reading/fixtures.js (data-az glosses
- * turned into data-g keys + translation rows).
+ * is a faithful conversion of the old static/js/reading/fixtures.js (data-az
+ * glosses turned into data-g keys + translation rows). That fixture was removed
+ * (it was public and held answers); its glossed words are kept in
+ * test resource seed/wolves-glosses-from-old-fixture.html for this check.
  */
 @JdbcTest
 @Import(TestcontainersConfiguration.class)
@@ -74,10 +76,8 @@ class SeedDataTest {
             dbFamilies.put(rs.getString("code"), rs.getString("family"));
         });
 
-        assertThat(jsFamilies).hasSize(11);
-        assertThat(dbFamilies).containsAllEntriesOf(jsFamilies);
-        // Added by the database design; the admin catalog gets them in tasks.md task 8.
-        assertThat(dbFamilies.keySet()).hasSize(13).contains("SUMMARY_BOX", "DIAGRAM_LABEL");
+        // The editor's catalog now has all 13 types (SUMMARY_BOX and DIAGRAM_LABEL added in frontend admin task 4).
+        assertThat(dbFamilies).hasSize(13).isEqualTo(jsFamilies);
         assertThat(dbFamilies).containsEntry("SUMMARY_BOX", "match").containsEntry("DIAGRAM_LABEL", "gap");
     }
 
@@ -106,7 +106,7 @@ class SeedDataTest {
         // Ordered (surface, meaning) pairs as authored in the old fixture.
         List<List<String>> fixture = new ArrayList<>();
         Matcher m = Pattern.compile("<span class=\"w\" data-az=\"([^\"]*)\">([^<]*)</span>")
-                .matcher(classpathText("static/js/reading/fixtures.js"));
+                .matcher(classpathText("seed/wolves-glosses-from-old-fixture.html"));
         while (m.find()) {
             fixture.add(List.of(m.group(2), m.group(1)));
         }

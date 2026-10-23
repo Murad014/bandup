@@ -1,6 +1,7 @@
 /* =========================================================================
-   core.js — pure, DOM-free logic for the Reading Practice feature.
-   Kept separate so it can be unit-tested without a browser/DOM.
+   core.js — small DOM-free helpers for the reading page.
+   (Grading lives on the server only; the browser never sees answers before
+   submitting.)
    ========================================================================= */
 
 /** Format a seconds value as m:ss, prefixing "+" once in overtime (negative). */
@@ -17,56 +18,37 @@ export function isLowTime(remaining, threshold) {
     return remaining <= threshold;
 }
 
-/** Normalise a free-text answer for comparison (trim + lowercase). */
-export function normalizeAnswer(value) {
-    return String(value == null ? "" : value).trim().toLowerCase();
+/** How a question type is answered (database design §4.6). */
+export const FAMILY = {
+    TFNG: "fixed", YNNG: "fixed",
+    MCQ: "single", MCMA: "multi",
+    FILL: "gap", SUMMARY: "gap", SHORT: "gap", DIAGRAM_LABEL: "gap",
+    MATCH_HEADINGS: "match", MATCH_INFO: "match", MATCH_FEATURES: "match", MATCH_ENDINGS: "match",
+    SUMMARY_BOX: "match",
+};
+
+export const FIXED_CHOICES = {
+    TFNG: ["TRUE", "FALSE", "NOT GIVEN"],
+    YNNG: ["YES", "NO", "NOT GIVEN"],
+};
+
+const WORDS = ["ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX"];
+
+/** "NO MORE THAN TWO WORDS AND/OR A NUMBER" from a group's word limit; "" without one. */
+export function wordLimitHint(maxWords, numbersAllowed) {
+    if (!maxWords) return "";
+    const count = WORDS[maxWords] || String(maxWords);
+    const base = maxWords === 1 ? "ONE WORD ONLY" : "NO MORE THAN " + count + " WORDS";
+    return numbersAllowed ? base.replace(" ONLY", "") + " AND/OR A NUMBER" : base;
 }
 
-/**
- * Grade a single answer against an answer-key entry.
- * key.answer may be a string (TFNG) or an array of accepted strings (FILL).
- */
-export function gradeAnswer(key, given) {
-    if (given == null || String(given).trim() === "") return false;
-    if (Array.isArray(key.answer)) {
-        return key.answer.map(normalizeAnswer).includes(normalizeAnswer(given));
-    }
-    return normalizeAnswer(given) === normalizeAnswer(key.answer);
+/** "7" or "7–8". */
+export function numberLabel(q) {
+    return q.nTo ? q.n + "–" + q.nTo : String(q.n);
 }
 
-/** The answer to display to the learner (first accepted value for FILL). */
-export function displayAnswer(key) {
-    return Array.isArray(key.answer) ? key.answer[0] : key.answer;
-}
-
-/**
- * Grade a full attempt. This is the stub server's grading logic; the real
- * backend will reproduce it. Returns the shape the UI renders from.
- *
- * @param answerKey map of questionNumber -> { answer, explanation, evidenceId }
- * @param answers   array of { n, value }
- */
-export function gradeAttempt(answerKey, answers) {
-    const byN = new Map((answers || []).map((a) => [a.n, a.value]));
-    const numbers = Object.keys(answerKey).map(Number).sort((a, b) => a - b);
-
-    let score = 0;
-    const results = numbers.map((n) => {
-        const key = answerKey[n];
-        const given = byN.has(n) ? byN.get(n) : "";
-        const correct = gradeAnswer(key, given);
-        if (correct) score += 1;
-        return {
-            n,
-            correct,
-            given,
-            answer: displayAnswer(key),
-            explanation: key.explanation,
-            evidenceId: key.evidenceId,
-        };
-    });
-
-    const total = numbers.length;
-    const percent = total ? Math.round((score / total) * 100) : 0;
-    return { score, total, percent, results };
-}
+/** The help languages offered in the picker (enabled support languages). */
+export const HELP_LANGUAGES = [
+    { code: "az", name: "Azərbaycanca" },
+    { code: "en", name: "English" },
+];

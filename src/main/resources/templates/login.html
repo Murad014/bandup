@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>Sign in · BandUp</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/auth.css}">
+</head>
+<body>
+<main class="wrap auth">
+    <form class="auth-card" data-login-form novalidate>
+        <h1 class="auth-title">Sign in</h1>
+        <p class="auth-error" data-form-error role="alert" hidden></p>
+        <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn btn--primary auth-submit" type="submit">Sign in</button>
+        <p class="auth-alt">New to BandUp? <a href="/register" data-keep-next>Create an account</a></p>
+    </form>
+    <!-- Inside <main>: the layout only takes this element. -->
+    <script type="module" th:src="@{/js/login.js}"></script>
+</main>
+</body>
+</html>
