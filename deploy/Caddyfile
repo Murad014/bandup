@@ -1,0 +1,14 @@
+# HTTPS for BandUp. Caddy gets and renews the certificate (Let's Encrypt) for
+# BANDUP_DOMAIN by itself; plain http:// is redirected to https://.
+{$BANDUP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:8080
+	# Uploads are at most 3 MB; refuse anything much bigger before it reaches the app.
+	request_body {
+		max_size 5MB
+	}
+	log {
+		output stdout
+		format console
+	}
+}

@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -38,6 +39,10 @@ class AuthController {
     private final RefreshSession refreshSession;
     private final Logout logout;
     private final GetMe getMe;
+
+    /** {@code bandup.auth.secure-cookie}: true everywhere except the local profile (see {@link RefreshCookie}). */
+    @Value("${bandup.auth.secure-cookie:true}")
+    private boolean secureCookie;
     private final CurrentUser currentUser;
 
     @PostMapping("/register")
@@ -61,7 +66,7 @@ class AuthController {
         } catch (UnauthenticatedException e) {
             ProblemDetail problem = ApiProblems.unauthenticated(e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .header(HttpHeaders.SET_COOKIE, RefreshCookie.clear())
+                    .header(HttpHeaders.SET_COOKIE, RefreshCookie.clear(secureCookie))
                     .body(problem);
         }
     }
@@ -69,7 +74,7 @@ class AuthController {
     @PostMapping("/logout")
     ResponseEntity<Void> logout(@CookieValue(name = RefreshCookie.NAME, required = false) String refreshToken) {
         logout.logout(refreshToken);
-        return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, RefreshCookie.clear()).build();
+        return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, RefreshCookie.clear(secureCookie)).build();
     }
 
     @GetMapping("/me")
@@ -79,10 +84,10 @@ class AuthController {
                 .orElseThrow(() -> new UnauthenticatedException("Sign in to continue."));
     }
 
-    private static ResponseEntity<AuthResponse> signedIn(SignedIn signedIn) {
+    private ResponseEntity<AuthResponse> signedIn(SignedIn signedIn) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, RefreshCookie.issue(signedIn.refreshToken(), signedIn.issuedAt(),
-                        signedIn.refreshTokenExpiresAt()))
+                        signedIn.refreshTokenExpiresAt(), secureCookie))
                 .body(AuthResponse.of(signedIn));
     }
 }

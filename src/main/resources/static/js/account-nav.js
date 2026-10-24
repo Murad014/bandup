@@ -1,6 +1,7 @@
 /* =========================================================================
    account-nav.js — the navbar's account part, from auth.js:
-   "Sign in" when signed out; the user's name + "Sign out" when signed in.
+   "Sign in" when signed out; "My progress", the user's name and "Sign out"
+   when signed in.
    There is no Admin link: admins open /admin themselves (user decision).
    ========================================================================= */
 
@@ -10,6 +11,7 @@ const signIn = document.querySelector("[data-nav-signin]");
 const account = document.querySelector("[data-nav-account]");
 const name = document.querySelector("[data-nav-username]");
 const signOut = document.querySelector("[data-nav-signout]");
+const progress = document.querySelector("[data-nav-progress]");
 const signInLink = signIn && signIn.querySelector("a");
 
 if (signInLink) {
@@ -21,6 +23,7 @@ if (signInLink) {
 function render(user) {
     if (signIn) signIn.hidden = !!user;
     if (account) account.hidden = !user;
+    if (progress) progress.hidden = !user;
     if (name) name.textContent = user ? user.displayName || "Account" : "";
 }
 

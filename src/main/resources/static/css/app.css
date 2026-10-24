@@ -338,3 +338,9 @@ a.skill { border: 2px solid var(--accent-soft); }
 
 /* The reading page is full-height; its footer would only get in the way. */
 body:has(.reading) .site-foot { display: none; }
+
+/* Colour helpers (no inline style attributes: the Content-Security-Policy forbids them). */
+.bg-ok { background: var(--ok); } .bg-sun { background: var(--sun); }
+.bg-sky-soft { background: var(--sky-soft); } .bg-sun-soft { background: var(--sun-soft); }
+.bg-teal-soft { background: var(--teal-soft); } .bg-accent-soft { background: var(--accent-soft); }
+.bg-grape-soft { background: var(--grape-soft); }

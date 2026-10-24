@@ -43,3 +43,7 @@ npm-debug.log*
 
 # Uploaded images (local storage, bandup.media.dir)
 data/
+
+# Production secrets and backups (deploy/)
+deploy/.env
+deploy/backups/

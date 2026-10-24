@@ -7,3 +7,6 @@ bandup:
     admin-email: ${BANDUP_ADMIN_EMAIL:admin@a.az}
     admin-password: ${BANDUP_ADMIN_PASSWORD:admin}
     allow-short-admin-password: true
+    # http://localhost has no HTTPS, and Safari drops Secure cookies there
+    # (Chrome doesn't): without this, Safari signs you out on every page load.
+    secure-cookie: false

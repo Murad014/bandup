@@ -18,6 +18,7 @@ class PracticeAccessRules implements ApiAccessRules {
     @Override
     public void authorize(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry rules) {
         rules.requestMatchers(HttpMethod.GET, "/api/v1/passages/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/attempts").permitAll();
+                .requestMatchers(HttpMethod.POST, "/api/v1/attempts").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/me/**").authenticated(); // "My progress": own attempts only
     }
 }

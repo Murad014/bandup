@@ -261,3 +261,8 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
   guard is unchanged.
 - _Verified_: `UiPagesTest` (no `data-nav-admin`, no `/admin` link),
   `AuthBrowserTest.anAdminSeesNoAdminLinkAndOpensThePanelByItsAddress`.
+
+## My progress (backend requirement 11)
+
+- [x] `/progress` page and navbar "My progress" (signed-in only), reading
+  page review mode — details and tests in `../backend/practice/tasks.md`.

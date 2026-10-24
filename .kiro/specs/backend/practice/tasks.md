@@ -116,3 +116,26 @@ done only when requested, one at a time, and ends green (`sh gradlew test`).
     both numbers of one "Choose TWO", missing time / passage, non-text
     value, bad JSON) and nothing stored; a client-sent score is ignored.
     288 tests green.
+
+- [x] Learner history — requirement 11, design §7.5
+  - [x] `LearnerHistory`, port `AttemptHistory`, `JdbcAttemptHistory`,
+    `ProgressController` (`/api/v1/me/progress`, `/api/v1/me/attempts`,
+    `/api/v1/me/attempts/{id}`), access rule `/api/v1/me/**` authenticated.
+  - [x] Page `/progress` (`ProgressPageController`, `progress.html/css/js`):
+    summary tiles, attempts newest first (cover, date, time, score
+    coloured by percent), passage filter, pages of 10, Review / Try again,
+    "not available any more" for unpublished passages, empty state; navbar
+    "My progress" for signed-in users; reading page review mode
+    (`?review=`: answers filled in, graded, no timer; "Start again" drops
+    `?review`).
+  - _Verified_: `ProgressApiTest` (4): own attempts only (anonymous and
+    other learners excluded), totals (average 75 %, best 100 %, 100 s),
+    newest first, paging, filter, 400 for bad page/size, review content with
+    help-language explanations, stored grade unchanged after a content
+    edit, `updatedSince`, unpublished → `available: false`, 404 for others'
+    / anonymous / unknown / malformed ids, 401 without a token. Mutation:
+    dropping the ownership condition fails all four.
+    `ProgressBrowserTest` (3): practise → navbar link → page → Review
+    (answers, grades, no timer) → Start again; signed out → sign in with
+    `next=/progress`; empty state. 439 tests and 13 Selenium scenarios green;
+    screenshots checked.

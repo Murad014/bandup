@@ -1,0 +1,15 @@
+# Only what the image build needs goes to Docker.
+.git
+.gradle
+.idea
+.kiro
+.vscode
+build
+data
+deploy
+ai-docs
+node_modules
+untitled folder
+src/test
+*.md
+.DS_Store

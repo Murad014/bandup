@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>My progress · BandUp</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/progress.css}">
+</head>
+<body>
+<!-- "My progress": progress.js fills it from GET /api/v1/me/progress and /api/v1/me/attempts. -->
+<main class="wrap progress" id="progressRoot">
+    <div class="progress-head">
+        <div>
+            <h1 class="progress-title">My progress</h1>
+            <p class="progress-sub">Every passage you've practised, with your score and time.</p>
+        </div>
+    </div>
+
+    <section class="stats" id="stats" aria-label="Summary" hidden>
+        <div class="stat"><span class="stat__value" id="statPassages">0</span><span class="stat__label">Passages done</span></div>
+        <div class="stat"><span class="stat__value" id="statAttempts">0</span><span class="stat__label">Attempts</span></div>
+        <div class="stat"><span class="stat__value" id="statAverage">–</span><span class="stat__label">Average score</span></div>
+        <div class="stat"><span class="stat__value" id="statBest">–</span><span class="stat__label">Best score</span></div>
+        <div class="stat"><span class="stat__value" id="statTime">0 min</span><span class="stat__label">Practice time</span></div>
+    </section>
+
+    <div class="history-bar" id="historyBar" hidden>
+        <h2 class="section-title">Attempts</h2>
+        <label class="filter-select">Passage
+            <select id="passageFilter"><option value="">All passages</option></select>
+        </label>
+    </div>
+
+    <p class="progress-status" id="progressStatus">Loading…</p>
+    <ol class="attempts" id="attemptList"></ol>
+    <nav class="progress-pager" id="pager" aria-label="Pages" hidden>
+        <button type="button" class="btn" id="prevPage">← Newer</button>
+        <span id="pageInfo"></span>
+        <button type="button" class="btn" id="nextPage">Older →</button>
+    </nav>
+
+    <script type="module" th:src="@{/js/progress.js}"></script>
+</main>
+</body>
+</html>

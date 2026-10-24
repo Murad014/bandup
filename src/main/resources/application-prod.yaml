@@ -1,0 +1,38 @@
+# Production (SPRING_PROFILES_ACTIVE=prod), behind the Caddy proxy in deploy/.
+# Every secret comes from the environment (deploy/.env on the server); nothing
+# here has a usable default, so a missing value stops the start.
+spring:
+  datasource:
+    url: ${BANDUP_DB_URL}
+    username: ${BANDUP_DB_USERNAME}
+    password: ${BANDUP_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+
+server:
+  port: 8080
+  # Caddy terminates HTTPS and sends X-Forwarded-For / -Proto: the app sees the
+  # real client address (login limits) and knows the request was HTTPS (HSTS).
+  # Safe because only Caddy can reach the app (its port isn't published).
+  forward-headers-strategy: native
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+    include-message: never
+  compression:
+    enabled: true
+    mime-types: text/html,text/css,application/javascript,application/json,image/svg+xml
+
+bandup:
+  jwt:
+    secret: ${BANDUP_JWT_SECRET}
+    require-secret: true
+  auth:
+    admin-email: ${BANDUP_ADMIN_EMAIL}
+    admin-password: ${BANDUP_ADMIN_PASSWORD}
+  media:
+    dir: /app/data/media
+
+logging:
+  level:
+    root: INFO
