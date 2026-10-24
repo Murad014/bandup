@@ -1,0 +1,61 @@
+/* "My progress" (/progress). */
+.progress { max-width: 1180px; margin: 0 auto; padding-top: 32px; padding-bottom: 48px; }
+.progress-head {
+    background: linear-gradient(120deg, var(--sun-soft), var(--accent-soft));
+    border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 22px;
+}
+.progress-title { font: 800 2rem/1.15 var(--display); margin: 0; }
+.progress-sub { color: var(--muted); margin: 6px 0 0; font-size: 1.05rem; }
+
+.stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin-bottom: 32px; }
+@media (max-width: 900px) { .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat {
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    padding: 18px 20px; box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 4px;
+}
+.stat__value { font: 800 1.8rem/1.1 var(--display); }
+.stat__label { color: var(--muted); font-weight: 700; font-size: .88rem; }
+
+.history-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.history-bar .section-title { margin: 0; }
+.filter-select { display: flex; gap: 8px; align-items: center; font: 700 .88rem var(--ui); color: var(--muted); }
+.filter-select select {
+    font: 700 .9rem var(--ui); padding: 7px 12px; border: 2px solid var(--line); border-radius: var(--radius-pill);
+    background: var(--paper); color: var(--fg); max-width: 60vw;
+}
+
+.progress-status {
+    padding: 36px; text-align: center; color: var(--muted); font-weight: 700;
+    border: 2px dashed var(--line); border-radius: var(--radius-lg);
+}
+.progress-status .btn { margin-left: 8px; }
+
+.attempts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.attempt {
+    display: grid; grid-template-columns: 120px 1fr auto auto; gap: 18px; align-items: center;
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    padding: 12px 16px 12px 12px; box-shadow: var(--shadow-1);
+}
+.attempt__cover { width: 120px; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.attempt__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.attempt__body h3 { margin: 0 0 4px; font: 800 1.08rem var(--display); }
+.attempt__meta { margin: 0; color: var(--muted); font-size: .9rem; }
+.attempt__gone { margin: 4px 0 0; color: var(--bad); font-size: .85rem; font-weight: 700; }
+.attempt__score {
+    display: flex; flex-direction: column; align-items: center; min-width: 76px;
+    padding: 8px 12px; border-radius: var(--radius);
+}
+.attempt__score b { font: 800 1.25rem var(--display); }
+.attempt__score span { font-weight: 800; font-size: .85rem; }
+.attempt__score--good { background: var(--ok-soft); color: var(--ok); }
+.attempt__score--ok { background: var(--sun-soft); color: color-mix(in srgb, var(--sun) 70%, var(--fg)); }
+.attempt__score--low { background: var(--bad-soft); color: var(--bad); }
+.attempt__actions { display: flex; gap: 8px; }
+@media (max-width: 720px) {
+    .attempt { grid-template-columns: 88px 1fr auto; }
+    .attempt__cover { width: 88px; }
+    .attempt__actions { grid-column: 1 / -1; }
+    .attempt__actions .btn { flex: 1; }
+}
+.progress-pager { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 24px; font-weight: 700; }

@@ -21,6 +21,10 @@ export function createApi(base = "/api/v1") {
         submitAttempt(payload, lang) {
             return apiFetch(base + "/attempts" + query(lang), { method: "POST", json: payload });
         },
+        /** GET /me/attempts/{id}?lang= — one of the learner's own attempts, to review ("My progress"). */
+        fetchReview(attemptId, lang) {
+            return apiFetch(base + "/me/attempts/" + encodeURIComponent(attemptId) + query(lang));
+        },
     };
 }
 

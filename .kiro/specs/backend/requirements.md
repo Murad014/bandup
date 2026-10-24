@@ -197,7 +197,9 @@ depends on no technology.
    token (JWT, valid 15 minutes) in the body and set a refresh token in the
    `bandup_refresh` cookie: `HttpOnly`, `Secure`, `SameSite=Strict`, limited
    to `/api/v1/auth`, valid 14 days. The refresh token SHALL never appear in a
-   response body.
+   response body. Only the `local` profile (http://localhost) MAY drop
+   `Secure` (`bandup.auth.secure-cookie: false`), because Safari discards
+   Secure cookies on plain http.
 3. IF login fails THEN the API SHALL respond `401` with the same message for a
    wrong email, a malformed email, a wrong password and an inactive account,
    in about the same time (a dummy hash is checked when the email is unknown).
@@ -277,6 +279,21 @@ depends on no technology.
 5. WHEN an exercise has no cover THEN the pages SHALL show an illustration
    for its first topic (nature, science, history, society, technology), or a
    default one.
+
+## Requirement 11 — Learner history ("My progress")
+
+1. A signed-in learner SHALL see a summary: passages done, attempts, average
+   score, best score and total practice time.
+2. THE learner SHALL see their attempts, newest first, in pages (size 1–50):
+   passage title, cover, date, score, percent and time; optionally only one
+   passage's attempts. Anonymous attempts and other learners' attempts
+   SHALL never appear.
+3. THE learner SHALL be able to review one attempt: every question with
+   their answer, the correct answer, points, explanation (help language with
+   fallback) and evidence — as stored when it was graded, not re-graded.
+4. WHEN the attempt belongs to someone else, is anonymous, or doesn't exist
+   THEN the API SHALL answer `404`. Without a token it SHALL answer `401`.
+5. THE navbar SHALL show "My progress" (`/progress`) only to signed-in users.
 
 ---
 

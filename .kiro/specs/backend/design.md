@@ -499,6 +499,32 @@ evidenceId}]}`. `given` is exactly what was sent (`""` when unanswered);
 
 ---
 
+### 7.5 Learner history ("My progress", requirement 11)
+
+Read-only: a graded attempt never changes, so history is a query, not a new
+aggregate (same reasoning as the catalog, decision 16). The `Attempt`
+aggregate stays the only writer.
+
+| Piece | Layer | Role |
+|---|---|---|
+| `LearnerHistory` | application | `summary`, `attempts(page, passage filter)`, `review(attemptId, language)`; the caller must be signed in, and only sees their own attempts |
+| `AttemptHistory` | application port | reads stored attempts and their answers |
+| `JdbcAttemptHistory` | infrastructure.readmodel | SQL over `attempt`, `attempt_answer`, `exercise`, `question*`, `media`, `topic` |
+| `ProgressController` | web | `GET /api/v1/me/progress`, `GET /api/v1/me/attempts`, `GET /api/v1/me/attempts/{id}` |
+
+- **Review = the result screen again**, built from what was stored: the
+  learner's answer, the expected-answer snapshot and the points (never
+  re-graded). Numbers, explanation (help language with fallback) and
+  evidence id come from the exercise's questions now; `updatedSince` tells
+  the page when the exercise was revised after the attempt.
+- Someone else's attempt, an anonymous one, or a malformed id → `404`
+  (nothing reveals that it exists).
+- `available` is false when the exercise isn't published any more: the list
+  shows it, the review link is off.
+- The review page is the reading page in review mode
+  (`/reading/{slug}?review={attemptId}`): the passage, the learner's answers
+  filled in and the grades applied, no timer; "Start again" practises anew.
+
 ## 8. Content context
 
 > Built: tactical model (task 0), domain (task 1), persistence (task 2),
@@ -759,6 +785,11 @@ GET /api/v1/exercises/filters?lang=  → {skills[], formats[], levels[], types[]
 | GET | `/api/v1/exercises/filters?lang=` | public | 200 |
 | GET | `/api/v1/passages/{slug}?lang=` | public | 200 |
 | POST | `/api/v1/attempts` | public (token optional) | 201 |
+| GET | `/api/v1/me/progress` | token (own data) | 200 |
+| GET | `/api/v1/me/attempts?passageId=&page=&size=` | token (own data) | 200 |
+| GET | `/api/v1/me/attempts/{id}?lang=` | token (own attempt, else 404) | 200 |
+| POST | `/api/v1/admin/media` | ADMIN/AUTHOR | 201 |
+| GET | `/media/{publicId}` | public | 200 |
 | GET | `/api/v1/admin/passages` | ADMIN/AUTHOR | 200 |
 | GET | `/api/v1/admin/passages/{slug}` | ADMIN/AUTHOR | 200 |
 | POST | `/api/v1/admin/passages` | ADMIN/AUTHOR | 201 |
@@ -904,6 +935,9 @@ Tactical design (7–13):
     storage later) and `MediaLibrary` (`media` rows, `JdbcMediaLibrary`).
     Upload `POST /api/v1/admin/media` → `{id, url, width, height}`; serve
     `GET /media/{publicId}`. V7 adds `exercise.cover_media_id`.
+19. **Production** (user choice: VPS + Docker): see `../deployment/`.
+    Security headers (CSP etc.) live in `SecurityConfig`; the prod profile
+    requires `BANDUP_JWT_SECRET` and trusts the proxy's forwarded headers.
 
 ### Open — product decisions needed
 
@@ -913,8 +947,8 @@ Tactical design (7–13):
 - ~~No rate limiting of login attempts~~ — done (requirement 8.12).
 - ~~`refresh_token` rows are never cleaned up~~ — done (requirement 8.13).
 - ~~Leaving a page mid-refresh can end the session~~ — done: 30 s grace (8.4).
-- Deployment: configure forwarded headers behind a proxy (login limits use
-  the client address).
+- ~~Deployment: configure forwarded headers behind a proxy~~ — done
+  (`forward-headers-strategy: native`, deployment spec).
 - Two tabs refreshing at the same moment end the session (the session lock
   makes this deterministic). Recommended fix: `auth.js` lets one tab refresh
   and the others reuse its result. **Done** in frontend foundation task 2 (Web Locks), browser-tested.

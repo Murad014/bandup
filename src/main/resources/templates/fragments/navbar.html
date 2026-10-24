@@ -44,6 +44,12 @@
                 </span>
             </li>
             <!-- Account: filled in by account-nav.js from auth.js. -->
+            <!-- "My progress": shown by account-nav.js to signed-in users only. -->
+            <li class="app-nav__item" data-nav-progress hidden>
+                <a class="app-nav__link" th:href="@{/progress}"
+                   th:classappend="${activeKey == 'progress'} ? ' is-active' : ''"
+                   th:attr="aria-current=${activeKey == 'progress'} ? 'page' : null">My progress</a>
+            </li>
             <li class="app-nav__item" data-nav-signin>
                 <a class="app-nav__link app-nav__cta" th:href="@{/login}">Sign in</a>
             </li>

@@ -32,6 +32,23 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 @Configuration
 class SecurityConfig {
 
+    /**
+     * What a page may load: only BandUp's own scripts, styles, images and API,
+     * plus Google Fonts. No inline scripts or style attributes, no framing.
+     * A second line of defence behind the HTML sanitizer.
+     */
+    static final String CONTENT_SECURITY_POLICY = String.join("; ",
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self' https://fonts.googleapis.com",
+            "font-src 'self' https://fonts.gstatic.com",
+            "img-src 'self' data:",
+            "connect-src 'self'",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'");
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, List<ApiAccessRules> contexts,
             JwtAuthenticationConverter jwtAuthenticationConverter,
@@ -45,6 +62,12 @@ class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY))
+                        .frameOptions(frame -> frame.deny())
+                        .referrerPolicy(referrer -> referrer.policy(
+                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicyHeader(permissions -> permissions.policy("camera=(), microphone=(), geolocation=()")))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
                     contexts.forEach(context -> context.authorize(auth));

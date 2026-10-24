@@ -37,6 +37,10 @@ class JwtConfig {
     SecretKey jwtSigningKey(JwtProperties properties) {
         byte[] secret;
         if (properties.secret() == null || properties.secret().isBlank()) {
+            if (properties.requireSecret()) {
+                throw new IllegalStateException("BANDUP_JWT_SECRET is required in this environment (at least "
+                        + MIN_SECRET_BYTES + " bytes; e.g. `openssl rand -base64 48`)");
+            }
             log.warn("BANDUP_JWT_SECRET is not set: using a random signing key. Access tokens won't survive a restart. "
                     + "Set BANDUP_JWT_SECRET (at least {} bytes) in every shared or deployed environment.", MIN_SECRET_BYTES);
             secret = new byte[MIN_SECRET_BYTES];

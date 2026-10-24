@@ -35,7 +35,7 @@ class JwtAccessTokenIssuerTest {
     @Test
     void containsPublicIdRolesLanguageIssuerAndA15MinuteExpiry() {
         JwtAccessTokenIssuer issuer = new JwtAccessTokenIssuer(new NimbusJwtEncoder(new ImmutableSecret<>(KEY)),
-                new JwtProperties(null, null, null));
+                new JwtProperties(null, null, null, false));
         User leyla = User.restore(UserId.newId(), Email.of("leyla@example.com"), new PasswordHash("$2a$12$x"), "Leyla",
                 LanguageCode.of("az"), LanguageCode.of("tr"), LanguageCode.ENGLISH,
                 EnumSet.of(Role.TRANSLATOR, Role.AUTHOR), UserStatus.ACTIVE);

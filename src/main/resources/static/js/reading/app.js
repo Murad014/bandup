@@ -77,12 +77,67 @@ export function createReadingApp(options = {}) {
             const session = await api.fetchSession(els.root.dataset.sessionId, state.lang);
             state.session = session;
             renderSession(session);
+            if (await openReview()) return;
             startTimer(session.durationSeconds, session.lowTimeThresholdSeconds);
             setControls({ submit: true, reset: true });
             setInProgress(true);
         } catch (err) {
             showError(err);
         }
+    }
+
+    /* ---- review mode (/reading/{slug}?review={attemptId}, "My progress") --- */
+    function reviewId() {
+        try {
+            return new URLSearchParams(w.location.search).get("review");
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /** Shows a stored attempt: its answers filled in and graded, no timer. False to practise normally. */
+    async function openReview() {
+        const id = reviewId();
+        if (!id || !api.fetchReview) return false;
+        let review;
+        try {
+            review = await api.fetchReview(id, state.lang);
+        } catch (e) {
+            return false; // not theirs, gone, or signed out: just practise
+        }
+        if (review.passageId !== state.session.id) return false;
+        fillAnswers(review.result.results);
+        state.graded = true;
+        applyGrades(review.result);
+        if (els.timer) els.timer.textContent = "--:--";
+        setControls({ submit: false, reset: true });
+        setInProgress(false);
+        const when = new Date(review.submittedAt);
+        const note = el("p", "review-note",
+            "Reviewing your attempt from " + when.toLocaleDateString() + " " + when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            + (review.updatedSince ? ". This passage was updated since, so some questions may read differently." : ".")
+            + " Press \"Start again\" to practise it anew.");
+        els.resultBox.insertBefore(note, els.resultBox.firstChild);
+        return true;
+    }
+
+    /** Puts stored answers back into the form (the same controls collectAnswers reads). */
+    function fillAnswers(results) {
+        results.forEach((r) => {
+            const given = r.given;
+            if (Array.isArray(given)) {
+                d.querySelectorAll('input[name="q' + r.n + '"]').forEach((i) => (i.checked = given.includes(i.value)));
+                return;
+            }
+            if (!given) return;
+            const radio = [...d.querySelectorAll('input[name="q' + r.n + '"]')].find((i) => i.value === given);
+            if (radio) { radio.checked = true; return; }
+            const select = byId("sel" + r.n);
+            if (select) { select.value = given; return; }
+            const input = byId("in" + r.n);
+            if (input) input.value = given;
+        });
+        d.querySelectorAll(".qgroup").forEach(markUsedOptions);
     }
 
     function showLoading() {
@@ -620,6 +675,9 @@ export function createReadingApp(options = {}) {
         }
         stopTimer();
         startTimer(state.session.durationSeconds, state.session.lowTimeThresholdSeconds);
+        if (reviewId() && w.history && w.history.replaceState) {
+            try { w.history.replaceState(null, "", w.location.pathname); } catch (e) { /* noop */ }
+        }
         setControls({ submit: true, reset: true });
         setInProgress(true);
         if (w.scrollTo) { try { w.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { /* noop */ } }

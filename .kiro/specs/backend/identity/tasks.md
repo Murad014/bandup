@@ -301,3 +301,14 @@ requested, one at a time, and ends green (`sh gradlew test`).
   - _Verified_: `NewPasswordTest` +1, `BootstrapAdminTest` +1 (short password
     refused unless local); the real app on the dev database: login
     `admin@a.az` / `admin` → 200. 419 tests green.
+
+- [x] 14. Safari sign-in loop on http://localhost (bug)
+  - Cause: the refresh cookie is `Secure`; Safari drops Secure cookies on
+    `http://localhost` (Chrome keeps them), so every page load found no
+    session and sent the admin back to `/login`.
+  - Fix: `bandup.auth.secure-cookie` (default true) → `RefreshCookie`;
+    `false` only in `application-local.yaml`. Production and tests keep
+    `Secure`.
+  - _Verified_: `LocalRefreshCookieTest` failed first (cookie had Secure),
+    passes after the fix; `AuthApiTest` still expects `Secure`;
+    `ProductionProfileTest` checks prod keeps it.
