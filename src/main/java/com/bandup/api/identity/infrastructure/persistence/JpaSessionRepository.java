@@ -119,4 +119,13 @@ class JpaSessionRepository implements SessionRepository {
                     having bool_and(replaced_by is not null or coalesce(revoked_at < ?1, false) or expires_at < ?1))""")
                 .setParameter(1, Timestamp.from(cutoff)).executeUpdate();
     }
+
+    @Override
+    @Transactional
+    public void revokeAllOf(UserId userId, Instant now) {
+        entityManager.createNativeQuery("""
+                update refresh_token set revoked_at = ?1
+                where revoked_at is null and user_id = (select id from app_user where public_id = ?2)""")
+                .setParameter(1, Timestamp.from(now)).setParameter(2, userId.value()).executeUpdate();
+    }
 }

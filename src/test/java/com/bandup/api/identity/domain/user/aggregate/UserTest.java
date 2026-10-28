@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.bandup.api.identity.domain.user.valueobject.Email;
 import com.bandup.api.identity.domain.user.valueobject.PasswordHash;
+import com.bandup.api.identity.domain.user.valueobject.InstructorStatus;
 import com.bandup.api.identity.domain.user.valueobject.Role;
 import com.bandup.api.identity.domain.user.valueobject.UserId;
 import com.bandup.api.identity.domain.user.valueobject.UserStatus;
@@ -27,7 +28,13 @@ class UserTest {
 
         assertThat(aysel.roles()).containsExactly(Role.LEARNER);
         assertThat(aysel.status()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(aysel.isEmailVerified()).isFalse();
+        assertThat(aysel.canAuthenticate()).isFalse();         // until the emailed link is opened
+        assertThat(aysel.awaitsEmailConfirmation()).isTrue();
+        assertThat(aysel.instructorStatus()).isEqualTo(InstructorStatus.NONE);
+        aysel.verifyEmail(NOW);
         assertThat(aysel.canAuthenticate()).isTrue();
+        assertThat(aysel.awaitsEmailConfirmation()).isFalse();
         assertThat(aysel.canAuthor()).isFalse();
         assertThat(aysel.targetLanguage()).isEqualTo(LanguageCode.ENGLISH);
         assertThat(aysel.supportLanguage()).isEqualTo(AZ);
@@ -43,13 +50,13 @@ class UserTest {
 
     @Test
     void theBootstrapAdminCanUseTheAdminApi() {
-        User murad = User.createAdmin(Email.of("murad@example.com"), HASH, "Murad");
+        User murad = User.createAdmin(Email.of("murad@example.com"), HASH, "Murad", java.time.Instant.parse("2026-01-01T00:00:00Z"));
         assertThat(murad.roles()).containsExactly(Role.ADMIN);
         assertThat(murad.canAuthor()).isTrue();
     }
 
     @Test
-    void onlyActiveUsersCanAuthenticate() {
+    void onlyActiveUsersWithAConfirmedEmailCanAuthenticate() {
         User disabled = learner();
         disabled.disable();
         User deleted = learner();
@@ -57,6 +64,7 @@ class UserTest {
 
         assertThat(learner().canAuthenticate()).isTrue();
         assertThat(disabled.canAuthenticate()).isFalse();
+        assertThat(disabled.awaitsEmailConfirmation()).isFalse(); // a disabled account just gets "wrong email or password"
         assertThat(deleted.canAuthenticate()).isFalse();
         assertThat(UserStatus.ACTIVE.canAuthenticate()).isTrue();
         assertThat(UserStatus.DISABLED.canAuthenticate()).isFalse();
@@ -116,7 +124,55 @@ class UserTest {
         assertThat(a).isNotEqualTo(learner());
     }
 
+    /** A learner who opened the confirmation link. */
     private static User learner() {
-        return User.registerLearner(Email.of("aysel@example.com"), HASH, "Aysel", AZ, AZ);
+        User aysel = User.registerLearner(Email.of("aysel@example.com"), HASH, "Aysel", AZ, AZ);
+        aysel.verifyEmail(java.time.Instant.parse("2026-10-24T09:00:00Z"));
+        return aysel;
+    }
+
+    // ------------------------------------------------------------ email and Instructor requests (requirement 12)
+
+    private static final java.time.Instant NOW = java.time.Instant.parse("2026-10-24T10:00:00Z");
+
+    @Test
+    void confirmingTheEmailTwiceKeepsTheFirstTime() {
+        User aysel = User.registerLearner(Email.of("aysel@example.com"), HASH, null, AZ, AZ);
+        aysel.verifyEmail(NOW);
+        aysel.verifyEmail(NOW.plusSeconds(60));
+        assertThat(aysel.emailVerifiedAt()).contains(NOW);
+    }
+
+    @Test
+    void theFirstAdminIsConfirmedFromTheStart() {
+        User admin = User.createAdmin(Email.of("owner@example.com"), HASH, null, NOW);
+        assertThat(admin.canAuthenticate()).isTrue();
+    }
+
+    @Test
+    void anInstructorSignUpIsAPendingRequestThatOnlyApprovalTurnsIntoAnAuthor() {
+        User leyla = User.register(Email.of("leyla@example.com"), HASH, "Leyla", AZ, AZ, true, NOW);
+        assertThat(leyla.instructorStatus()).isEqualTo(InstructorStatus.PENDING);
+        assertThat(leyla.instructorRequestedAt()).contains(NOW);
+        assertThat(leyla.roles()).containsExactly(Role.LEARNER);
+        assertThat(leyla.canAuthor()).isFalse();
+
+        leyla.approveInstructor();
+        assertThat(leyla.instructorStatus()).isEqualTo(InstructorStatus.APPROVED);
+        assertThat(leyla.roles()).containsExactlyInAnyOrder(Role.LEARNER, Role.AUTHOR);
+        assertThat(leyla.canAuthor()).isTrue();
+        org.assertj.core.api.Assertions.assertThatThrownBy(leyla::approveInstructor).isInstanceOf(IllegalStateException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(leyla::rejectInstructor).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void aRejectedRequestStaysALearnerAndALearnerHasNothingToApprove() {
+        User rasim = User.register(Email.of("rasim@example.com"), HASH, null, AZ, AZ, true, NOW);
+        rasim.rejectInstructor();
+        assertThat(rasim.instructorStatus()).isEqualTo(InstructorStatus.REJECTED);
+        assertThat(rasim.canAuthor()).isFalse();
+
+        User aysel = User.registerLearner(Email.of("aysel@example.com"), HASH, null, AZ, AZ);
+        org.assertj.core.api.Assertions.assertThatThrownBy(aysel::approveInstructor).isInstanceOf(IllegalStateException.class);
     }
 }

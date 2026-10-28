@@ -11,12 +11,13 @@ import com.bandup.api.identity.domain.user.repository.UserRepository;
 import com.bandup.api.identity.domain.user.valueobject.Email;
 import com.bandup.api.identity.domain.user.valueobject.NewPassword;
 import com.bandup.api.identity.domain.user.valueobject.PasswordHash;
+import com.bandup.api.shared.application.ForbiddenException;
 import com.bandup.api.shared.application.TooManyRequestsException;
 import com.bandup.api.shared.application.UnauthenticatedException;
 import com.bandup.api.shared.domain.error.DomainException;
 
 /**
- * Use case: sign in with email and password (requirements 8.2, 8.3, 8.10).
+ * Use case: sign in with email and password (requirements 8.2, 8.3, 8.10, 12.2).
  * A wrong email, a wrong password and a disabled account all get the same
  * answer, and take about the same time (a dummy hash is checked when the email
  * is unknown), so the response doesn't reveal which emails exist.
@@ -29,6 +30,7 @@ import com.bandup.api.shared.domain.error.DomainException;
 public class Login {
 
     static final String WRONG_CREDENTIALS = "Wrong email or password.";
+    static final String EMAIL_NOT_CONFIRMED = "Please confirm your email first: open the link we sent you.";
 
     private final UserRepository users;
     private final PasswordHasher hasher;
@@ -69,6 +71,10 @@ public class Login {
         throttling.checkAllowed(command.email(), command.clientAddress());
         Optional<User> found = parseEmail(command.email()).flatMap(users::findByEmail);
         boolean passwordMatches = hasher.matches(command.password(), found.map(User::passwordHash).orElse(timingDummy));
+        if (found.isPresent() && passwordMatches && found.get().awaitsEmailConfirmation()) {
+            // Only after the right password, so it tells nothing to someone guessing.
+            throw new ForbiddenException(EMAIL_NOT_CONFIRMED, "EMAIL_NOT_VERIFIED");
+        }
         if (found.isEmpty() || !passwordMatches || !found.get().canAuthenticate()) {
             throttling.recordFailure(command.email(), command.clientAddress());
             throw new UnauthenticatedException(WRONG_CREDENTIALS);

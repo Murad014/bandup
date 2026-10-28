@@ -295,6 +295,27 @@ depends on no technology.
    THEN the API SHALL answer `404`. Without a token it SHALL answer `401`.
 5. THE navbar SHALL show "My progress" (`/progress`) only to signed-in users.
 
+## Requirement 12 — Email confirmation, password reset, instructors
+
+1. On sign-up the user SHALL choose **Learner** or **Instructor**. An
+   Instructor account SHALL start as a pending request and practise like a
+   learner; only an ADMIN approval SHALL give it the AUTHOR role.
+2. After sign-up THE system SHALL email a confirmation link (valid 24 h,
+   single use). WHILE the email isn't confirmed THE user SHALL NOT be able
+   to sign in, and SHALL be told so (after a correct password) with a way to
+   get a new link.
+3. "Forgot password" SHALL email a reset link (valid 1 h, single use). The
+   answer SHALL be the same whether or not the email has an account. A reset
+   SHALL set the new password, confirm the email and sign out every session.
+4. Links SHALL be random, stored only as hashes, and a new link SHALL make
+   older open links of the same kind unusable. One email per kind per
+   address per minute at most.
+5. Admins SHALL see pending instructor requests and approve or reject them;
+   the instructor SHALL be emailed when approved.
+6. Emails SHALL go over SMTP (provider settings in the environment); in
+   local development and tests the links SHALL be written to the log
+   instead.
+
 ---
 
 ## Non-functional requirements

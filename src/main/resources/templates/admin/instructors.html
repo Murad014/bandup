@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::title}, ~{::#pageCss}, ~{::main}, 'instructors')}">
+<head>
+    <title>Instructors · BandUp Admin</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<main id="instructorsRoot">
+    <div class="admin-row">
+        <h1 class="admin-h1">Instructor requests</h1>
+    </div>
+    <p class="admin-sub">People who signed up as Instructors. Approving gives them the editor (they can create and
+        publish passages) and emails them; rejecting keeps them a learner.</p>
+
+    <p id="instructorsStatus" class="admin-status">Loading requests…</p>
+    <table id="instructorsTable" class="admin-table" hidden>
+        <thead>
+            <tr><th>Name</th><th>Email</th><th>Email confirmed</th><th>Requested</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="instructorsBody"></tbody>
+    </table>
+
+    <script type="module" th:src="@{/js/admin/instructors-page.js}"></script>
+</main>
+</body>
+</html>

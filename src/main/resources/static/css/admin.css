@@ -79,6 +79,7 @@ body.admin { background: var(--bg); }
 }
 .admin-nav__link[data-key="dashboard"]::before { content: "\25A6"; } /* ▦ */
 .admin-nav__link[data-key="sessions"]::before { content: "\2630"; }  /* ☰ */
+.admin-nav__link[data-key="instructors"]::before { content: "\2605"; } /* ★ */
 .admin-nav__link.is-active[data-key]::before { opacity: 1; }
 
 .admin-sidebar__foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }

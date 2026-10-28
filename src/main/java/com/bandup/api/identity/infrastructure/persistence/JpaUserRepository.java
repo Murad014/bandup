@@ -45,6 +45,13 @@ class JpaUserRepository implements UserRepository {
     }
 
     @Override
+    public java.util.List<User> findPendingInstructors() {
+        return users.findByInstructorStatusOrderByInstructorRequestedAt(
+                com.bandup.api.identity.domain.user.valueobject.InstructorStatus.PENDING)
+                .stream().map(JpaUserRepository::toDomain).toList();
+    }
+
+    @Override
     public boolean existsWithRole(Role role) {
         return users.existsWithRole(role);
     }
@@ -63,6 +70,9 @@ class JpaUserRepository implements UserRepository {
         entity.supportLanguage = user.supportLanguage().value();
         entity.targetLanguage = user.targetLanguage().value();
         entity.status = user.status();
+        entity.emailVerifiedAt = user.emailVerifiedAt().orElse(null);
+        entity.instructorStatus = user.instructorStatus();
+        entity.instructorRequestedAt = user.instructorRequestedAt().orElse(null);
         entity.roles.clear();
         entity.roles.addAll(user.roles());
         if (!user.passwordHash().value().equals(entity.passwordHash)) {
@@ -87,6 +97,9 @@ class JpaUserRepository implements UserRepository {
                 LanguageCode.of(e.supportLanguage),
                 LanguageCode.of(e.targetLanguage),
                 e.roles,
-                e.status);
+                e.status,
+                e.emailVerifiedAt,
+                e.instructorStatus,
+                e.instructorRequestedAt);
     }
 }

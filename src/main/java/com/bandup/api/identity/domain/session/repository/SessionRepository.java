@@ -25,4 +25,7 @@ public interface SessionRepository {
      * touched. Returns how many tokens were deleted.
      */
     int deleteEndedBefore(Instant cutoff);
+
+    /** Revokes every live token of the user (sign out everywhere, e.g. after a password reset). */
+    void revokeAllOf(com.bandup.api.identity.domain.user.valueobject.UserId userId, Instant now);
 }

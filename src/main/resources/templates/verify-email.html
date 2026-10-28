@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>Confirm your email · BandUp</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/auth.css}">
+</head>
+<body>
+<main class="wrap auth">
+    <section class="auth-card auth-done" data-verify-email>
+        <div class="auth-done__icon" aria-hidden="true" data-icon>⏳</div>
+        <h1 class="auth-title" data-title>Confirming your email…</h1>
+        <p data-message></p>
+        <a class="btn btn--primary auth-submit" href="/login" data-sign-in hidden>Sign in</a>
+        <p class="auth-alt" data-again hidden>Need a new link? <a href="/login">Sign in</a> and choose "Send the link again".</p>
+    </section>
+    <script type="module" th:src="@{/js/account.js}"></script>
+</main>
+</body>
+</html>

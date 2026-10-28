@@ -190,6 +190,26 @@ export async function register(form) {
     return res.json();
 }
 
+/** POST to an account-email endpoint (no token); throws ApiError on failure. */
+async function accountPost(path, body) {
+    const res = await fetch(AUTH + path, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new ApiError(res.status, await problemOf(res));
+}
+
+/** Opens the emailed confirmation link (400 when it's invalid, used or expired). */
+export const verifyEmail = (token) => accountPost("/verify-email", { token });
+/** Sends the confirmation link again (always succeeds: reveals nothing). */
+export const resendVerification = (email) => accountPost("/resend-verification", { email });
+/** Emails a password reset link (always succeeds: reveals nothing). */
+export const forgotPassword = (email) => accountPost("/forgot-password", { email });
+/** Sets a new password from the reset link (400 bad link, 422 weak password). */
+export const resetPassword = (token, password) => accountPost("/reset-password", { token, password });
+
 /** Ends the whole session on the server and in every tab. */
 export async function logout() {
     try {

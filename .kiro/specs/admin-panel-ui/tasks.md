@@ -197,3 +197,7 @@ until that lands; flipping `USE_STUB` off switches to the real API.
   it); the other editor tests and `AuthorScenariosTest` use the panel and
   the dropdown; 426 tests and 13 Selenium scenarios green; screenshots
   checked by eye.
+
+- [x] `/admin/instructors`: pending Instructor requests with Approve / Reject
+  (ADMIN only; the sidebar item is hidden from authors) — backend
+  requirement 12.5.

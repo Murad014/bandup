@@ -47,3 +47,6 @@ data/
 # Production secrets and backups (deploy/)
 deploy/.env
 deploy/backups/
+
+# macOS Finder files
+.DS_Store

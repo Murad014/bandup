@@ -46,19 +46,21 @@ class AuthApiTest {
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
     @Autowired JsonMapper json;
+    @Autowired com.bandup.RecordingMailer mailbox;
 
     @BeforeEach
     void cleanAccounts() {
         jdbc.update("delete from login_throttle"); // all tests sign in from the same test address
         jdbc.update("delete from refresh_token");
         jdbc.update("delete from app_user");
+        mailbox.clear();
     }
 
     // ------------------------------------------------------------ register
 
     @Test
     void registerThenLoginThenMe() throws Exception {
-        String id = registerAysel()
+        String id = register(AYSEL)
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.roles[0]").value("LEARNER"))
                 .andExpect(jsonPath("$.displayName").value("Aysel"))
@@ -67,6 +69,12 @@ class AuthApiTest {
                 .andExpect(jsonPath("$.email").doesNotExist())
                 .andExpect(content().string(not(containsString(PASSWORD))))
                 .andReturn().getResponse().getContentAsString().replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        // Not before the emailed link is opened.
+        login("Aysel@Example.com", PASSWORD)
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("EMAIL_NOT_VERIFIED"));
+        confirm("aysel@example.com");
 
         MvcResult login = login("Aysel@Example.com", PASSWORD)
                 .andExpect(status().isOk())
@@ -212,6 +220,7 @@ class AuthApiTest {
                 .andExpect(jsonPath("$.detail").value("Too many sign-in attempts. Try again in 15 minutes."));
         // The lock is for that email only.
         register(Map.of("email", "leyla@example.com", "password", PASSWORD, "displayName", "Leyla"));
+        confirm("leyla@example.com");
         login("leyla@example.com", PASSWORD).andExpect(status().isOk());
     }
 
@@ -299,9 +308,24 @@ class AuthApiTest {
 
     // ------------------------------------------------------------- helpers
 
+    private static final Map<String, String> AYSEL = Map.of("email", "Aysel@Example.com", "password", PASSWORD,
+            "displayName", "Aysel", "uiLanguage", "az", "supportLanguage", "az");
+
+    /** Registers Aysel and opens her confirmation link, so she can sign in. */
     private ResultActions registerAysel() throws Exception {
-        return register(Map.of("email", "Aysel@Example.com", "password", PASSWORD, "displayName", "Aysel",
-                "uiLanguage", "az", "supportLanguage", "az"));
+        ResultActions registered = register(AYSEL);
+        if (registered.andReturn().getResponse().getStatus() == 201) {
+            confirm("aysel@example.com");
+        }
+        return registered;
+    }
+
+    /** Opens the newest confirmation link emailed to {@code email}. */
+    private void confirm(String email) throws Exception {
+        String token = mailbox.latestToken(email, "/verify-email").orElseThrow();
+        mvc.perform(post("/api/v1/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of("token", token))))
+                .andExpect(status().isOk());
     }
 
     private ResultActions register(Map<String, String> body) throws Exception {

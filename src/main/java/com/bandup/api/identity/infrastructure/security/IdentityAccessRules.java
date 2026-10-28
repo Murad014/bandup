@@ -17,12 +17,16 @@ import com.bandup.api.shared.infrastructure.security.ApiAccessRules;
 class IdentityAccessRules implements ApiAccessRules {
 
     private static final String[] SIGN_IN = {
-            "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout"};
+            "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout",
+            "/api/v1/auth/verify-email", "/api/v1/auth/resend-verification", "/api/v1/auth/forgot-password",
+            "/api/v1/auth/reset-password"};
 
     @Override
     public void authorize(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry rules) {
         rules.requestMatchers(HttpMethod.POST, SIGN_IN).permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated();
+                .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
+                // ADMIN only (InstructorRequests checks it too, whatever order the contexts' rules come in).
+                .requestMatchers("/api/v1/admin/instructor-requests/**", "/api/v1/admin/instructor-requests").hasRole("ADMIN");
     }
 
     /** Sign-in endpoints ignore a stale access token, so it can't block the refresh that replaces it. */

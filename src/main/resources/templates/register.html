@@ -10,6 +10,18 @@
     <form class="auth-card" data-register-form novalidate>
         <h1 class="auth-title">Create an account</h1>
         <p class="auth-error" data-form-error role="alert" hidden></p>
+        <fieldset class="account-type" data-field="accountType">
+            <legend>I am a…</legend>
+            <label class="account-type__option">
+                <input type="radio" name="accountType" value="LEARNER" checked>
+                <span><b>📚 Learner</b><small>Practise IELTS reading and track your progress.</small></span>
+            </label>
+            <label class="account-type__option">
+                <input type="radio" name="accountType" value="INSTRUCTOR">
+                <span><b>🎓 Instructor</b><small>Create passages for students. An admin approves instructor accounts.</small></span>
+            </label>
+            <span class="err" data-error-for="accountType"></span>
+        </fieldset>
         <div class="field" data-field="displayName">
             <label for="displayName">Your name</label>
             <input id="displayName" name="displayName" type="text" autocomplete="name" maxlength="80">
@@ -39,6 +51,18 @@
         <button class="btn btn--primary auth-submit" type="submit">Create account</button>
         <p class="auth-alt">Already have an account? <a href="/login" data-keep-next>Sign in</a></p>
     </form>
+    <!-- Shown after signing up: the account works once the emailed link is opened. -->
+    <section class="auth-card auth-done" data-check-email hidden>
+        <div class="auth-done__icon" aria-hidden="true">✉️</div>
+        <h1 class="auth-title">Check your email</h1>
+        <p>We sent a confirmation link to <b data-sent-to></b>. Open it to finish creating your account
+            (it works for 24 hours).</p>
+        <p class="auth-note" data-instructor-note hidden>After you confirm, an admin reviews your Instructor request.
+            Until then you can practise like a learner.</p>
+        <p class="auth-alt">Nothing arrived? Check spam, or
+            <button class="link-btn" type="button" data-resend>send the link again</button>.</p>
+        <p class="auth-ok" data-resent role="status" hidden>If the account still needs confirming, a new link is on its way.</p>
+    </section>
     <!-- Inside <main>: the layout only takes this element. -->
     <script type="module" th:src="@{/js/register.js}"></script>
 </main>
