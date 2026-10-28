@@ -95,7 +95,8 @@ class PracticeApiTest {
 
         // The passage text itself holds the gap answers and the ev spans (that's the exam);
         // nothing else may reveal an answer, an explanation or which span proves what.
-        String withoutPassage = body.replaceAll("\"passageHtml\":\"(\\\\.|[^\"\\\\])*\"", "");
+        // Possessive quantifiers (++ / *+): no backtracking, so no deep recursion on a long passage.
+        String withoutPassage = body.replaceAll("\"passageHtml\":\"(?:[^\"\\\\]++|\\\\.)*+\"", "");
         assertThat(withoutPassage).contains("\"glosses\"").doesNotContain("passageHtml");
         assertThat(withoutPassage).doesNotContain("answer", "explanation", "evidence", "riverbanks", "songbirds",
                 "Mainly", "hunting", "\"e1\"", "\"e4\"");
