@@ -41,3 +41,34 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        env:
+          TAG: ${{ github.sha }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: TAG,GHCR_USER,GHCR_TOKEN
+          script: |
+            set -e
+            cd /opt/bandup
+            sed -i '/^BANDUP_TAG=/d' .env
+            echo "BANDUP_TAG=$TAG" >> .env
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker compose pull app
+            docker logout ghcr.io
+            docker compose up -d
+            docker image prune -f
+            DOMAIN=$(grep '^BANDUP_DOMAIN=' .env | cut -d= -f2-)
+            curl -fsS -o /dev/null --retry 40 --retry-delay 3 --retry-all-errors "https://$DOMAIN/"
+            echo "Deployed $TAG to https://$DOMAIN"
