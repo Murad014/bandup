@@ -30,6 +30,7 @@ public class BootstrapAdmin {
 
     private final UserRepository users;
     private final PasswordHasher hasher;
+    private final java.time.Clock clock;
 
     /** @throws com.bandup.api.shared.domain.error.DomainException if the configured email or password is invalid */
     public Result ensureAdmin(String rawEmail, String rawPassword) {
@@ -49,7 +50,7 @@ public class BootstrapAdmin {
         if (users.existsByEmail(email)) {
             return Result.EMAIL_TAKEN_BY_NON_ADMIN;
         }
-        users.save(User.createAdmin(email, hasher.hash(password), "Administrator"));
+        users.save(User.createAdmin(email, hasher.hash(password), "Administrator", clock.instant()));
         return Result.CREATED;
     }
 }

@@ -27,6 +27,13 @@ public class AdminPageController {
         return "admin/sessions";
     }
 
+    /** Instructor sign-ups waiting for approval (ADMIN only; the API checks it). */
+    @GetMapping("/instructors")
+    public String instructors(Model model) {
+        model.addAttribute("activeKey", AdminNavigationAdvice.INSTRUCTORS);
+        return "admin/instructors";
+    }
+
     @GetMapping("/sessions/new")
     public String newSession(Model model) {
         model.addAttribute("activeKey", AdminNavigationAdvice.SESSIONS);

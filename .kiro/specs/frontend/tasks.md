@@ -266,3 +266,10 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
 
 - [x] `/progress` page and navbar "My progress" (signed-in only), reading
   page review mode — details and tests in `../backend/practice/tasks.md`.
+
+## Account emails and Instructor sign-up (backend requirement 12)
+
+- [x] Register: Learner / Instructor cards, then "Check your email" (resend);
+  login: "confirm your email first" box with resend, "Forgot password?";
+  pages `/verify-email`, `/forgot-password`, `/reset-password`. Details in
+  `../backend/identity/tasks.md` task 15.

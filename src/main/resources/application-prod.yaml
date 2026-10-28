@@ -9,6 +9,20 @@ spring:
     hikari:
       maximum-pool-size: 10
 
+  # Account emails over SMTP (any provider: Brevo, Resend, Mailgun…).
+  mail:
+    host: ${BANDUP_SMTP_HOST}
+    port: ${BANDUP_SMTP_PORT:587}
+    username: ${BANDUP_SMTP_USERNAME}
+    password: ${BANDUP_SMTP_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
 server:
   port: 8080
   # Caddy terminates HTTPS and sends X-Forwarded-For / -Proto: the app sees the
@@ -28,10 +42,14 @@ bandup:
     secret: ${BANDUP_JWT_SECRET}
     require-secret: true
   auth:
+    public-url: ${BANDUP_PUBLIC_URL}
     admin-email: ${BANDUP_ADMIN_EMAIL}
     admin-password: ${BANDUP_ADMIN_PASSWORD}
   media:
     dir: /app/data/media
+  mail:
+    enabled: true
+    from: ${BANDUP_MAIL_FROM}
 
 logging:
   level:

@@ -44,3 +44,11 @@ bandup:
     refresh-token-lifetime: 14d
     admin-email: ${BANDUP_ADMIN_EMAIL:}
     admin-password: ${BANDUP_ADMIN_PASSWORD:}
+    # The site's address for links in emails (confirmation, password reset).
+    public-url: ${BANDUP_PUBLIC_URL:http://localhost:8080}
+
+  # Account emails. Off (written to the log) unless a deployment turns it on and
+  # sets the SMTP server (spring.mail.*). See application-prod.yaml.
+  mail:
+    enabled: false
+    from: ${BANDUP_MAIL_FROM:BandUp <no-reply@localhost>}

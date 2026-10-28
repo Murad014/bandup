@@ -17,7 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bandup.api.identity.application.ConfirmEmail;
 import com.bandup.api.identity.application.GetMe;
+import com.bandup.api.identity.application.RequestPasswordReset;
+import com.bandup.api.identity.application.ResetPassword;
+import com.bandup.api.identity.application.SendConfirmation;
 import com.bandup.api.identity.application.Login;
 import com.bandup.api.identity.application.Logout;
 import com.bandup.api.identity.application.RefreshSession;
@@ -39,6 +43,10 @@ class AuthController {
     private final RefreshSession refreshSession;
     private final Logout logout;
     private final GetMe getMe;
+    private final ConfirmEmail confirmEmail;
+    private final SendConfirmation sendConfirmation;
+    private final RequestPasswordReset requestPasswordReset;
+    private final ResetPassword resetPassword;
 
     /** {@code bandup.auth.secure-cookie}: true everywhere except the local profile (see {@link RefreshCookie}). */
     @Value("${bandup.auth.secure-cookie:true}")
@@ -48,8 +56,35 @@ class AuthController {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     UserView register(@RequestBody AuthRequests.Register body) {
-        return registerLearner.register(new RegisterLearner.Command(
-                body.email(), body.password(), body.displayName(), body.uiLanguage(), body.supportLanguage()));
+        return registerLearner.register(new RegisterLearner.Command(body.email(), body.password(), body.displayName(),
+                body.uiLanguage(), body.supportLanguage(), body.accountType()));
+    }
+
+    /** The confirmation link was opened. */
+    @PostMapping("/verify-email")
+    ResponseEntity<Void> verifyEmail(@RequestBody AuthRequests.Token body) {
+        confirmEmail.confirm(body.token());
+        return ResponseEntity.ok().build();
+    }
+
+    /** Always 202: doesn't reveal whether the email has an account. */
+    @PostMapping("/resend-verification")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    void resendVerification(@RequestBody AuthRequests.EmailOnly body) {
+        sendConfirmation.resend(body.email());
+    }
+
+    /** Always 202: doesn't reveal whether the email has an account. */
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    void forgotPassword(@RequestBody AuthRequests.EmailOnly body) {
+        requestPasswordReset.request(body.email());
+    }
+
+    @PostMapping("/reset-password")
+    ResponseEntity<Void> resetPassword(@RequestBody AuthRequests.Reset body) {
+        resetPassword.reset(body.token(), body.password());
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/login")

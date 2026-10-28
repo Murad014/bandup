@@ -312,3 +312,33 @@ requested, one at a time, and ends green (`sh gradlew test`).
   - _Verified_: `LocalRefreshCookieTest` failed first (cookie had Secure),
     passes after the fix; `AuthApiTest` still expects `Secure`;
     `ProductionProfileTest` checks prod keeps it.
+
+- [x] 15. Email confirmation, password reset, instructors — requirement 12, design §6.7
+  - [x] Domain: `User` (`emailVerifiedAt`, `InstructorStatus`, `register`,
+    `verifyEmail`, `approveInstructor`, `rejectInstructor`,
+    `awaitsEmailConfirmation`; `canAuthenticate` needs a confirmed email);
+    module `token` (`AccountToken`, `TokenPurpose`, `LinkHash`,
+    `AccountTokenRepository`); `SessionRepository.revokeAllOf`.
+  - [x] V8 (`email_verified_at` backfilled for existing users,
+    `instructor_status`, `instructor_requested_at`, `account_token`);
+    `JdbcAccountTokenRepository`, user entity fields.
+  - [x] Use cases `RegisterLearner` (+ `accountType`), `ConfirmEmail`,
+    `SendConfirmation`, `RequestPasswordReset`, `ResetPassword`,
+    `InstructorRequests`, `Login` (403 `EMAIL_NOT_VERIFIED`); `AccountEmails`
+    + port `Mailer` (`SmtpMailer` / `LogMailer`); endpoints in
+    `AuthController` and `InstructorRequestController`; nightly clean-up
+    deletes ended links.
+  - [x] Pages: register (Learner / Instructor, "check your email", resend),
+    login (unconfirmed box + resend, "Forgot password?"), `/verify-email`,
+    `/forgot-password`, `/reset-password` (`account.js`), admin
+    `/admin/instructors` (hidden from authors).
+  - [x] Production: `spring-boot-starter-mail`; SMTP and
+    `BANDUP_PUBLIC_URL` / `BANDUP_MAIL_FROM` in `application-prod.yaml`,
+    `deploy/compose.yaml`, `.env.example`, README.
+  - _Verified_: `AccountEmailsApiTest` (6), `UserTest` (+4),
+    `AccountEmailsBrowserTest` (2), `SignInPagesBrowserTest` sign-up flow;
+    existing tests confirm the email before signing in (tests record emails
+    in `RecordingMailer`). Bug found by the tests: "latest link" query crashed
+    when there was none. Mutations: links not replaced → test fails; email
+    no longer required in `canAuthenticate` → test fails. 451 tests and 13
+    Selenium scenarios green; screenshots checked.

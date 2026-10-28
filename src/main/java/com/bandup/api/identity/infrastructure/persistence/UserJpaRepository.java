@@ -18,4 +18,7 @@ interface UserJpaRepository extends JpaRepository<UserEntity, Long> {
 
     @Query("select count(u) > 0 from UserEntity u join u.roles r where r = :role")
     boolean existsWithRole(Role role);
+
+    java.util.List<UserEntity> findByInstructorStatusOrderByInstructorRequestedAt(
+            com.bandup.api.identity.domain.user.valueobject.InstructorStatus status);
 }

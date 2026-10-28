@@ -22,6 +22,11 @@ final class RegisterPage {
         ui.click(By.cssSelector("[data-register-form] button[type=submit]"));
     }
 
+    /** After signing up: "Check your email". */
+    void waitForCheckEmail() {
+        ui.waitFor(d -> ui.isShown(By.cssSelector("[data-check-email]")));
+    }
+
     String errorUnder(String field) {
         By error = By.cssSelector("[data-error-for='" + field + "']");
         ui.waitFor(d -> !ui.driver().findElement(error).getText().isEmpty());

@@ -25,3 +25,29 @@
 .field .err { color: var(--bad); font-size: .85rem; font-weight: 600; }
 .field .err:empty { display: none; }
 .field.has-error input, .field.has-error select { border-color: var(--bad); box-shadow: 0 0 0 4px var(--bad-soft); }
+
+/* Learner / Instructor choice on sign-up. */
+.account-type { border: 0; padding: 0; margin: 0 0 18px; display: grid; gap: 10px; }
+.account-type legend { font-weight: 700; font-size: .9rem; margin-bottom: 8px; }
+.account-type__option { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; cursor: pointer;
+    border: 2px solid var(--line); border-radius: var(--radius); transition: border-color .15s, background .15s; }
+.account-type__option:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.account-type__option:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.account-type__option input { accent-color: var(--accent); margin-top: 4px; }
+.account-type__option span { display: flex; flex-direction: column; gap: 2px; }
+.account-type__option small { color: var(--muted); font-size: .85rem; }
+.account-type .err:empty { display: none; }
+.account-type .err { color: var(--bad); font-size: .85rem; font-weight: 600; }
+
+.auth-done { text-align: center; }
+.auth-done__icon { font-size: 2.6rem; margin: 6px 0 4px; }
+.auth-done p { color: var(--muted); }
+.auth-done b { color: var(--fg); }
+.auth-note { background: var(--sun-soft); border-radius: var(--radius); padding: 10px 14px; color: var(--fg) !important; }
+.auth-ok { color: var(--ok); font-weight: 700; margin: 10px 0 0; }
+.link-btn { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); font-weight: 700; cursor: pointer; text-decoration: underline; }
+.auth-confirm { background: var(--sun-soft); border-radius: var(--radius); padding: 12px 14px; margin: 0 0 16px; }
+.auth-confirm p { margin: 0 0 10px; font-weight: 600; }
+.auth-forgot { text-align: right; margin: -6px 0 14px; font-size: .9rem; }
+.auth-forgot a { color: var(--accent); font-weight: 700; text-decoration: none; }
+.auth-sub { color: var(--muted); margin: -10px 0 20px; }

@@ -18,6 +18,12 @@
             <label for="password">Password</label>
             <input id="password" name="password" type="password" autocomplete="current-password" required>
         </div>
+        <div class="auth-confirm" data-confirm-email hidden>
+            <p>Please confirm your email first: open the link we sent you.</p>
+            <button class="btn" type="button" data-resend>Send the link again</button>
+            <p class="auth-ok" data-resent role="status" hidden>A new link is on its way (check spam too).</p>
+        </div>
+        <p class="auth-forgot"><a href="/forgot-password">Forgot password?</a></p>
         <button class="btn btn--primary auth-submit" type="submit">Sign in</button>
         <p class="auth-alt">New to BandUp? <a href="/register" data-keep-next>Create an account</a></p>
     </form>

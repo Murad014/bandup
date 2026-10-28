@@ -68,7 +68,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ForbiddenException.class)
     ProblemDetail forbidden(ForbiddenException e) {
-        return ApiProblems.forbidden(e.getMessage());
+        ProblemDetail problem = ApiProblems.forbidden(e.getMessage());
+        e.code().ifPresent(code -> problem.setProperty("code", code));
+        return problem;
     }
 
     /** Missing, invalid or expired token (also reached from the security filters). */

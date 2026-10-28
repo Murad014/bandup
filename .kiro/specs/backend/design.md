@@ -362,6 +362,48 @@ startup.
 
 ---
 
+### 6.7 Email confirmation, password reset, instructors (requirement 12)
+
+User decisions: unconfirmed accounts can't sign in; Instructors are approved
+by an admin; email over SMTP (any provider).
+
+**Domain**
+
+| Module | Element | Rules |
+|---|---|---|
+| `user` | `User.emailVerifiedAt`, `verifyEmail(now)`, `isEmailVerified()` | the first admin is created verified; `canSignIn()` = active **and** verified |
+| `user` | `InstructorStatus` VO (`NONE`, `PENDING`, `APPROVED`, `REJECTED`); `User.registerLearner(…, wantsInstructor)`, `approveInstructor()` (adds `AUTHOR`), `rejectInstructor()` | only a `PENDING` request can be approved or rejected |
+| `token` (new) | aggregate `AccountToken`: user, `TokenPurpose` (`EMAIL_VERIFICATION` 24 h, `PASSWORD_RESET` 1 h), hash, issued / expires / used | `use(now)`: fails when used or expired; one use only |
+| `token` | `AccountTokenRepository`: `save`, `findByHash`, `latest(user, purpose)`, `invalidateOpen(user, purpose)`, `deleteEndedBefore` | a new link makes earlier open links of the same purpose unusable |
+| `session` | `SessionRepository.revokeAllOf(user, now)` | a password reset signs out every device |
+
+**Application** (`identity.application`)
+
+| Use case | Endpoint | Answer |
+|---|---|---|
+| `RegisterLearner` (+ `accountType` `LEARNER` / `INSTRUCTOR`) | `POST /auth/register` | 201; sends the confirmation link; no sign-in |
+| `ConfirmEmail` | `POST /auth/verify-email {token}` | 200; bad / used / expired link → 400 |
+| `SendConfirmation` | `POST /auth/resend-verification {email}` | always 202 (reveals nothing); sends only to an unconfirmed account, at most once a minute |
+| `Login` | `POST /auth/login` | right password but unconfirmed → 403 with `"code": "EMAIL_NOT_VERIFIED"` (only after the right password, so it reveals nothing new) |
+| `RequestPasswordReset` | `POST /auth/forgot-password {email}` | always 202; sends to an active account, at most once a minute |
+| `ResetPassword` | `POST /auth/reset-password {token, password}` | 200; new password, email counts as confirmed (the inbox is proven), all sessions revoked; bad link → 400, weak password → 422 |
+| `InstructorRequests` | `GET /admin/instructor-requests`, `POST …/{userId}/approve`, `POST …/{userId}/reject` | ADMIN only; approval emails the instructor |
+
+Port `Mailer` (`send(to, subject, text)`); adapters `SmtpMailer`
+(`spring-boot-starter-mail`, `bandup.mail.enabled=true` in prod) and
+`LogMailer` (local / tests: the link goes to the log). Emails are sent after
+the database change; a sending failure is logged and the user can ask again.
+Links use `bandup.public-url`. The nightly cleanup also deletes ended links.
+
+**Database** V8: `app_user.email_verified_at` (existing users backfilled as
+confirmed), `app_user.instructor_status`, `instructor_requested_at`; table
+`account_token` (hash only, never the raw link).
+
+**Pages**: register (Learner / Instructor cards; then "check your email"),
+login ("confirm your email first" + resend; "Forgot password?"),
+`/verify-email`, `/forgot-password`, `/reset-password`, admin
+`/admin/instructors`.
+
 ## 7. Practice context
 
 > Built: tactical model (task 0), domain (task 1), adapters (task 2), use
@@ -785,6 +827,12 @@ GET /api/v1/exercises/filters?lang=  → {skills[], formats[], levels[], types[]
 | GET | `/api/v1/exercises/filters?lang=` | public | 200 |
 | GET | `/api/v1/passages/{slug}?lang=` | public | 200 |
 | POST | `/api/v1/attempts` | public (token optional) | 201 |
+| POST | `/api/v1/auth/verify-email` | public | 200 / 400 |
+| POST | `/api/v1/auth/resend-verification` | public | 202 always |
+| POST | `/api/v1/auth/forgot-password` | public | 202 always |
+| POST | `/api/v1/auth/reset-password` | public (link) | 200 / 400 / 422 |
+| GET | `/api/v1/admin/instructor-requests` | ADMIN | 200 |
+| POST | `/api/v1/admin/instructor-requests/{userId}/approve` / `reject` | ADMIN | 204 |
 | GET | `/api/v1/me/progress` | token (own data) | 200 |
 | GET | `/api/v1/me/attempts?passageId=&page=&size=` | token (own data) | 200 |
 | GET | `/api/v1/me/attempts/{id}?lang=` | token (own attempt, else 404) | 200 |

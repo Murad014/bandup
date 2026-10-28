@@ -40,6 +40,17 @@ abstract class UiTestBase {
     @LocalServerPort
     int port;
 
+    /** The emails the app "sent" (tests record them instead of sending). */
+    @org.springframework.beans.factory.annotation.Autowired
+    com.bandup.RecordingMailer mailbox;
+
+    /** Opens the confirmation link emailed to {@code email}, as the learner would from their inbox. */
+    void openConfirmationLink(String email) {
+        String token = mailbox.latestToken(email, "/verify-email").orElseThrow();
+        ui.open("/verify-email?token=" + token);
+        ui.waitFor(d -> ui.text(org.openqa.selenium.By.cssSelector("[data-title]")).equals("Email confirmed"));
+    }
+
     ChromeDriver driver;
     Ui ui;
 

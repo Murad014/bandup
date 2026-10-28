@@ -100,3 +100,10 @@ when requested.
   - `exercise.cover_media_id` → `media(id)`, `on delete set null`: the cover
     image of an exercise (backend requirement 10). Still 29 tables.
   - _Verified_: `CoverImageApiTest`, full suite green.
+
+- [x] 9. `V8__email_confirmation_and_instructors.sql`
+  - `app_user.email_verified_at` (existing accounts backfilled as confirmed),
+    `instructor_status` + `instructor_requested_at` (check: a request has
+    its time), table `account_token` (hash only, 64 hex; expiry after
+    issue). 30 tables.
+  - _Verified_: `SchemaConstraintsTest` counts 30; identity tests.

@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.bandup.api.identity.domain.user.valueobject.InstructorStatus;
 import com.bandup.api.identity.domain.user.valueobject.Role;
 import com.bandup.api.identity.domain.user.valueobject.UserStatus;
 
@@ -67,6 +68,14 @@ class UserEntity {
 
     @Column(table = "user_credential", name = "updated_at", nullable = false)
     Instant credentialUpdatedAt;
+
+    Instant emailVerifiedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    InstructorStatus instructorStatus = InstructorStatus.NONE;
+
+    Instant instructorRequestedAt;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

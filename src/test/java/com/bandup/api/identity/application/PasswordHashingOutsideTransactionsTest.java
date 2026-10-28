@@ -56,6 +56,7 @@ class PasswordHashingOutsideTransactionsTest {
     @Test
     void loginVerifiesOutsideATransaction() {
         register.register(new RegisterLearner.Command("aysel@example.com", PASSWORD, null, "az", "az"));
+        confirmEmails();
         hasher.calls.clear();
 
         login.login(new Login.Command("aysel@example.com", PASSWORD));
@@ -102,5 +103,9 @@ class PasswordHashingOutsideTransactionsTest {
         private static String tx() {
             return TransactionSynchronizationManager.isActualTransactionActive() ? "IN-TX" : "no-tx";
         }
+    }
+
+    private void confirmEmails() {
+        jdbc.update("update app_user set email_verified_at = now()"); // as if the emailed link was opened
     }
 }

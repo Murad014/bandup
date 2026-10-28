@@ -19,6 +19,7 @@ class SessionCleanupSchedule {
     @Scheduled(cron = "${bandup.auth.cleanup-cron:0 30 3 * * *}")
     void nightly() {
         int[] deleted = purge.purge();
-        log.info("Session clean-up: {} ended refresh tokens and {} idle sign-in counters deleted", deleted[0], deleted[1]);
+        log.info("Session clean-up: {} ended refresh tokens, {} idle sign-in counters and {} ended email links deleted",
+                deleted[0], deleted[1], deleted[2]);
     }
 }

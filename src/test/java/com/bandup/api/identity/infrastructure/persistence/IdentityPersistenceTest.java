@@ -83,7 +83,7 @@ class IdentityPersistenceTest {
     @Test
     void findsByEmailAndRole() {
         assertThat(users.existsWithRole(Role.ADMIN)).isFalse();
-        users.save(User.createAdmin(Email.of("murad@example.com"), HASH, "Murad"));
+        users.save(User.createAdmin(Email.of("murad@example.com"), HASH, "Murad", java.time.Instant.parse("2026-01-01T00:00:00Z")));
         em.flush();
 
         assertThat(users.existsByEmail(Email.of("MURAD@example.com"))).isTrue();

@@ -138,8 +138,12 @@ class AuthorScenariosTest extends UiTestBase {
     void learnerKeptOut() {
         ui.open("/register");
         RegisterPage register = new RegisterPage(ui);
-        register.fillIn("Learner", unique("learner") + "@bandup.test", PASSWORD, "English");
+        String email = unique("learner") + "@bandup.test";
+        register.fillIn("Learner", email, PASSWORD, "English");
         register.submit();
+        register.waitForCheckEmail();
+        openConfirmationLink(email);
+        new LoginPage(ui).open().signIn(email, PASSWORD);
         ui.waitForPath("/");
 
         ui.open("/admin/sessions");

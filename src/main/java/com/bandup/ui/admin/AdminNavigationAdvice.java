@@ -11,11 +11,14 @@ public class AdminNavigationAdvice {
 
     public static final String DASHBOARD = "dashboard";
     public static final String SESSIONS = "sessions";
+    /** ADMIN only: guard.js hides the link from authors. */
+    public static final String INSTRUCTORS = "instructors";
 
     @ModelAttribute("adminNav")
     public List<AdminNavItem> adminNav() {
         return List.of(
                 new AdminNavItem(DASHBOARD, "Dashboard", "/admin"),
-                new AdminNavItem(SESSIONS, "Sessions", "/admin/sessions"));
+                new AdminNavItem(SESSIONS, "Sessions", "/admin/sessions"),
+                new AdminNavItem(INSTRUCTORS, "Instructors", "/admin/instructors"));
     }
 }

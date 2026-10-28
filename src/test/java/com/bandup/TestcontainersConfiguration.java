@@ -17,6 +17,13 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
+    /** Every test application "sends" its account emails here instead of the log. */
+    @Bean
+    @org.springframework.context.annotation.Primary
+    RecordingMailer recordingMailer() {
+        return new RecordingMailer();
+    }
+
     @Bean
     @ServiceConnection
     PostgreSQLContainer postgres() {

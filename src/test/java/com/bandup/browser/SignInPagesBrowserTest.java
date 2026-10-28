@@ -9,10 +9,12 @@ import org.junit.jupiter.api.Test;
 /** The sign-in and sign-up pages in Chrome against the real API (frontend task 3). */
 class SignInPagesBrowserTest extends BrowserTestBase {
 
+    @org.springframework.beans.factory.annotation.Autowired com.bandup.RecordingMailer mailbox;
+
     @Test
-    void signUpSignsInAndGoesBackToWhereTheLearnerCameFrom() throws Exception {
+    void signUpAsksToConfirmTheEmailAndTheLinkActivatesTheAccount() throws Exception {
         String email = "new-" + UUID.randomUUID() + "@bandup.test";
-        HeadlessChrome.Tab tab = chrome.newTab(url("/register?next=%2Freading%2Fyellowstone-wolves"));
+        HeadlessChrome.Tab tab = chrome.newTab(url("/register"));
 
         tab.eval(type("#displayName", "Nigar"));
         tab.eval(type("#email", email));
@@ -20,9 +22,33 @@ class SignInPagesBrowserTest extends BrowserTestBase {
         tab.eval("document.querySelector('#supportLanguage').value = 'az'");
         tab.eval("document.querySelector('[data-register-form] button[type=submit]').click()");
 
-        tab.waitFor("location.pathname === '/reading/yellowstone-wolves' && document.readyState === 'complete'");
+        tab.waitFor("!document.querySelector('[data-check-email]').hidden");
+        assertThat(tab.eval("document.querySelector('[data-register-form]').hidden").asBoolean()).isTrue();
+        assertThat(tab.text("document.querySelector('[data-sent-to]').textContent")).isEqualTo(email);
+        assertThat(tab.eval("document.querySelector('[data-instructor-note]').hidden").asBoolean()).isTrue();
+        assertThat(tab.eval("document.querySelector('[data-nav-signin]').hidden").asBoolean()).isFalse(); // not signed in
+
+        // Signing in before confirming says what to do and offers a new link.
+        tab.navigate(url("/login"));
+        tab.eval(type("#email", email));
+        tab.eval(type("#password", PASSWORD));
+        tab.eval("document.querySelector('[data-login-form] button[type=submit]').click()");
+        tab.waitFor("!document.querySelector('[data-confirm-email]').hidden");
+        assertThat(tab.eval("document.querySelector('[data-form-error]').hidden").asBoolean()).isTrue();
+
+        // The emailed link confirms the account; then signing in works.
+        String token = mailbox.latestToken(email, "/verify-email").orElseThrow();
+        tab.navigate(url("/verify-email?token=" + token));
+        tab.waitFor("document.querySelector('[data-title]').textContent === 'Email confirmed'");
+        tab.eval("document.querySelector('[data-sign-in]').click()");
+        tab.waitFor("location.pathname === '/login' && document.readyState === 'complete'");
+        signIn(tab, email, PASSWORD);
         tab.waitFor(signedInNavbar("Nigar"));
         assertThat(tab.text(AUTH + ".then(m => m.currentUser()).then(u => u.supportLanguage)")).isEqualTo("az");
+
+        // The same link again: it worked once.
+        tab.navigate(url("/verify-email?token=" + token));
+        tab.waitFor("document.querySelector('[data-title]').textContent === \"This link doesn't work\"");
     }
 
     @Test

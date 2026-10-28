@@ -20,4 +20,7 @@ public interface UserRepository {
     boolean existsWithRole(Role role);
 
     void save(User user);
+
+    /** Users whose Instructor request waits for an admin, oldest request first. */
+    java.util.List<User> findPendingInstructors();
 }

@@ -16,7 +16,7 @@ import com.bandup.api.identity.domain.throttle.repository.LoginThrottleRepositor
  * Daily housekeeping: deletes sessions that ended (every token expired or
  * revoked) more than a day ago, and sign-in counters idle for a day. A new
  * refresh token is stored on every page load, so without this the table only
- * grows. Live sessions and active locks are never touched.
+ * grows. Emailed links that expired or were used a day ago go too. Live sessions and active locks are never touched.
  */
 @Service
 @RequiredArgsConstructor
@@ -27,12 +27,14 @@ public class PurgeEndedSessions {
 
     private final SessionRepository sessions;
     private final LoginThrottleRepository throttles;
+    private final com.bandup.api.identity.domain.token.repository.AccountTokenRepository links;
     private final Clock clock;
 
-    /** Returns {deleted tokens, deleted counters}. */
+    /** Returns {deleted tokens, deleted counters, deleted email links}. */
     @Transactional
     public int[] purge() {
         Instant cutoff = clock.instant().minus(KEEP);
-        return new int[] {sessions.deleteEndedBefore(cutoff), throttles.deleteIdleSince(cutoff)};
+        return new int[] {sessions.deleteEndedBefore(cutoff), throttles.deleteIdleSince(cutoff),
+                links.deleteEndedBefore(cutoff)};
     }
 }

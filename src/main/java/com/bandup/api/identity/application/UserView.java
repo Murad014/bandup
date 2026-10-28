@@ -14,12 +14,14 @@ public record UserView(
         Set<String> roles,
         String uiLanguage,
         String supportLanguage,
-        String targetLanguage) {
+        String targetLanguage,
+        String instructorStatus) {
 
     public static UserView of(User user) {
         Set<String> roles = new TreeSet<>();
         user.roles().stream().map(Role::name).forEach(roles::add);
         return new UserView(user.id().value(), user.displayName().orElse(null), roles,
-                user.uiLanguage().value(), user.supportLanguage().value(), user.targetLanguage().value());
+                user.uiLanguage().value(), user.supportLanguage().value(), user.targetLanguage().value(),
+                user.instructorStatus().name());
     }
 }

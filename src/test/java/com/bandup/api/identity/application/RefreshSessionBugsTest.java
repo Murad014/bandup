@@ -41,6 +41,7 @@ class RefreshSessionBugsTest {
         jdbc.update("delete from refresh_token");
         jdbc.update("delete from app_user");
         register.register(new RegisterLearner.Command("aysel@example.com", PASSWORD, "Aysel", "az", "az"));
+        jdbc.update("update app_user set email_verified_at = now()"); // as if the emailed link was opened
     }
 
     /** Bug 1: without a lock, several refreshes of the same token all succeed and fork the session. */

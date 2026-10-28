@@ -32,6 +32,9 @@ abstract class BrowserTestBase {
     @LocalServerPort
     int port;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    org.springframework.jdbc.core.JdbcTemplate jdbc;
+
     HeadlessChrome chrome;
 
     @BeforeAll
@@ -58,6 +61,7 @@ abstract class BrowserTestBase {
         String email = name.toLowerCase() + "-" + UUID.randomUUID() + "@bandup.test";
         tab.eval(AUTH + ".then(m => m.register({email: '" + email + "', password: '" + PASSWORD + "', displayName: '"
                 + name + "', uiLanguage: 'en', supportLanguage: 'az'}))");
+        jdbc.update("update app_user set email_verified_at = now() where email = ?", email); // the emailed link, opened
         return email;
     }
 

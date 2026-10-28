@@ -66,6 +66,10 @@ export const adminReady = (async () => {
         return NEVER;
     }
     showAccount(user);
+    if (!hasRole(user, "ADMIN")) {
+        // Authors don't handle Instructor requests (the API refuses them anyway).
+        document.querySelectorAll('[data-admin-nav-link][data-key="instructors"]').forEach((a) => (a.hidden = true));
+    }
     document.body.classList.add("admin-ready");
     onChange((now) => {
         // Signed out here or in another tab. With unsaved work, stay: the next save

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class LearnerScenariosTest extends UiTestBase {
 
     @Test
-    @DisplayName("A new learner signs up from the reading page and comes back to it, signed in")
+    @DisplayName("A new learner signs up from the reading page, confirms the email and comes back to it, signed in")
     void signUpAndComeBack() {
         ReadingPage reading = new ReadingPage(ui).open("yellowstone-wolves");
         NavBar nav = new NavBar(ui);
@@ -20,10 +20,17 @@ class LearnerScenariosTest extends UiTestBase {
         new LoginPage(ui).goToRegister();
         ui.waitForPath("/register");
         RegisterPage register = new RegisterPage(ui);
-        register.fillIn("Aysel", unique("aysel") + "@bandup.test", PASSWORD, "Azərbaycanca");
+        String email = unique("aysel") + "@bandup.test";
+        register.fillIn("Aysel", email, PASSWORD, "Azərbaycanca");
         ui.step("Sign-up form filled in");
         register.submit();
+        register.waitForCheckEmail();
+        ui.step("Check your email");
 
+        openConfirmationLink(email);
+        ui.step("Email confirmed from the link");
+        ui.open("/login?next=%2Freading%2Fyellowstone-wolves");
+        new LoginPage(ui).signIn(email, PASSWORD);
         ui.waitForPath("/reading/yellowstone-wolves");
         reading.waitUntilLoaded();
         ui.step("Back on the reading page, signed in");
@@ -129,8 +136,13 @@ class LearnerScenariosTest extends UiTestBase {
         new NavBar(ui).clickSignIn();
         new LoginPage(ui).goToRegister();
         RegisterPage register = new RegisterPage(ui);
-        register.fillIn("Browser", unique("browser") + "@bandup.test", PASSWORD, "English");
+        String email = unique("browser") + "@bandup.test";
+        register.fillIn("Browser", email, PASSWORD, "English");
         register.submit();
+        register.waitForCheckEmail();
+        openConfirmationLink(email);
+        ui.open("/login?next=%2Freading%2Fyellowstone-wolves");
+        new LoginPage(ui).signIn(email, PASSWORD);
         ui.waitForPath("/reading/yellowstone-wolves");
         reading.waitUntilLoaded().pick(1, "FALSE");
         reading.submit();
