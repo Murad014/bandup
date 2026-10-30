@@ -244,6 +244,39 @@ move between features (Reading now; Grammar and other skills later).
 
 ---
 
+## Requirement 11 — Personal reading settings
+
+**User story:** As a learner, I want to arrange the reading screen my way (text
+size, layout, colours), so that I can read comfortably, and find it the same
+way next time.
+
+#### Acceptance Criteria
+
+1. WHEN the learner opens the reading settings ("Aa" in the reading bar) THEN
+   the UI SHALL offer: passage text size and question text size (85–160%, in
+   5% steps), layout (passage left / passage right / stacked), page width
+   (normal / wide / full), line spacing (compact / normal / relaxed), font
+   (clean / book / easy-read), colours (site theme / sepia / dark), cover image
+   (show / hide), and "Reset to default".
+2. WHEN the passage and questions are side by side THE UI SHALL let the
+   learner resize them by dragging the divider between them (30–70% for the
+   passage), with arrow keys on the focused divider, and reset it with a
+   double-click.
+3. WHEN a setting changes THEN the UI SHALL apply it at once and save it on
+   this device (localStorage); WHEN the page is opened or refreshed THEN the
+   saved settings SHALL be applied before the page is drawn.
+4. WHERE the viewport is narrow THE UI SHALL stack the panels and hide the
+   divider; the other settings still apply.
+5. WHERE storage is blocked THE UI SHALL still apply the settings for the
+   current page, without remembering them.
+6. WHEN a learner first sees the reading page THEN the UI SHALL show a one-time
+   tip about the reading settings ("Show me" opens them, "Got it" dismisses);
+   it SHALL not appear again on that device.
+7. THE settings panel SHALL be keyboard operable (Escape closes it) and every
+   control SHALL have an accessible name.
+
+---
+
 ## Non-functional requirements
 
 1. The UI SHALL NOT contain or expose correct answers or explanations prior to

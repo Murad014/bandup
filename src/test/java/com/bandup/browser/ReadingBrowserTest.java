@@ -15,6 +15,70 @@ class ReadingBrowserTest extends BrowserTestBase {
     JdbcTemplate jdbc;
 
     @Test
+    void readingSettingsApplyAtOnceAndAreKeptAfterARefresh() throws Exception {
+        HeadlessChrome.Tab tab = chrome.newTab(url("/"));
+        tab.eval("localStorage.removeItem('bandup.reader.v1'); localStorage.removeItem('bandup.reader.tipSeen')");
+        tab.navigate(url("/reading/yellowstone-wolves"));
+        tab.waitFor("document.querySelectorAll('#questions .q').length === 6");
+
+        // The new feature is announced once; "Show me" opens the panel.
+        assertThat(tab.eval("document.getElementById('readerTip').hidden").asBoolean()).isFalse();
+        assertThat(tab.eval("document.getElementById('readerPanel').hidden").asBoolean()).isTrue();
+        tab.eval("document.getElementById('readerTipOpen').click()");
+        tab.waitFor("!document.getElementById('readerPanel').hidden && document.getElementById('readerTip').hidden");
+        String passageSize = "parseFloat(getComputedStyle(document.getElementById('passage')).fontSize)";
+        double before = tab.eval(passageSize).asDouble();
+
+        // Bigger passage text (+10%), smaller questions (-5%), passage on the right, wide, relaxed, book font, sepia, no cover.
+        tab.eval("const up = document.querySelector('[data-step=passageScale][data-dir=\"1\"]'); up.click(); up.click()");
+        tab.eval("document.querySelector('[data-step=questionScale][data-dir=\"-1\"]').click()");
+        for (String[] choice : new String[][] {{"layout", "swap"}, {"width", "wide"}, {"spacing", "relaxed"},
+                {"font", "serif"}, {"tone", "sepia"}, {"cover", "hide"}}) {
+            tab.eval("document.querySelector('.seg[data-pref=%s] [data-value=%s]').click()".formatted(choice[0], choice[1]));
+        }
+        assertSettingsShown(tab);
+        assertThat(tab.eval(passageSize).asDouble()).isCloseTo(before * 1.1, org.assertj.core.data.Offset.offset(0.2));
+        // Passage on the right: questions start further left.
+        assertThat(tab.eval("document.querySelector('.questions').getBoundingClientRect().left"
+                + " < document.querySelector('.passage').getBoundingClientRect().left").asBoolean()).isTrue();
+
+        // The divider: arrow keys widen the passage (on the right, ArrowLeft moves toward the questions' side).
+        tab.eval("const s = document.getElementById('splitter'); s.focus();"
+                + " s.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft', bubbles: true}));"
+                + " s.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft', bubbles: true}))");
+        assertThat(tab.text("document.getElementById('splitter').getAttribute('aria-valuenow')")).isEqualTo("54");
+
+        // Escape closes the panel; after a refresh everything is as it was, and the tip doesn't come back.
+        tab.eval("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}))");
+        assertThat(tab.eval("document.getElementById('readerPanel').hidden").asBoolean()).isTrue();
+        tab.navigate(url("/reading/yellowstone-wolves"));
+        tab.waitFor("document.querySelectorAll('#questions .q').length === 6");
+        assertThat(tab.eval("document.getElementById('readerTip').hidden").asBoolean()).isTrue();
+        assertSettingsShown(tab);
+        assertThat(tab.text("document.getElementById('reading-root').style.getPropertyValue('--split')")).isEqualTo("54%");
+
+        // Reset brings back the defaults (and saves them).
+        tab.eval("document.getElementById('readerBtn').click()");
+        tab.eval("document.getElementById('readerReset').click()");
+        assertThat(tab.text("['layout','width','spacing','font','tone','cover'].map(k => document.getElementById('reading-root').dataset[k]).join()"))
+                .isEqualTo("side,normal,normal,sans,auto,show");
+        assertThat(tab.text("document.getElementById('passageScaleOut').textContent")).isEqualTo("100%");
+        assertThat(tab.text("JSON.parse(localStorage.getItem('bandup.reader.v1')).split")).isEqualTo("50");
+    }
+
+    private static void assertSettingsShown(HeadlessChrome.Tab tab) throws Exception {
+        assertThat(tab.text("['layout','width','spacing','font','tone','cover'].map(k => document.getElementById('reading-root').dataset[k]).join()"))
+                .isEqualTo("swap,wide,relaxed,serif,sepia,hide");
+        assertThat(tab.text("document.getElementById('passageScaleOut').textContent")).isEqualTo("110%");
+        assertThat(tab.text("document.getElementById('questionScaleOut').textContent")).isEqualTo("95%");
+        assertThat(tab.text("document.querySelector('.seg[data-pref=tone] [aria-pressed=true]').dataset.value")).isEqualTo("sepia");
+        assertThat(tab.text("getComputedStyle(document.getElementById('passage')).fontFamily")).startsWith("Literata");
+        assertThat(tab.text("getComputedStyle(document.querySelector('.reading-main')).maxWidth")).isEqualTo("1560px");
+        assertThat(tab.text("getComputedStyle(document.getElementById('passageCover')).display")).isEqualTo("none");
+        assertThat(tab.text("getComputedStyle(document.querySelector('.passage')).backgroundColor")).isEqualTo("rgb(251, 245, 231)");
+    }
+
+    @Test
     void wolvesLoadsFromTheApiWithAzerbaijaniHelp() throws Exception {
         HeadlessChrome.Tab tab = chrome.newTab(url("/"));
         tab.eval("localStorage.setItem('bandup.helpLanguage', 'az')");

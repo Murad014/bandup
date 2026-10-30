@@ -161,6 +161,16 @@ Conventions:
     click-through confirms the idea end to end.
   - _Requirements: 1–10 (integration)_
 
+- [x] 15. Personal reading settings (asked by the user)
+  - "Aa" panel: passage/question text size, layout (left/right/stacked), page
+    width, line spacing, font, colours (site/sepia/dark), cover, reset; the
+    draggable divider; a one-time tip announcing the feature. Saved in
+    localStorage and applied before the page is drawn (design §7.1).
+  - _Verify_: `ReadingBrowserTest.readingSettingsApplyAtOnceAndAreKeptAfterARefresh`
+    (change all settings, check the page, refresh, check again, reset); a
+    mutation (saving disabled) makes it fail. Screenshots checked in every mode.
+  - _Requirements: 11.1–11.7_
+
 ---
 
 ## Resolve before/while implementing (from design §11)

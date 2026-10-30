@@ -367,6 +367,30 @@ controls), matching the prototype and avoiding duplicate state.
   (~820px).
 - Theme follows `prefers-color-scheme`, overridable via `data-theme`.
 
+### 7.1 Personal reading settings (Req 11)
+
+- `static/js/reading/prefs.js`: a classic (blocking) script, the first child
+  of `<main id="reading-root">`, so the saved settings are applied before the
+  page is drawn. It owns the model: `{passageScale, questionScale, split,
+  layout, width, spacing, font, tone, cover}`, stored as JSON under
+  `localStorage["bandup.reader.v1"]`; unknown or out-of-range values fall back
+  to the defaults. It applies them as `data-layout|width|spacing|font|tone|cover`
+  attributes and the CSS variables `--passage-scale`, `--question-scale` and
+  `--split` on the root (CSSOM, so the CSP needs no inline styles), and loads
+  the easy-read font (Atkinson Hyperlegible, Google Fonts) only when chosen.
+  It exposes `window.BandUpReaderPrefs` for the panel.
+- `static/js/reading/settings.js` (module, started by `reading.js`): the "Aa"
+  panel (steppers, segmented buttons with `aria-pressed`, reset, Escape and
+  outside click close it), the divider (`role="separator"`, pointer drag with
+  pointer capture, arrow keys ±2%, Home/End, double-click resets; saved when
+  the drag ends) and the one-time tip (`localStorage["bandup.reader.tipSeen"]`).
+- `reading.css`: the grid is `split% | 16px divider | rest`; "passage right"
+  swaps the column order and the template; "stacked" and ≤820px use one column
+  and hide the divider. Passage text uses `font-size: calc(1rem *
+  --passage-scale)`; the questions panel uses CSS `zoom: --question-scale` so
+  every part of it scales. Sepia and dark redefine the colour tokens on
+  `.reading` only; "site" keeps the site's light/dark theme.
+
 ---
 
 ## 8. File layout (UI side)
