@@ -9,6 +9,7 @@ import { createReadingApp } from "./reading/app.js";
 import { api } from "./reading/api.js";
 import { currentUser } from "./auth.js";
 import { HELP_LANGUAGES } from "./reading/core.js";
+import { initReaderSettings } from "./reading/settings.js";
 
 const KEY = "bandup.helpLanguage";
 
@@ -39,6 +40,7 @@ async function helpLanguage() {
 }
 
 async function start() {
+    initReaderSettings(); // text size, layout, colours... (saved on this device)
     const picker = document.getElementById("helpLang");
     if (picker && picker.options.length === 0) {
         HELP_LANGUAGES.forEach((l) => picker.add(new Option(l.name, l.code)));

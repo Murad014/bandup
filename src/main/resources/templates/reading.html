@@ -13,6 +13,8 @@
 -->
 <main class="reading" id="reading-root"
       th:attr="data-session-id=${sessionId}" data-api-base="/api/v1">
+    <!-- Applies the learner's saved reading settings before the page is drawn. -->
+    <script th:src="@{/js/reading/prefs.js}"></script>
 
     <div class="reading-bar">
         <div class="bar">
@@ -24,9 +26,97 @@
                 <span>Help</span>
                 <select id="helpLang" aria-label="Help language (word meanings and explanations)"></select>
             </label>
+            <button class="reader-btn" id="readerBtn" type="button" aria-expanded="false"
+                    aria-controls="readerPanel" title="Reading settings">Aa<span class="sr-only"> Reading settings</span></button>
             <span class="timer" id="timer" aria-live="off">--:--</span>
             <button class="btn btn--primary" id="submit" type="button" disabled>Submit</button>
+
+            <!-- Reading settings (reading/settings.js); saved on this device. -->
+            <div class="reader-panel" id="readerPanel" role="dialog" aria-label="Reading settings" hidden>
+                <div class="reader-panel__head">
+                    <strong>Reading settings</strong>
+                    <button class="reader-x" id="readerClose" type="button" aria-label="Close reading settings">×</button>
+                </div>
+                <div class="reader-row">
+                    <span>Passage text</span>
+                    <div class="stepper">
+                        <button type="button" data-step="passageScale" data-dir="-1" aria-label="Smaller passage text">A−</button>
+                        <output data-for="passageScale" id="passageScaleOut">100%</output>
+                        <button type="button" data-step="passageScale" data-dir="1" aria-label="Bigger passage text">A+</button>
+                    </div>
+                </div>
+                <div class="reader-row">
+                    <span>Questions text</span>
+                    <div class="stepper">
+                        <button type="button" data-step="questionScale" data-dir="-1" aria-label="Smaller question text">A−</button>
+                        <output data-for="questionScale" id="questionScaleOut">100%</output>
+                        <button type="button" data-step="questionScale" data-dir="1" aria-label="Bigger question text">A+</button>
+                    </div>
+                </div>
+                <div class="reader-row reader-row--wide">
+                    <span>Layout</span>
+                    <div class="seg" data-pref="layout" role="group" aria-label="Layout">
+                        <button type="button" data-value="side">Passage left</button>
+                        <button type="button" data-value="swap">Passage right</button>
+                        <button type="button" data-value="stack">Stacked</button>
+                    </div>
+                </div>
+                <div class="reader-row reader-row--wide">
+                    <span>Page width</span>
+                    <div class="seg" data-pref="width" role="group" aria-label="Page width">
+                        <button type="button" data-value="normal">Normal</button>
+                        <button type="button" data-value="wide">Wide</button>
+                        <button type="button" data-value="full">Full</button>
+                    </div>
+                </div>
+                <div class="reader-row reader-row--wide">
+                    <span>Line spacing</span>
+                    <div class="seg" data-pref="spacing" role="group" aria-label="Line spacing">
+                        <button type="button" data-value="compact">Compact</button>
+                        <button type="button" data-value="normal">Normal</button>
+                        <button type="button" data-value="relaxed">Relaxed</button>
+                    </div>
+                </div>
+                <div class="reader-row reader-row--wide">
+                    <span>Font</span>
+                    <div class="seg" data-pref="font" role="group" aria-label="Font">
+                        <button type="button" data-value="sans" class="f-sans">Clean</button>
+                        <button type="button" data-value="serif" class="f-serif">Book</button>
+                        <button type="button" data-value="easy" class="f-easy">Easy-read</button>
+                    </div>
+                </div>
+                <div class="reader-row reader-row--wide">
+                    <span>Colours</span>
+                    <div class="seg" data-pref="tone" role="group" aria-label="Colours">
+                        <button type="button" data-value="auto">Site</button>
+                        <button type="button" data-value="sepia">Sepia</button>
+                        <button type="button" data-value="dark">Dark</button>
+                    </div>
+                </div>
+                <div class="reader-row reader-row--wide">
+                    <span>Cover image</span>
+                    <div class="seg" data-pref="cover" role="group" aria-label="Cover image">
+                        <button type="button" data-value="show">Show</button>
+                        <button type="button" data-value="hide">Hide</button>
+                    </div>
+                </div>
+                <div class="reader-panel__foot">
+                    <button class="btn" id="readerReset" type="button">Reset to default</button>
+                    <p>Saved on this device. Tip: drag the bar between the passage and the questions.</p>
+                </div>
+            </div>
         </div>
+
+        <!-- One-time hint about the reading settings. -->
+        <div class="reader-tip" id="readerTip" role="status" hidden>
+            <p><strong>New:</strong> make reading comfortable. Change the text size, layout, font and colours with
+                <b>Aa</b>, and drag the bar between the passage and the questions to resize them.</p>
+            <div class="reader-tip__actions">
+                <button class="btn btn--primary" id="readerTipOpen" type="button">Show me</button>
+                <button class="btn" id="readerTipClose" type="button">Got it</button>
+            </div>
+        </div>
+
     </div>
 
     <div class="reading-main">
@@ -40,7 +130,11 @@
             </details>
         </section>
 
-        <section class="panel" aria-label="Questions">
+        <div class="splitter" id="splitter" role="separator" tabindex="0" aria-orientation="vertical"
+             aria-label="Resize passage and questions" aria-valuemin="30" aria-valuemax="70" aria-valuenow="50"
+             title="Drag to resize · double-click to reset"></div>
+
+        <section class="panel questions" aria-label="Questions">
             <div id="resultBox" hidden></div>
             <form id="form" autocomplete="off">
                 <div id="questions" class="panel__status">Loading questions…</div>
