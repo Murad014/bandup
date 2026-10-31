@@ -33,7 +33,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 class SecurityConfig {
 
     /**
-     * What a page may load: only BandUp's own scripts, styles, images and API,
+     * What a page may load: only Orbiko's own scripts, styles, images and API,
      * plus Google Fonts. No inline scripts or style attributes, no framing.
      * A second line of defence behind the HTML sanitizer.
      */

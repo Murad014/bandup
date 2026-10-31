@@ -40,6 +40,37 @@ class AuthBrowserTest extends BrowserTestBase {
     }
 
     @Test
+    void theAccountButtonShowsTheLearnerAndItsMenuSignsOut() throws Exception {
+        HeadlessChrome.Tab tab = chrome.newTab(url("/"));
+        signIn(tab, registerLearner(tab, "Nigar"), PASSWORD);
+        tab.waitFor(signedInNavbar("Nigar"));
+
+        // A chip with the first letter and the name; the menu is closed.
+        assertThat(tab.text("document.querySelector('.account-chip [data-nav-avatar]').textContent")).isEqualTo("N");
+        assertThat(tab.eval("document.getElementById('accountMenu').hidden").asBoolean()).isTrue();
+        assertThat(tab.text("document.querySelector('[data-account-toggle]').getAttribute('aria-expanded')")).isEqualTo("false");
+
+        // Opening it shows who is signed in, with My progress and Sign out; Escape and an outside click close it.
+        tab.eval("document.querySelector('[data-account-toggle]').click()");
+        assertThat(tab.eval("document.getElementById('accountMenu').hidden").asBoolean()).isFalse();
+        assertThat(tab.text("document.querySelector('[data-account-toggle]').getAttribute('aria-expanded')")).isEqualTo("true");
+        assertThat(tab.text("document.querySelector('[data-nav-fullname]').textContent")).isEqualTo("Nigar");
+        assertThat(tab.text("document.querySelector('[data-nav-role]').textContent")).isEqualTo("Learner");
+        assertThat(tab.text("[...document.querySelectorAll('#accountMenu [role=menuitem]')].map(i => i.textContent.trim()).join('|')"))
+                .isEqualTo("My progress|Sign out");
+        tab.eval("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}))");
+        assertThat(tab.eval("document.getElementById('accountMenu').hidden").asBoolean()).isTrue();
+        tab.eval("document.querySelector('[data-account-toggle]').click()");
+        tab.eval("document.body.click()");
+        assertThat(tab.eval("document.getElementById('accountMenu').hidden").asBoolean()).isTrue();
+
+        // Sign out from the menu.
+        tab.eval("document.querySelector('[data-account-toggle]').click()");
+        tab.eval("document.querySelector('[data-nav-signout]').click()");
+        tab.waitFor(signedOutNavbar());
+    }
+
+    @Test
     void anAdminSeesNoAdminLinkAndOpensThePanelByItsAddress() throws Exception {
         HeadlessChrome.Tab tab = chrome.newTab(url("/"));
 

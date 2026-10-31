@@ -987,6 +987,15 @@ Tactical design (7–13):
     Security headers (CSP etc.) live in `SecurityConfig`; the prod profile
     requires `BANDUP_JWT_SECRET` and trusts the proxy's forwarded headers.
 
+21. **Product name: Orbiko** (asked by the user; "BandUp" was taken by several
+    IELTS products). Every user-visible text, the navbar/admin wordmark
+    (`Orbiko`, one colour), the planet logo (`static/img/logo.svg`, also the
+    favicon) and the account emails use it. Internal names stay unchanged so
+    the live server and pipeline keep working: the `com.bandup` package, the
+    `BANDUP_*` settings, the database, cookies, storage keys, the Docker image
+    and `window.BandUp*` script globals. Flyway migrations are never edited.
+    `UiPagesTest` checks the brand and that "BandUp" is gone from the pages.
+
 ### Open — product decisions needed
 
 - The admin editor must switch to the §8.4 contract (ids, nested answers,

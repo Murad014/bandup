@@ -241,6 +241,11 @@ move between features (Reading now; Grammar and other skills later).
 7. WHERE the navbar is rendered THE UI SHALL apply the same theming (light/dark)
    and accessibility expectations (focus indicators, accessible labels, current
    -page indication) as the rest of the app.
+8. WHILE a learner is signed in THE navbar SHALL show an account button (a round
+   avatar with the first letter of their name, the name, and an arrow); WHEN it
+   is clicked THEN a menu SHALL open with their name and role, "My progress" and
+   "Sign out". Escape or a click outside closes it; on narrow screens it opens
+   inside the collapsed menu.
 
 ---
 

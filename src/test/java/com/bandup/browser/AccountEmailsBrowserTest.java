@@ -34,7 +34,7 @@ class AccountEmailsBrowserTest extends BrowserTestBase {
         assertThat(admin.text(mine + ".textContent")).contains("Teacher Leyla", "Not yet");
         admin.eval("window.confirm = () => true; " + mine + ".querySelector('.btn--primary').click()");
         admin.waitFor(mine + " === undefined");
-        assertThat(mailbox.to(email).getLast().subject()).isEqualTo("You're now a BandUp Instructor");
+        assertThat(mailbox.to(email).getLast().subject()).isEqualTo("You're now an Orbiko Instructor");
 
         // Approved and confirmed: the new instructor gets into the editor.
         jdbc.update("update app_user set email_verified_at = now() where email = ?", email);

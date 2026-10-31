@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34">
+  <title>Orbiko</title>
+  <!-- Orbiko mark: a planet (coral) with an orbit ring (teal) and a moon (sun yellow). -->
+  <path d="M2 17 A15 5.6 0 0 1 32 17" transform="rotate(-24 17 17)" fill="none" stroke="#12a594" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="17" cy="17" r="10" fill="#ff6b4a"/>
+  <circle cx="13.6" cy="13.4" r="3.2" fill="#fff" opacity=".32"/>
+  <path d="M2 17 A15 5.6 0 0 0 32 17" transform="rotate(-24 17 17)" fill="none" stroke="#12a594" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="29" cy="6.6" r="2.9" fill="#f5a524"/>
+</svg>

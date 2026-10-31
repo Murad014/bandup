@@ -171,6 +171,14 @@ Conventions:
     mutation (saving disabled) makes it fail. Screenshots checked in every mode.
   - _Requirements: 11.1–11.7_
 
+- [x] 16. Account button in the navbar (asked by the user)
+  - Avatar + name chip with a menu (name, role, My progress, Sign out),
+    replacing the plain name and "Sign out" link (design §7.0).
+  - _Verify_: `AuthBrowserTest.theAccountButtonShowsTheLearnerAndItsMenuSignsOut`;
+    the Selenium page object signs out through the menu; screenshots on
+    desktop and phone.
+  - _Requirements: 10.8_
+
 ---
 
 ## Resolve before/while implementing (from design §11)

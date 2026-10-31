@@ -2,7 +2,7 @@
    theme.js — persisted light/dark theme.
    Applies the saved theme to <html data-theme> immediately (before paint) to
    avoid a flash, exposes window.BandUpTheme.toggle(), and wires any element
-   with [data-theme-toggle]. Light unless the learner picked dark (BandUp is
+   with [data-theme-toggle]. Light unless the learner picked dark (Orbiko is
    bright by default; the OS setting doesn't switch it).
    Loaded synchronously in <head>.
    ========================================================================= */

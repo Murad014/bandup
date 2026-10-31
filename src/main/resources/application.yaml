@@ -51,4 +51,4 @@ bandup:
   # sets the SMTP server (spring.mail.*). See application-prod.yaml.
   mail:
     enabled: false
-    from: ${BANDUP_MAIL_FROM:BandUp <no-reply@localhost>}
+    from: ${BANDUP_MAIL_FROM:Orbiko <no-reply@localhost>}

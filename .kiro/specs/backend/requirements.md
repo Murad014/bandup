@@ -2,7 +2,7 @@
 
 ## Overview
 
-BandUp is one Spring Boot application with **two sides**:
+Orbiko is one Spring Boot application with **two sides**:
 
 - **Backend (`com.bandup.api`)**: all business logic, organised as bounded
   contexts, exposed only as a REST API under `/api/v1/**`, secured with JWT.

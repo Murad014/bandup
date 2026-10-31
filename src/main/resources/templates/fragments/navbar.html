@@ -12,12 +12,13 @@
     <div class="app-nav__inner wrap">
         <a class="app-nav__brand" th:href="@{/}">
             <svg class="brand-mark" viewBox="0 0 34 34" aria-hidden="true">
-                <rect width="34" height="34" rx="10" fill="var(--accent)"/>
-                <rect x="8" y="18" width="5" height="9" rx="2" fill="#fff" opacity=".7"/>
-                <rect x="15" y="13" width="5" height="14" rx="2" fill="#fff" opacity=".85"/>
-                <rect x="22" y="7" width="5" height="20" rx="2" fill="#fff"/>
+                <path d="M2 17 A15 5.6 0 0 1 32 17" transform="rotate(-24 17 17)" fill="none" stroke="var(--teal)" stroke-width="2.6" stroke-linecap="round"/>
+                <circle cx="17" cy="17" r="10" fill="var(--accent)"/>
+                <circle cx="13.6" cy="13.4" r="3.2" fill="#fff" opacity=".32"/>
+                <path d="M2 17 A15 5.6 0 0 0 32 17" transform="rotate(-24 17 17)" fill="none" stroke="var(--teal)" stroke-width="2.6" stroke-linecap="round"/>
+                <circle cx="29" cy="6.6" r="2.9" fill="var(--sun)"/>
             </svg>
-            <span class="app-nav__name">Band<span>Up</span></span>
+            <span class="app-nav__name">Orbiko</span>
         </a>
 
         <button class="app-nav__toggle" type="button"
@@ -54,8 +55,24 @@
                 <a class="app-nav__link app-nav__cta" th:href="@{/login}">Sign in</a>
             </li>
             <li class="app-nav__item app-nav__account" data-nav-account hidden>
-                <span class="app-nav__user" data-nav-username></span>
-                <button class="app-nav__link app-nav__signout" type="button" data-nav-signout>Sign out</button>
+                <!-- Account button: avatar (first letter) + name; opens the account menu. -->
+                <button class="account-chip" type="button" data-account-toggle
+                        aria-haspopup="menu" aria-expanded="false" aria-controls="accountMenu">
+                    <span class="avatar" data-nav-avatar aria-hidden="true"></span>
+                    <span class="app-nav__user" data-nav-username></span>
+                    <span class="account-chip__chev" aria-hidden="true"></span>
+                </button>
+                <div class="account-menu" id="accountMenu" role="menu" aria-label="Account" hidden>
+                    <div class="account-menu__head">
+                        <span class="avatar avatar--lg" data-nav-avatar aria-hidden="true"></span>
+                        <div>
+                            <strong data-nav-fullname></strong>
+                            <small data-nav-role></small>
+                        </div>
+                    </div>
+                    <a class="account-menu__item" role="menuitem" th:href="@{/progress}">My progress</a>
+                    <button class="account-menu__item account-menu__signout" role="menuitem" type="button" data-nav-signout>Sign out</button>
+                </div>
             </li>
             <li class="app-nav__item">
                 <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle theme">

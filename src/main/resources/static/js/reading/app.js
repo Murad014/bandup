@@ -162,7 +162,7 @@ export function createReadingApp(options = {}) {
                 retry.addEventListener("click", () => init());
                 els.passage.appendChild(retry);
             } else {
-                const home = el("a", "btn", "Back to BandUp");
+                const home = el("a", "btn", "Back to Orbiko");
                 home.href = "/";
                 els.passage.appendChild(home);
             }

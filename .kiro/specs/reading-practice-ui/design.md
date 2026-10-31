@@ -367,6 +367,17 @@ controls), matching the prototype and avoiding duplicate state.
   (~820px).
 - Theme follows `prefers-color-scheme`, overridable via `data-theme`.
 
+### 7.0 Account button (Req 10.8)
+
+- `fragments/navbar.html`: `[data-nav-account]` holds the chip button
+  (`[data-account-toggle]`, `aria-haspopup="menu"`, `aria-expanded`) and the
+  menu `#accountMenu` (`role="menu"`; head with avatar, `[data-nav-fullname]`,
+  `[data-nav-role]`; items "My progress" and `[data-nav-signout]`).
+- `account-nav.js` fills the avatar letter, name and role (Admin, Author,
+  Translator, Instructor, else Learner), opens/closes the menu (click, Escape,
+  outside click) and signs out. `app.css` places the menu under the chip; at
+  ≤720px it is part of the collapsed menu (static, full width).
+
 ### 7.1 Personal reading settings (Req 11)
 
 - `static/js/reading/prefs.js`: a classic (blocking) script, the first child
