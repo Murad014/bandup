@@ -313,13 +313,19 @@ controls), matching the prototype and avoiding duplicate state.
   `lowTimeThresholdSeconds`, show `+` prefix once negative.
 - `stop()` on submit; `reset()` on restart.
 
-### 6.5 Highlighting (Req 3)
+### 6.5 Highlighting: passage and questions (Req 3)
 
 - Port the prototype's selection logic: on `mouseup`/`touchend`, if a non-empty
-  selection lies inside the passage, show the floating Highlight button anchored
-  to the selection's bounding rect.
-- Activating it wraps the range in `<mark>`; clicking an existing `<mark>`
-  (with no active selection) unwraps it and re-normalises text nodes.
+  selection is `highlightable`, show the floating Highlight button anchored to
+  the selection's bounding rect. `highlightable(range)`: inside `#passage`, or
+  inside `#questions` when the range contains no `input`/`select`/`textarea`/
+  `button` and the focus isn't in an answer control (wrapping a control in
+  `<mark>` would move it out of its label/line).
+- Activating it wraps the range in `<mark>`; clicking an existing `<mark>` in
+  `#passage` or `#questions` (with no active selection) unwraps it and
+  re-normalises text nodes. A `<mark>` inside an option `<label>` cancels the
+  click, so removing the highlight doesn't tick the option.
+- `restart()` unwraps the marks in both areas.
 - Manual `<mark>` styling is distinct from evidence styling (`.ev.on`).
 
 ### 6.6 Gloss popover (Req 2)

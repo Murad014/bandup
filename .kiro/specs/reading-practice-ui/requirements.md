@@ -80,24 +80,31 @@ that I can understand the passage in my native language.
 
 ---
 
-## Requirement 3 — Passage highlighting
+## Requirement 3 — Passage and question highlighting
 
-**User story:** As a learner, I want to highlight parts of the passage, so that
-I can mark important information while I read.
+**User story:** As a learner, I want to highlight parts of the passage and of
+the questions, so that I can mark important information while I read.
 
 #### Acceptance Criteria
 
-1. WHEN a learner selects text within the passage THEN the UI SHALL show a
-   "Highlight" action anchored to the selection.
+1. WHEN a learner selects text within the passage, or question text within the
+   questions panel (stems, instructions, option labels), THEN the UI SHALL show
+   a "Highlight" action anchored to the selection.
 2. WHEN the learner activates the Highlight action THEN the UI SHALL wrap the
    selected text in a highlight and clear the selection.
 3. WHEN a learner taps/clicks an existing highlight AND no text is currently
    selected THEN the UI SHALL remove that highlight and restore the surrounding
    text flow.
-4. IF the selection falls outside the passage region THEN the UI SHALL NOT offer
-   the Highlight action.
+4. IF the selection falls outside the passage and the questions panel, OR a
+   selection in the questions panel takes in an answer control (input, select,
+   button) or the focus is in one, THEN the UI SHALL NOT offer the Highlight
+   action.
 5. WHERE highlights exist THE UI SHALL keep them visually distinct from
    evidence highlighting used during feedback.
+6. WHEN a learner removes a highlight on an option's text THEN the UI SHALL NOT
+   also choose that option.
+7. WHEN the learner starts again THEN the UI SHALL remove all highlights in the
+   passage and the questions.
 
 ---
 
