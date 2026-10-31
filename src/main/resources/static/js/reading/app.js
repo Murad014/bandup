@@ -492,10 +492,18 @@ export function createReadingApp(options = {}) {
         const s = selection();
         if (!s || !s.rangeCount || s.isCollapsed) { hideHighlightButton(); return; }
         const range = s.getRangeAt(0);
-        if (!els.passage.contains(range.commonAncestorContainer)) { hideHighlightButton(); return; }
+        if (!highlightable(range)) { hideHighlightButton(); return; }
         savedRange = range.cloneRange();
         place(els.hlBtn, { getBoundingClientRect: () => range.getBoundingClientRect() });
         if (els.pop) els.pop.hidden = true;
+    }
+    /** The passage, or question text that doesn't reach into an answer control (wrapping one would break it). */
+    function highlightable(range) {
+        const node = range.commonAncestorContainer;
+        if (els.passage && els.passage.contains(node)) return true;
+        if (!els.questions || !els.questions.contains(node)) return false;
+        if (d.activeElement && d.activeElement.matches && d.activeElement.matches("#questions input, #questions select")) return false;
+        return !range.cloneContents().querySelector("input, select, textarea, button");
     }
     function hideHighlightButton() { if (els.hlBtn) els.hlBtn.hidden = true; }
     function applyHighlight(range) {
@@ -669,10 +677,11 @@ export function createReadingApp(options = {}) {
         });
         d.querySelectorAll(".qgroup").forEach(markUsedOptions);
         d.querySelectorAll(".ev.on").forEach((x) => x.classList.remove("on"));
-        if (els.passage) {
-            els.passage.querySelectorAll("mark").forEach((m) => unwrap(m));
-            els.passage.normalize();
-        }
+        [els.passage, els.questions].forEach((area) => {
+            if (!area) return;
+            area.querySelectorAll("mark").forEach((m) => unwrap(m));
+            area.normalize();
+        });
         stopTimer();
         startTimer(state.session.durationSeconds, state.session.lowTimeThresholdSeconds);
         if (reviewId() && w.history && w.history.replaceState) {
@@ -736,8 +745,12 @@ export function createReadingApp(options = {}) {
 
             if (!closest("#pop") && els.pop) els.pop.hidden = true;
 
-            const mark = closest("#passage mark");
-            if (mark && !(selection() && selection().toString())) { unwrap(mark); }
+            const mark = closest("#passage mark, #questions mark");
+            if (mark && !(selection() && selection().toString())) {
+                // Removing a highlight on an option's text must not also tick that option.
+                if (mark.closest("label")) e.preventDefault();
+                unwrap(mark);
+            }
 
             const evBtn = closest("[data-ev]");
             if (evBtn) showEvidence(evBtn.dataset.ev);

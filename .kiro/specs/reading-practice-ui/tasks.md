@@ -179,6 +179,16 @@ Conventions:
     desktop and phone.
   - _Requirements: 10.8_
 
+- [x] 17. Highlight question text like the passage (asked by the user)
+  - The Highlight button also works on the questions panel: stems,
+    instructions, option labels; never across an answer box, select or
+    button. Tapping a highlight on an option's text removes it without
+    ticking the option. "Start again" clears both areas (design §6.5).
+  - _Verify_: `ReadingBrowserTest.questionTextCanBeHighlightedLikeThePassageButNeverAcrossAnAnswerControl`
+    (passage, question stem, a selection over an answer box is refused, an
+    option label); a mutation (passage-only rule) makes it fail.
+  - _Requirements: 3.1, 3.4, 3.6, 3.7_
+
 ---
 
 ## Resolve before/while implementing (from design §11)

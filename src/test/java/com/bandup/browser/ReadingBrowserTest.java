@@ -102,6 +102,55 @@ class ReadingBrowserTest extends BrowserTestBase {
     }
 
     @Test
+    void questionTextCanBeHighlightedLikeThePassageButNeverAcrossAnAnswerControl() throws Exception {
+        HeadlessChrome.Tab tab = chrome.newTab(url("/reading/yellowstone-wolves"));
+        tab.waitFor("document.querySelectorAll('#questions .q').length === 6");
+        tab.eval("""
+                window.selectAndRelease = (node) => {
+                  const r = document.createRange(); r.selectNodeContents(node);
+                  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+                  window.checked = false;
+                  document.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+                  setTimeout(() => window.checked = true, 60);
+                };
+                window.textIn = (sel) => {
+                  const t = document.createTreeWalker(document.querySelector(sel), NodeFilter.SHOW_TEXT,
+                    {acceptNode: n => n.textContent.trim().length > 3 ? 1 : 3});
+                  return t.nextNode();
+                };
+                window.hl = () => document.getElementById('hlBtn');
+                """);
+
+        // The passage, as before.
+        tab.eval("selectAndRelease(textIn('#passage'))");
+        tab.waitFor("checked && !hl().hidden");
+        tab.eval("hl().click()");
+        assertThat(tab.eval("document.querySelectorAll('#passage mark').length").asInt()).isEqualTo(1);
+
+        // A question's own text.
+        tab.eval("selectAndRelease(textIn('#q1 .stem'))");
+        tab.waitFor("checked && !hl().hidden");
+        tab.eval("hl().click()");
+        assertThat(tab.eval("document.querySelectorAll('#q1 mark').length").asInt()).isEqualTo(1);
+        assertThat(tab.eval("document.getElementById('hlBtn').hidden").asBoolean()).isTrue();
+
+        // A selection that takes in an answer box is not offered (wrapping would move the control).
+        tab.eval("selectAndRelease(document.getElementById('q2'))");
+        tab.waitFor("checked");
+        assertThat(tab.eval("hl().hidden").asBoolean()).isTrue();
+
+        // An option's text: tapping its highlight removes it and doesn't tick the option.
+        tab.eval("window.opt = document.querySelector('.q[data-family=fixed] label'); selectAndRelease(textIn('.q[data-family=fixed] label'))");
+        tab.waitFor("checked && !hl().hidden");
+        tab.eval("hl().click()");
+        assertThat(tab.eval("opt.querySelectorAll('mark').length").asInt()).isEqualTo(1);
+        tab.eval("getSelection().removeAllRanges(); opt.querySelector('mark').click()");
+        assertThat(tab.eval("opt.querySelectorAll('mark').length").asInt()).isZero();
+        assertThat(tab.eval("opt.querySelector('input').checked").asBoolean()).isFalse();
+        assertThat(tab.eval("opt.querySelector('input') !== null && opt.textContent.trim().length > 0").asBoolean()).isTrue();
+    }
+
+    @Test
     void changingTheHelpLanguageKeepsTheAnswers() throws Exception {
         HeadlessChrome.Tab tab = chrome.newTab(url("/"));
         tab.eval("localStorage.setItem('bandup.helpLanguage', 'az')");
