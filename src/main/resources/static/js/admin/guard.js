@@ -38,7 +38,7 @@ function showNoAccess() {
     const back = document.createElement("a");
     back.className = "btn btn--primary";
     back.href = "/";
-    back.textContent = "Back to BandUp";
+    back.textContent = "Back to Orbiko";
     box.append(title, text, back);
     main.replaceChildren(box);
 }

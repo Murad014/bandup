@@ -2,9 +2,9 @@
 
 ## Overview
 
-BandUp moves from in-browser stub data to a real relational database. The
+Orbiko moves from in-browser stub data to a real relational database. The
 schema must serve today's Reading feature and the admin panel, and must not
-need to be redesigned when BandUp goes **public and global**: learners with
+need to be redesigned when Orbiko goes **public and global**: learners with
 many native languages, more exam skills (Listening, Grammar, …) and
 eventually more target languages than English.
 

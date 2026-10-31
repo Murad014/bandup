@@ -38,7 +38,6 @@ body.admin { background: var(--bg); }
     margin-bottom: 8px;
     border-bottom: 1px solid var(--line);
 }
-.admin-brand span { color: var(--accent); }
 
 .admin-nav__caption {
     font: 600 .68rem var(--ui);
@@ -315,7 +314,6 @@ body.admin:not(.admin-ready) .admin-main { visibility: hidden; }
 .cover-field__actions .err:empty { display: none; }
 
 /* ---- Bright & friendly touches (shared tokens from app.css) ----------- */
-.admin-brand span { color: var(--accent); }
 .admin-nav__link { border-radius: var(--radius-pill); font-weight: 700; }
 .admin-nav__link.is-active { background: var(--accent-soft); color: var(--accent); }
 .card, .dash-card { border-radius: var(--radius-lg); box-shadow: var(--shadow-1); }

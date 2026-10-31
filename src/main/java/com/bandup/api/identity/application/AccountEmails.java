@@ -40,20 +40,20 @@ class AccountEmails {
 
     void sendConfirmation(User user, Instant now) {
         String link = settings.publicUrl() + "/verify-email?token=" + issue(user, TokenPurpose.EMAIL_VERIFICATION, now);
-        send(user, "Confirm your BandUp email", greeting(user)
-                + "Please confirm your email address to start using BandUp:\n\n" + link + "\n\n"
-                + "The link works for 24 hours. If you didn't create a BandUp account, you can ignore this email.\n");
+        send(user, "Confirm your Orbiko email", greeting(user)
+                + "Please confirm your email address to start using Orbiko:\n\n" + link + "\n\n"
+                + "The link works for 24 hours. If you didn't create an Orbiko account, you can ignore this email.\n");
     }
 
     void sendPasswordReset(User user, Instant now) {
         String link = settings.publicUrl() + "/reset-password?token=" + issue(user, TokenPurpose.PASSWORD_RESET, now);
-        send(user, "Reset your BandUp password", greeting(user)
-                + "Someone (hopefully you) asked to reset your BandUp password. Choose a new one here:\n\n" + link + "\n\n"
+        send(user, "Reset your Orbiko password", greeting(user)
+                + "Someone (hopefully you) asked to reset your Orbiko password. Choose a new one here:\n\n" + link + "\n\n"
                 + "The link works for 1 hour. If you didn't ask for this, ignore this email: your password stays the same.\n");
     }
 
     void sendInstructorApproved(User user) {
-        send(user, "You're now a BandUp Instructor", greeting(user)
+        send(user, "You're now an Orbiko Instructor", greeting(user)
                 + "Your Instructor request was approved. Sign in and open " + settings.publicUrl() + "/admin "
                 + "to create reading passages.\n");
     }

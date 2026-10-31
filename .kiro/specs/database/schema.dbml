@@ -1,4 +1,4 @@
-// BandUp — database schema (PostgreSQL 16)
+// Orbiko — database schema (PostgreSQL 16)
 // Paste into https://dbdiagram.io/d  (source of truth: design.md §4)
 // Status/skill/role/etc. columns are varchar + CHECK constraints in SQL; allowed values are in notes.
 

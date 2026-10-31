@@ -14,7 +14,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title th:replace="${title}">BandUp</title>
+    <title th:replace="${title}">Orbiko</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo.svg}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Nunito:wght@400;600;700;800&display=swap">
@@ -26,7 +27,7 @@
     <nav th:replace="~{fragments/navbar :: navbar(${navItems}, ${activeKey})}"></nav>
     <th:block th:replace="${content}"></th:block>
     <footer class="site-foot wrap">
-        <span>© BandUp · IELTS practice</span>
+        <span>© Orbiko · IELTS practice</span>
         <span>Made for learners, one passage at a time.</span>
     </footer>
     <script th:src="@{/js/nav.js}" defer></script>

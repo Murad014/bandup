@@ -15,7 +15,9 @@ final class NavBar {
         ui.click(By.cssSelector("[data-nav-signin] a"));
     }
 
+    /** Opens the account menu (avatar + name), then clicks "Sign out", as a learner would. */
     void clickSignOut() {
+        ui.click(By.cssSelector("[data-account-toggle]"));
         ui.click(By.cssSelector("[data-nav-signout]"));
     }
 

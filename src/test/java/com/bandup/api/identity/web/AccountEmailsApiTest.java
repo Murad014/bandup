@@ -53,7 +53,7 @@ class AccountEmailsApiTest {
                 .andExpect(jsonPath("$.instructorStatus").value("NONE"));
 
         assertThat(mailbox.to("aysel@example.com")).singleElement()
-                .satisfies(m -> assertThat(m.subject()).isEqualTo("Confirm your BandUp email"))
+                .satisfies(m -> assertThat(m.subject()).isEqualTo("Confirm your Orbiko email"))
                 .satisfies(m -> assertThat(m.text()).contains("https://bandup.test/verify-email?token=", "24 hours", "Hello Aysel"));
         login("aysel@example.com", PASSWORD).andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("EMAIL_NOT_VERIFIED"))
@@ -116,7 +116,7 @@ class AccountEmailsApiTest {
         post("/api/v1/auth/forgot-password", Map.of("email", "nobody@example.com")).andExpect(status().isAccepted());
         assertThat(mailbox.to("nobody@example.com")).isEmpty();
         var reset = mailbox.to("aysel@example.com").getLast();
-        assertThat(reset.subject()).isEqualTo("Reset your BandUp password");
+        assertThat(reset.subject()).isEqualTo("Reset your Orbiko password");
         assertThat(reset.text()).contains("https://bandup.test/reset-password?token=", "1 hour");
         String token = mailbox.latestToken("aysel@example.com", "/reset-password").orElseThrow();
 
@@ -184,7 +184,7 @@ class AccountEmailsApiTest {
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(
                 "/api/v1/admin/instructor-requests/" + rasimId + "/reject").header("Authorization", admin))
                 .andExpect(status().isNoContent());
-        assertThat(mailbox.to("leyla@example.com").getLast().subject()).isEqualTo("You're now a BandUp Instructor");
+        assertThat(mailbox.to("leyla@example.com").getLast().subject()).isEqualTo("You're now an Orbiko Instructor");
         assertThat(mailbox.to("rasim@example.com")).hasSize(1); // just the confirmation
 
         String leylaAgain = bearer(login("leyla@example.com", PASSWORD).andReturn());

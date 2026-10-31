@@ -50,6 +50,9 @@ class UiPagesTest {
         String home = html("/");
 
         assertThat(home).contains("href=\"/reading\"", ">Reading<", ">Grammar<", "soon");
+        // The brand: Orbiko name, planet logo and favicon on every page; the old name is gone.
+        assertThat(home).contains(">Orbiko</span>", "<title>Orbiko", "rel=\"icon\" type=\"image/svg+xml\" href=\"/img/logo.svg\"")
+                .doesNotContain("BandUp", "Band<span>Up");
         assertThat(home).doesNotContain("data-nav-admin").doesNotContain("href=\"/admin\""); // no Admin link: admins type /admin
         // .app-nav__item sets display:flex, which would override [hidden] without this rule (seen in Chrome).
         assertThat(mvc.perform(get("/css/app.css")).andReturn().getResponse().getContentAsString())

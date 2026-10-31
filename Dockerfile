@@ -1,4 +1,4 @@
-# BandUp production image: build the jar with the JDK, run it on a small JRE as a non-root user.
+# Orbiko production image: build the jar with the JDK, run it on a small JRE as a non-root user.
 # Build:  docker build -t bandup .
 # Run:    see deploy/compose.yaml (needs the variables from deploy/.env).
 

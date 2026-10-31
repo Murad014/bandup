@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
 <head>
-    <title>Sign in · BandUp</title>
+    <title>Sign in · Orbiko</title>
     <link id="pageCss" rel="stylesheet" th:href="@{/css/auth.css}">
 </head>
 <body>
@@ -25,7 +25,7 @@
         </div>
         <p class="auth-forgot"><a href="/forgot-password">Forgot password?</a></p>
         <button class="btn btn--primary auth-submit" type="submit">Sign in</button>
-        <p class="auth-alt">New to BandUp? <a href="/register" data-keep-next>Create an account</a></p>
+        <p class="auth-alt">New to Orbiko? <a href="/register" data-keep-next>Create an account</a></p>
     </form>
     <!-- Inside <main>: the layout only takes this element. -->
     <script type="module" th:src="@{/js/login.js}"></script>

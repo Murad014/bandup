@@ -1,5 +1,5 @@
 /* =========================================================================
-   app.css — BandUp design system + app shell.
+   app.css — Orbiko design system + app shell.
    Bright & friendly: warm cream background, coral primary, teal / sun / sky /
    grape accents, rounded shapes, soft shadows. Nunito for the interface,
    Literata for reading passages.
@@ -144,7 +144,6 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
     color: var(--fg);
     text-decoration: none;
 }
-.app-nav__name span { color: var(--accent); }
 .brand-mark { width: 34px; height: 34px; flex: none; }
 
 .app-nav__menu {
@@ -156,12 +155,51 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
     padding: 0;
 }
 .app-nav__item { display: flex; }
-.app-nav__account { gap: 4px; align-items: center; }
-.app-nav__user {
-    color: var(--muted); font-weight: 700; font-size: .9rem; padding: 0 6px; max-width: 14ch;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+/* Account: a chip (avatar + name) that opens a small menu with Sign out. */
+.app-nav__account { position: relative; align-items: center; margin-left: 6px; }
+.account-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 4px 12px 4px 4px;
+    border: 2px solid var(--line); border-radius: var(--radius-pill);
+    background: var(--paper); color: var(--fg);
+    font: 700 .92rem var(--ui); cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
 }
-.app-nav__signout { background: none; border: 0; font: inherit; cursor: pointer; }
+.account-chip:hover, .account-chip[aria-expanded="true"] { border-color: var(--accent); }
+.app-nav__user { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-chip__chev {
+    width: 7px; height: 7px; margin: -3px 2px 0 0;
+    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+    transform: rotate(45deg); transition: transform .15s ease;
+}
+.account-chip[aria-expanded="true"] .account-chip__chev { transform: rotate(-135deg); margin-top: 3px; }
+.avatar {
+    display: inline-grid; place-items: center; flex: none;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-contrast);
+    font: 800 .9rem var(--display); text-transform: uppercase;
+}
+.avatar--lg { width: 40px; height: 40px; font-size: 1.1rem; }
+.account-menu {
+    position: absolute; right: 0; top: calc(100% + 8px); z-index: 40;
+    min-width: 220px; padding: 8px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow-2);
+}
+.account-menu__head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 8px 10px; margin-bottom: 6px; border-bottom: 1px solid var(--line);
+}
+.account-menu__head strong { display: block; max-width: 18ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-menu__head small { color: var(--muted); font-size: .8rem; }
+.account-menu__item {
+    display: block; width: 100%; text-align: left;
+    padding: 9px 10px; border: 0; border-radius: 10px;
+    background: none; color: var(--fg); font: 700 .92rem var(--ui);
+    text-decoration: none; cursor: pointer;
+}
+.account-menu__item:hover, .account-menu__item:focus-visible { background: var(--surface); }
+.account-menu__signout { color: var(--bad); }
 .app-nav__link {
     display: inline-flex;
     align-items: center;
@@ -229,6 +267,9 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
     }
     .app-nav.open .app-nav__menu { display: flex; }
     .app-nav__item, .app-nav__link { width: 100%; }
+    .app-nav__account { flex-direction: column; align-items: stretch; margin: 6px 0 0; }
+    .account-chip { width: 100%; }
+    .account-menu { position: static; margin-top: 6px; box-shadow: none; }
 }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
