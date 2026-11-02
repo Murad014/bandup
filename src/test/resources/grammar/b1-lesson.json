@@ -1,0 +1,51 @@
+{
+  "id": "b1-test-present-perfect",
+  "level": "B1",
+  "topic": { "key": "present-perfect", "label": "Present perfect vs past simple" },
+  "title": "Present Perfect vs Past Simple",
+  "goal": { "en": "By the end, you'll know how to decide present perfect vs past simple.", "az": "Sonda present perfect və past simple arasında seçim edəcəksiniz." },
+  "minutes": 20,
+  "learn": [
+    { "icon": "🌉", "label": "The idea", "heading": "Present perfect links past to NOW",
+      "body": "<b>have/has + past participle</b>. The connection to now matters.",
+      "examples": [ { "ok": true, "text": "I <b>have lost</b> my keys." } ] },
+    { "icon": "📅", "label": "Past simple", "heading": "Finished action, finished time",
+      "body": "Signals: <b>yesterday, ago, last week, in 2020</b>." },
+    { "icon": "🧭", "label": "How to decide", "heading": "Ask 2 questions, in order",
+      "steps": [ "1️⃣ Is there a <b>finished-time word</b>? → <b>Past simple</b>",
+                 "2️⃣ <b>since / for / ever / just</b>? → <b>Present perfect</b>" ],
+      "tip": "Check the time words first — they decide it." }
+  ],
+  "worked": {
+    "question": "Choose the verb: “I ___ (visit) London in 2019.”",
+    "steps": [ "🔍 Find the time clue: <b>in 2019</b>.", "✅ Finished time → <b>visited</b>." ],
+    "answer": "visited"
+  },
+  "practice": [
+    { "id": "p1", "type": "choose", "prompt": "I ___ my wallet — I can't find it!",
+      "options": [ "lost", "have lost" ], "answer": 1,
+      "whys": [ "“lost” is finished past, but the result matters now", "✓ result affects now → present perfect" ],
+      "explanation": "Result matters now → present perfect." },
+    { "id": "p2", "type": "type", "prompt": "Type the correct form of “finish”:",
+      "sentence": "She ___ her homework yesterday.", "accept": [ "finished" ],
+      "explanation": "“yesterday” = finished time → <b>finished</b>." }
+  ],
+  "check": [
+    { "id": "c1", "type": "choose", "prompt": "I ___ to Japan twice in my life.",
+      "options": [ "went", "have been", "have gone", "was" ], "answer": 1,
+      "whys": [ "“went” needs a finished time", "✓ life experience → have been", "“have gone” means still away", "“was” can't take “to Japan” this way" ],
+      "explanation": "Life experience → <b>have been</b>." },
+    { "id": "c2", "type": "type", "prompt": "Type the correct form of “win”:",
+      "sentence": "They ___ the title in 2021.", "accept": [ "won" ], "show": "won",
+      "explanation": "“in 2021” = finished time → <b>won</b>." },
+    { "id": "c3", "type": "type", "prompt": "Type the missing words (negative of “see”):",
+      "sentence": "We ___ her since Monday.", "accept": [ "haven't seen", "have not seen" ], "show": "haven't seen",
+      "explanation": "“since” → present perfect; negative → <b>haven't seen</b>." },
+    { "id": "c4", "type": "fix", "prompt": "This sentence is wrong. Type the correct verb (one word):",
+      "wrong": "I have seen him yesterday.", "accept": [ "saw" ], "show": "saw",
+      "explanation": "“yesterday” blocks present perfect → <b>saw</b>." },
+    { "id": "c5", "type": "build", "prompt": "Build the sentence:",
+      "tiles": [ "since", "We", "him", "have", "2019", "known" ], "answer": "We have known him since 2019",
+      "explanation": "“since” → present perfect." }
+  ]
+}

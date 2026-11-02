@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>Grammar · Orbiko</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/grammar.css}">
+</head>
+<body>
+<!--
+  The grammar course (grammar design §6). grammar/course.js shows the level
+  choice the first time, then the course of the chosen level, from
+  /api/v1/grammar. No lesson content or answers are in this page.
+-->
+<main class="wrap grammar" id="grammarRoot">
+    <p class="g-status" id="gStatus" role="status">Loading…</p>
+
+    <!-- 1. Level choice -->
+    <section class="g-levels" id="levelPick" aria-labelledby="levelTitle" hidden>
+        <div class="g-lead">
+            <h1 id="levelTitle">What's your level?</h1>
+            <p>We'll build your daily grammar course.</p>
+        </div>
+        <div class="g-level-list" id="levelList"></div>
+        <p class="g-foot">One topic a day · learn the reasoning, then produce it yourself.</p>
+    </section>
+
+    <!-- 2. The course of the chosen level -->
+    <section class="g-course" id="course" aria-labelledby="courseTitle" hidden>
+        <div class="g-course-head">
+            <div>
+                <h1 id="courseTitle"></h1>
+                <p class="g-course-sub" id="courseSub"></p>
+            </div>
+            <button type="button" class="btn btn--text" id="changeLevel">Change level</button>
+        </div>
+        <div class="g-bar" aria-hidden="true"><i id="courseBar"></i></div>
+
+        <div class="g-card g-review" id="reviewCard" hidden>
+            <span class="g-review__icon" aria-hidden="true">🔁</span>
+            <div class="g-review__text"><b>Daily review</b><small id="reviewSub"></small></div>
+            <a class="btn btn--primary" id="reviewGo" href="/grammar/review" hidden>Review</a>
+        </div>
+        <div class="g-card g-guest" id="guestCard" hidden>
+            <span aria-hidden="true">💾</span>
+            <p>Lesson 1 is free to try. <a id="signInLink" href="/login?next=/grammar">Sign in</a> to save your
+                progress, unlock the next lessons and get a daily review.</p>
+        </div>
+
+        <div class="g-card g-today" id="todayCard" hidden>
+            <span class="g-kick" id="todayKick">Today's lesson</span>
+            <h2 id="todayTitle"></h2>
+            <p class="g-today__time">⏱ About 20 minutes · learn the reasoning → practise → master</p>
+            <div class="g-plan">
+                <div><b>📖 Learn</b><small>~7 min</small></div>
+                <div><b>✏️ Practise</b><small>~5 min</small></div>
+                <div><b>🎯 Master</b><small>~8 min</small></div>
+            </div>
+            <a class="btn btn--primary btn--lg" id="todayGo" href="#">Start today's lesson</a>
+            <p class="g-today__done" id="todayDone" hidden>🎉 You've done today's new lesson. The next one unlocks tomorrow —
+                replay a finished lesson or do your review meanwhile.</p>
+        </div>
+        <div class="g-card g-alldone" id="allDone" hidden>
+            <span aria-hidden="true">🏆</span>
+            <p>You've finished every lesson of this course. New lessons arrive regularly — check back soon.</p>
+        </div>
+
+        <div class="g-list-head">
+            <h2 class="g-list-title">Your lessons</h2>
+            <div class="chips g-topics" id="topicChips" role="group" aria-label="Filter by topic"></div>
+        </div>
+        <ol class="g-lessons" id="lessonList"></ol>
+        <p class="g-empty" id="lessonEmpty" hidden>No lessons yet for this level.</p>
+        <div class="g-more"><button type="button" class="btn" id="moreLessons" hidden>Show more lessons</button></div>
+        <p class="g-foot">A new topic unlocks every day — and old ones come back as review.</p>
+    </section>
+
+    <script type="module" th:src="@{/js/grammar/course.js}"></script>
+</main>
+</body>
+</html>

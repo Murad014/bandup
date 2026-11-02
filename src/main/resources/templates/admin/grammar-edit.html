@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::title}, ~{::#pageCss}, ~{::main}, 'grammar')}">
+<head>
+    <title>Grammar lesson · Orbiko Admin</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<!--
+  Grammar lesson editor (grammar requirement 12, design §6.5): the lesson
+  JSON of lesson-format.md (what n8n sends) and a live preview with the
+  answers. grammar-edit.js loads it from /api/v1/admin/grammar/lessons.
+-->
+<main id="gEditRoot" th:attr="data-lesson-id=${lessonId}">
+    <div class="editor-topbar">
+        <div class="editor-topbar__title">
+            <h1 class="admin-h1" id="gEditTitle">New grammar lesson</h1>
+            <span id="gStatus" class="badge badge--draft">draft</span>
+            <span id="gRevision" class="admin-sub editor-revision"></span>
+            <span id="gDirty" class="dirty-dot" hidden title="Unsaved changes">●</span>
+        </div>
+        <div class="editor-actions">
+            <button id="gSave" type="button" class="btn">Save draft</button>
+            <button id="gUnpublish" type="button" class="btn" hidden>Unpublish</button>
+            <label class="gp-pos" id="gPositionBox">Position
+                <input id="gPosition" type="number" min="1" placeholder="end" aria-label="Position in the course (empty = at the end)">
+            </label>
+            <button id="gPublish" type="button" class="btn btn--primary">Publish</button>
+        </div>
+    </div>
+
+    <div id="gNotice" class="admin-notice" role="status" hidden></div>
+    <div id="gErrors" class="admin-error" role="alert" hidden></div>
+
+    <div class="gp-split">
+        <div class="card gp-json">
+            <h3>Lesson JSON</h3>
+            <p class="admin-sub">The format n8n sends (<code>.kiro/specs/grammar/lesson-format.md</code>). Paste or edit it here.</p>
+            <p class="gp-jsonstate" id="gJsonState" aria-live="polite"></p>
+            <textarea id="gJson" spellcheck="false" autocomplete="off" aria-label="Lesson JSON"></textarea>
+        </div>
+        <div class="card gp-preview">
+            <h3>Preview <span class="admin-sub">(with answers — learners don't see them before answering)</span></h3>
+            <div id="gPreview"></div>
+        </div>
+    </div>
+
+    <script type="module" th:src="@{/js/admin/grammar-edit.js}"></script>
+</main>
+</body>
+</html>

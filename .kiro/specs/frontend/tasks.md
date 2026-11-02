@@ -236,8 +236,8 @@ Reading and Admin both need foundation 1–2; Admin also needs 3–4.
 - [x] Navbar logo mark, "Sign in" as the main button, footer on every page
   (hidden on the reading page).
 - [x] Home: hero with illustration, then "What do you want to practise?" —
-  the learner picks a skill first (Reading → `/reading`; Grammar "soon", not
-  a link), then "how it works" steps. No passages on the home page (user
+  the learner picks a skill first (Reading → `/reading`; Grammar → `/grammar`
+  since grammar task 7, "soon" before), then "how it works" steps. No passages on the home page (user
   request; "Fresh passages" and `home.js` removed).
 - [x] Catalog: header banner, chip filters, cards with a cover image, a
   "✓ Done" badge and "Best score n/m".

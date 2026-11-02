@@ -107,3 +107,18 @@ when requested.
     its time), table `account_token` (hash only, 64 hex; expiry after
     issue). 30 tables.
   - _Verified_: `SchemaConstraintsTest` counts 30; identity tests.
+
+- [x] 10. `V9__grammar.sql`
+  - Grammar feature (spec `../grammar/design.md` §7): `grammar_lesson`
+    (body as `jsonb`, one PUBLISHED lesson per level and position),
+    `grammar_progress` + `grammar_finished_lesson`, `grammar_run` (guest runs
+    have no user), `grammar_review_card` (one card per learner, lesson and
+    item). Lessons used by runs, finished lists or cards can't be deleted
+    (`on delete restrict`); deleting a user removes their grammar rows. 35 tables.
+  - _Verified_: `SchemaConstraintsTest` counts 35; `GrammarPersistenceTest`
+    (Hibernate validate, round trips, unique position, unique card, restrict).
+
+- [x] 11. `V10__grammar_seed_lessons.sql`
+  - One published grammar lesson per level (A2, B1, B2 from the prototype, a
+    new C1), each only if its slug is free, at the end of its course. Still 35 tables.
+  - _Verified_: `SeedLessonsTest`.

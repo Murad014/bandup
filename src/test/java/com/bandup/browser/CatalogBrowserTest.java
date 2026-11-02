@@ -32,8 +32,9 @@ class CatalogBrowserTest extends BrowserTestBase {
     void theHomePageAsksForASkillAndShowsNoPassages() throws Exception {
         HeadlessChrome.Tab tab = chrome.newTab(url("/"));
         assertThat(tab.eval("document.querySelectorAll('.ex-card').length").asInt()).isZero();
-        assertThat(tab.text("document.querySelector('[data-skill=grammar]').textContent")).contains("Grammar", "soon");
-        assertThat(tab.eval("document.querySelector('[data-skill=grammar]').tagName === 'A'").asBoolean()).isFalse();
+        assertThat(tab.text("document.querySelector('[data-skill=grammar]').textContent")).contains("Grammar")
+                .doesNotContain("soon");
+        assertThat(tab.eval("document.querySelector('[data-skill=grammar]').tagName === 'A'").asBoolean()).isTrue();
 
         tab.eval("document.querySelector('a[data-skill=reading]').click()");
         tab.waitFor("location.pathname === '/reading' && document.querySelector('.ex-card') !== null");

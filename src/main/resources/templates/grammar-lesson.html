@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>Grammar lesson · Orbiko</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/grammar.css}">
+</head>
+<body>
+<!--
+  One grammar lesson (grammar requirement 4). grammar/lesson.js loads it from
+  /api/v1/grammar and runs Goal → Learn → Practise → Master; answers are graded
+  on the server. Only the lesson id is in this page.
+-->
+<main class="wrap grammar g-lesson" id="lessonRoot" th:attr="data-slug=${slug}">
+    <p class="g-status" id="lstatus" role="status">Loading the lesson…</p>
+    <div id="lshell" hidden>
+        <div class="g-lesson-top">
+            <button type="button" class="g-x" id="exitLesson" aria-label="Leave the lesson" title="Leave the lesson">✕</button>
+            <ol class="g-pills" id="pills" aria-label="Lesson steps">
+                <li class="g-pill" data-stage="goal">Goal</li>
+                <li class="g-pill" data-stage="learn">Learn</li>
+                <li class="g-pill" data-stage="practice">Practise</li>
+                <li class="g-pill" data-stage="check">Master</li>
+            </ol>
+            <span class="g-clock" aria-label="Time in this lesson">⏱ <span id="clock">00:00</span></span>
+        </div>
+        <div class="g-bar g-bar--thin" aria-hidden="true"><i id="lprog"></i></div>
+    </div>
+    <div id="lbody"></div>
+
+    <script type="module" th:src="@{/js/grammar/lesson.js}"></script>
+</main>
+</body>
+</html>

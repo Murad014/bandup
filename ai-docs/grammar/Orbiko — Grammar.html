@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Orbiko — Grammar</title>
+<style>
+  :root{
+    --bg:#f7f7fb;--surface:#fff;--surface-2:#f1f1f7;--border:#e6e6ef;
+    --text:#1a1b2e;--muted:#6b6c84;--faint:#9a9bb2;
+    --brand:#5b4df0;--brand-soft:#ece9ff;--brand-ink:#3d31c4;
+    --good:#16a37a;--good-soft:#e2f6ee;--bad:#e0495f;--bad-soft:#fce7eb;--warn:#d98a1f;
+    --shadow:0 1px 2px rgba(26,27,46,.05),0 12px 32px -12px rgba(26,27,46,.12);--radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#0d0e18;--surface:#161827;--surface-2:#1e2133;--border:#272a40;
+    --text:#f0f1fa;--muted:#a3a5be;--faint:#6e7191;
+    --brand:#8a7dff;--brand-soft:#241f4a;--brand-ink:#b9b0ff;
+    --good:#34d399;--good-soft:#0f2e24;--bad:#f6788a;--bad-soft:#331921;--warn:#e7a948;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -16px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+  .wrap{max-width:720px;margin:0 auto;padding:0 20px}
+  header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .nav{display:flex;align-items:center;gap:16px;height:62px;max-width:720px;margin:0 auto;padding:0 20px}
+  .logo{font-weight:800;font-size:20px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+  .logo .dot{width:10px;height:10px;border-radius:50%;background:var(--brand)}
+  .spacer{flex:1}
+  .chip{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px;background:var(--surface);border:1px solid var(--border);padding:6px 11px;border-radius:999px;cursor:pointer}
+  .iconbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:16px;color:var(--text)}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .btn{border:none;cursor:pointer;font-weight:700;font-size:15px;padding:13px 22px;border-radius:12px;background:var(--brand);color:#fff;transition:transform .08s,filter .15s;width:100%}
+  .btn:hover{filter:brightness(1.05)}.btn:active{transform:translateY(1px)}
+  .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+  .btn[disabled]{opacity:.4;cursor:not-allowed}
+  section{display:none;animation:fade .25s ease}section.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .lead{text-align:center;margin:40px 0 22px}.lead h1{font-size:27px;letter-spacing:-.02em;margin-bottom:8px}.lead p{color:var(--muted)}
+  .lvl{padding:20px;cursor:pointer;display:flex;align-items:center;gap:16px;margin-bottom:12px;transition:transform .1s,border-color .15s}
+  .lvl:hover{transform:translateY(-2px);border-color:var(--brand)}
+  .lvl .e{font-size:28px}.lvl h3{font-size:16px}.lvl small{color:var(--muted);font-size:13px}
+  .lvl .code{margin-left:auto;font-weight:800;color:var(--brand-ink);background:var(--brand-soft);padding:6px 12px;border-radius:10px;font-size:13px}
+
+  .course-head{display:flex;align-items:center;justify-content:space-between;margin:30px 0 8px}
+  .course-head h2{font-size:20px}.course-head small{color:var(--muted)}
+  .cbar{height:8px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin-bottom:20px}
+  .cbar i{display:block;height:100%;background:var(--brand);border-radius:999px}
+  .review-card{padding:18px 20px;margin-bottom:16px;display:flex;align-items:center;gap:14px;border-left:4px solid var(--warn)}
+  .review-card .re{font-size:24px}.review-card .rt{flex:1}.review-card .rt b{font-size:15px}.review-card .rt small{display:block;color:var(--muted);font-size:12.5px}
+  .review-card button{width:auto;padding:10px 16px;font-size:14px}
+  .today-card{padding:26px;margin-bottom:26px}
+  .today-card .kick{font-size:12px;font-weight:700;color:var(--brand-ink);background:var(--brand-soft);display:inline-block;padding:5px 11px;border-radius:999px;margin-bottom:14px}
+  .today-card h1{font-size:24px;letter-spacing:-.02em;margin-bottom:6px}
+  .today-card .goal{color:var(--muted);margin-bottom:18px}
+  .plan{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+  .plan .p{flex:1;min-width:100px;background:var(--surface-2);border-radius:12px;padding:11px 13px}
+  .plan .p b{font-size:13px;display:block}.plan .p small{color:var(--muted);font-size:12px}
+  .timebadge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:16px}
+  .sch-h{font-size:14px;color:var(--muted);font-weight:700;margin:4px 0 12px}
+  .day{display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:13px;margin-bottom:9px;border:1px solid var(--border);background:var(--surface)}
+  .day .dn{width:30px;height:30px;border-radius:9px;background:var(--surface-2);display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+  .day .tt{flex:1}.day .tt b{font-size:14.5px}.day .tt small{display:block;color:var(--faint);font-size:12px}
+  .day .st{font-size:18px}
+  .day.done .dn{background:var(--good-soft);color:var(--good)}
+  .day.today{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft);cursor:pointer}
+  .day.today .dn{background:var(--brand);color:#fff}
+  .day.locked{opacity:.55}
+
+  .lshell-top{display:flex;align-items:center;gap:12px;margin:22px 0 14px}
+  .lshell-top .x{width:38px;height:38px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:17px;color:var(--text);flex:none}
+  .clock{display:flex;align-items:center;gap:6px;font-weight:700;font-variant-numeric:tabular-nums;font-size:14px;background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:999px;flex:none}
+  .pills{display:flex;gap:6px;flex:1}
+  .pill{flex:1;text-align:center;font-size:11px;font-weight:700;color:var(--faint);padding:7px 4px;border-radius:9px;background:var(--surface-2);border:1px solid transparent}
+  .pill.active{background:var(--brand-soft);color:var(--brand-ink);border-color:color-mix(in srgb,var(--brand) 30%,transparent)}
+  .pill.done{color:var(--good)}
+  .prog{height:7px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin-bottom:18px}
+  .prog i{display:block;height:100%;background:var(--brand);border-radius:999px;transition:width .3s}
+
+  .goal-card{padding:32px;text-align:center}.goal-card .e{font-size:40px;margin-bottom:12px}
+  .goal-card h1{font-size:23px;margin-bottom:10px;letter-spacing:-.01em}.goal-card p{color:var(--muted);margin-bottom:22px}
+
+  .teach{padding:30px;min-height:330px;display:flex;flex-direction:column}
+  .teach .ic{font-size:34px;margin-bottom:12px}
+  .teach .lbl{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--brand-ink);margin-bottom:8px}
+  .teach h2{font-size:22px;letter-spacing:-.01em;margin-bottom:12px}
+  .teach .body{font-size:16px;margin-bottom:14px}.teach .body b{color:var(--brand-ink)}
+  .ex{border-radius:12px;padding:12px 15px;font-size:15.5px;margin-bottom:9px;border:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
+  .ex.ok{background:var(--good-soft);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
+  .ex.no{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+  .ex .m{font-weight:800}.ex.ok .m{color:var(--good)}.ex.no .m{color:var(--bad)}
+  .decide{display:flex;flex-direction:column;gap:8px;margin:4px 0 12px}
+  .decide .s{background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--brand);border-radius:10px;padding:10px 13px;font-size:14.5px}
+  .decide .s b{color:var(--brand-ink)}
+  .tip{font-size:13px;color:var(--warn);font-weight:600;margin-top:2px}
+  .ansbox{font-size:16px;background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 30%,transparent);border-radius:10px;padding:10px 14px;margin:12px 0}
+  .ansbox b{color:var(--brand-ink)}
+  .teach .spacer{flex:1}
+  .lnav{display:flex;gap:10px;margin-top:18px}.lnav .btn{width:auto}.lnav .btn.ghost{flex:none;padding:13px 18px}.lnav .grow{flex:1}
+
+  .qcard{padding:28px;display:flex;flex-direction:column;min-height:300px}
+  .qkick{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand-ink);margin-bottom:6px;display:flex;justify-content:space-between}
+  .qkick .ty{color:var(--faint)}
+  .q{font-size:20px;line-height:1.5;margin:10px 0 18px}.q .blank{color:var(--brand);font-weight:800}
+  .wrongline{font-size:17px;background:var(--bad-soft);border:1px solid color-mix(in srgb,var(--bad) 30%,transparent);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+  .choices{display:flex;flex-direction:column;gap:10px}
+  .choice{text-align:left;padding:15px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:16px;color:var(--text);transition:border-color .12s,background .12s}
+  .choice:hover{border-color:var(--brand)}
+  .choice.correct{border-color:var(--good);background:var(--good-soft)}
+  .choice.wrong{border-color:var(--bad);background:var(--bad-soft)}
+  .inp{width:100%;font-size:18px;font-family:inherit;padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);outline:none}
+  .inp:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .inp.correct{border-color:var(--good);background:var(--good-soft)}.inp.wrong{border-color:var(--bad);background:var(--bad-soft)}
+  .tray{min-height:54px;border:1.5px dashed var(--border);border-radius:12px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-content:flex-start}
+  .tray.correct{border-color:var(--good);border-style:solid;background:var(--good-soft)}.tray.wrong{border-color:var(--bad);border-style:solid;background:var(--bad-soft)}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+  .tile{font-size:16px;font-weight:600;padding:9px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:transform .08s}
+  .tile:active{transform:scale(.96)}.tile.used{opacity:.35;pointer-events:none}
+  .tile.trayed{background:var(--brand-soft);border-color:color-mix(in srgb,var(--brand) 30%,transparent);color:var(--brand-ink)}
+  .q-spacer{flex:1}
+  .fb{margin-top:16px;border-radius:12px;padding:16px 18px;display:none;border:1px solid var(--border)}
+  .fb.show{display:block;animation:fade .2s ease}
+  .fb.ok{background:var(--good-soft);border-color:color-mix(in srgb,var(--good) 40%,transparent)}
+  .fb.no{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
+  .fb .v{font-weight:800;margin-bottom:6px}.fb.ok .v{color:var(--good)}.fb.no .v{color:var(--bad)}
+  .fb .ans{font-size:14px;margin-bottom:6px}.fb .ans b{color:var(--brand-ink)}
+  .fb .diag{font-size:14px;margin-bottom:8px;padding:8px 11px;background:color-mix(in srgb,var(--bad) 10%,transparent);border-radius:8px}
+  .fb .ex-txt{font-size:14.5px}.fb .ex-txt b{color:var(--brand-ink)}
+  .retrynote{font-size:12.5px;color:var(--warn);font-weight:700;margin-top:8px}
+  .spacednote{font-size:12.5px;color:var(--good);font-weight:700;margin-top:8px}
+  .mastery{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px;color:var(--muted)}
+  .mastery .mp{flex:1;height:8px;background:var(--surface-2);border-radius:999px;overflow:hidden}
+  .mastery .mp i{display:block;height:100%;background:var(--good);border-radius:999px;transition:width .35s}
+  .mastery b{color:var(--text)}
+
+  .done-card{padding:40px 30px;text-align:center}.done-card .big{font-size:52px;margin-bottom:10px}
+  .done-card h1{font-size:24px;margin-bottom:8px}.done-card p{color:var(--muted);margin-bottom:12px}
+  .recap{text-align:left;background:var(--surface-2);border-radius:12px;padding:14px 16px;margin:0 0 20px;font-size:14px;color:var(--muted);line-height:1.8}
+  .recap b{color:var(--text)}
+  .foot{text-align:center;color:var(--faint);font-size:12.5px;padding:34px 0}
+</style>
+</head>
+<body>
+<header><div class="nav">
+  <div class="logo"><span class="dot"></span>Orbiko</div><div class="spacer"></div>
+  <div class="chip" id="lvlChip" onclick="show('level')" style="display:none">🎯 <span id="lvlChipTxt"></span></div>
+  <div class="chip">🔥 <span>7</span></div>
+  <button class="iconbtn" id="themeBtn" onclick="toggleTheme()">☾</button>
+</div></header>
+
+<main class="wrap">
+  <section id="level" class="on">
+    <div class="lead"><h1>What's your level?</h1><p>We'll build your daily grammar course.</p></div>
+    <div class="card lvl" onclick="chooseLevel('A2')"><div class="e">🌱</div><div><h3>Elementary</h3><small>Foundations course</small></div><div class="code">A2</div></div>
+    <div class="card lvl" onclick="chooseLevel('B1')"><div class="e">🌿</div><div><h3>Intermediate</h3><small>Core IELTS grammar</small></div><div class="code">B1</div></div>
+    <div class="card lvl" onclick="chooseLevel('B2')"><div class="e">🌳</div><div><h3>Upper-Intermediate</h3><small>Band 7+ structures</small></div><div class="code">B2</div></div>
+    <div class="foot">One topic a day · learn the reasoning, then produce it yourself.</div>
+  </section>
+
+  <section id="course">
+    <div class="course-head"><h2 id="courseName"></h2><small id="courseDay"></small></div>
+    <div class="cbar"><i id="cbar" style="width:0"></i></div>
+    <div class="card review-card" id="reviewCard">
+      <div class="re">🔁</div>
+      <div class="rt"><b>Daily review</b><small id="reviewSub"></small></div>
+      <button class="btn" onclick="startReview()">Review</button>
+    </div>
+    <div class="card today-card">
+      <span class="kick">Today's lesson</span>
+      <h1 id="tTitle"></h1><p class="goal" id="tGoal"></p>
+      <div class="timebadge">⏱ About 20 minutes · learn the reasoning → practise → produce → master</div>
+      <div class="plan">
+        <div class="p"><b>📖 Learn</b><small>~7 min</small></div>
+        <div class="p"><b>✏️ Practise</b><small>~5 min</small></div>
+        <div class="p"><b>🎯 Master</b><small>~8 min</small></div>
+      </div>
+      <button class="btn" onclick="startLesson()">Start today's 20-min lesson</button>
+    </div>
+    <div class="sch-h">Your daily topics</div>
+    <div id="schedule"></div>
+    <div class="foot">A new topic unlocks every day — and old ones come back as review.</div>
+  </section>
+
+  <section id="lesson">
+    <div class="lshell-top">
+      <button class="x" onclick="exitLesson()">✕</button>
+      <div class="pills" id="pills">
+        <div class="pill" data-s="goal">Goal</div>
+        <div class="pill" data-s="learn">Learn</div>
+        <div class="pill" data-s="guided">Practise</div>
+        <div class="pill" data-s="check">Master</div>
+      </div>
+      <div class="clock">⏱ <span id="clock">00:00</span></div>
+    </div>
+    <div class="prog"><i id="lprog" style="width:0"></i></div>
+    <div id="lbody"></div>
+  </section>
+
+  <section id="review">
+    <div class="lshell-top">
+      <button class="x" onclick="show('course')">✕</button>
+      <div class="pills"><div class="pill active" style="flex:none;padding:7px 16px">🔁 Spaced review</div><div style="flex:1"></div></div>
+      <div class="clock">⏱ <span id="rclock">00:00</span></div>
+    </div>
+    <div class="prog"><i id="rprog" style="width:0"></i></div>
+    <div id="rbody"></div>
+  </section>
+</main>
+
+<script>
+/* ===================== DATA ===================== */
+const LNAME={A2:'Elementary',B1:'Intermediate',B2:'Upper-Intermediate'};
+const SYLLABUS={
+  A2:['Nouns: a / an','Plural nouns','this / that / these / those','Present simple','have got','there is / there are','Prepositions of place','Articles: a / an / the','Past simple of “be”','Can / can’t'],
+  B1:['Articles review','Countable & uncountable','Past simple','Present continuous vs simple','Comparatives & superlatives','Prepositions of time','Future: will vs going to','Present Perfect vs Past Simple','Present perfect continuous','Relative clauses'],
+  B2:['Narrative tenses','The passive voice','Reported speech','Modals of deduction','Advanced relative clauses','Gerunds vs infinitives','2nd conditional','2nd vs 3rd Conditional','Mixed conditionals','I wish / if only'],
+};
+const TODAY_INDEX=7;
+
+/* item types: mc | type | fix | order.  mc may carry whys[] (per-option diagnosis). */
+const LESSON={
+  A2:{goal:'By the end, you’ll know how to decide a, an, the — or no article — and produce them yourself.',
+    teach:[
+      {ic:'📦',lbl:'The idea',h:'“a / an” = one, not specific',body:'Use <b>a / an</b> for <b>one of many</b>, when the listener doesn’t know which.',ex:[{ok:true,t:'I saw <b>a</b> dog.'},{ok:true,t:'She is <b>an</b> engineer.'}]},
+      {ic:'🔊',lbl:'a vs an',h:'Follow the sound',body:'<b>a</b> + consonant sound, <b>an</b> + vowel sound.',ex:[{ok:true,t:'<b>a</b> university'},{ok:true,t:'<b>an</b> hour'}]},
+      {ic:'🎯',lbl:'the',h:'We both know which one',body:'Use <b>the</b> for something specific or unique.',ex:[{ok:true,t:'<b>The</b> sun is bright.'},{ok:true,t:'Close <b>the</b> door.'}]},
+      {ic:'🚫',lbl:'The trap',h:'No a/an with uncountable words',body:'<b>advice, information, water</b> take no a/an.',ex:[{ok:false,t:'an <b>advice</b>'},{ok:true,t:'some <b>advice</b>'}]},
+      {ic:'🧭',lbl:'How to decide',h:'Ask 3 questions, in order',steps:['1️⃣ Is the noun <b>uncountable</b>? (advice, water, information) → <b>no a/an</b>','2️⃣ Is it <b>specific / the only one</b>? → <b>the</b>','3️⃣ One of many? → <b>a</b> (consonant sound) or <b>an</b> (vowel sound)'],tip:'Work from the top: stop at the first “yes”.'},
+    ],
+    worked:{q:'Choose the article: “___ hour”.',steps:['🔊 Say it: <b>hour</b> — the “h” is silent.','🎯 So it starts with a <b>vowel sound</b> (ow-er), even though the letter is a consonant.','✅ Vowel sound → <b>an</b>.'],answer:'an hour'},
+    guided:[
+      {type:'mc',q:'This is ___ apple.',ch:['a','an'],c:1,whys:['“apple” begins with a vowel sound, so “a” sounds wrong','✓ vowel sound → an'],ex:'Vowel sound → <b>an</b>.'},
+      {type:'mc',q:'I can see ___ moon tonight.',ch:['a','the'],c:1,whys:['there’s only one moon, so it isn’t “one of many”','✓ unique → the'],ex:'Only one moon → <b>the</b>.'},
+      {type:'order',q:'Put the words in order:',tiles:['engineer','an','She','is'],answer:'She is an engineer',ex:'“engineer” has a vowel sound → <b>an</b>.'},
+    ],
+    check:[
+      {type:'mc',q:'She is ___ honest person.',ch:['a','an','the','—'],c:1,whys:['the letter is a consonant, but the h is silent','✓ silent h = vowel sound → an','“the” would mean one specific person','a noun like this needs an article'],ex:'Silent h → vowel sound → <b>an</b>.'},
+      {type:'mc',q:'I need ___ information first.',ch:['a','an','the','no article'],c:3,whys:['“information” is uncountable — no “a”','uncountable — no “an” either','“the” would point to specific information','✓ uncountable + general → no article'],ex:'Uncountable → <b>no article</b>.'},
+      {type:'type',q:'Type <b>a</b> or <b>an</b>:',sub:'___ umbrella',accept:['an'],show:'an',ex:'Vowel sound → <b>an</b>.'},
+      {type:'type',q:'Type <b>a</b> or <b>an</b>:',sub:'___ university',accept:['a'],show:'a',ex:'“yu” is a consonant sound → <b>a</b>.'},
+      {type:'mc',q:'___ moon looks beautiful.',ch:['A','An','The','—'],c:2,whys:['the moon is unique, not “one of many”','same — unique things don’t take a/an','✓ unique → The','a subject noun needs an article here'],ex:'Unique → <b>The</b>.'},
+      {type:'order',q:'Build the sentence:',tiles:['the','Close','please','door'],answer:'Close the door please',ex:'A specific door → <b>the</b>.'},
+      {type:'mc',q:'He wants ___ new phone.',ch:['a','an','the','—'],c:0,whys:['✓ one, not specific, consonant sound → a','“phone” starts with a consonant sound, not a vowel','“the” = a specific phone, but this one is new/any','a countable noun needs an article'],ex:'One, not specific, consonant sound → <b>a</b>.'},
+    ]},
+
+  B1:{goal:'By the end, you’ll know how to decide present perfect vs past simple — and produce both.',
+    teach:[
+      {ic:'🌉',lbl:'The idea',h:'Present perfect links past to NOW',body:'<b>have/has + past participle</b>. The connection to now matters, not the exact time.',ex:[{ok:true,t:'I <b>have lost</b> my keys. (I can’t find them now)'}]},
+      {ic:'✅',lbl:'When to use it',h:'Experience · unfinished time · recent result',body:'Signals: <b>ever, never, just, already, yet, since, for</b>.',ex:[{ok:true,t:'I <b>have been</b> to Paris.'},{ok:true,t:'We’ve known him <b>since</b> 2019.'}]},
+      {ic:'📅',lbl:'Past simple',h:'Finished action, finished time',body:'Signals: <b>yesterday, ago, last week, in 2020</b>.',ex:[{ok:true,t:'I <b>saw</b> him <b>yesterday</b>.'}]},
+      {ic:'⚠️',lbl:'The trap',h:'Finished time → never present perfect',body:'A finished-time word blocks the present perfect.',ex:[{ok:false,t:'I <b>have seen</b> him yesterday.'},{ok:true,t:'I <b>saw</b> him yesterday.'}]},
+      {ic:'🧭',lbl:'How to decide',h:'Ask 2 questions, in order',steps:['1️⃣ Is there a <b>finished-time word</b>? (yesterday, ago, in 2020, last week) → <b>Past simple</b>','2️⃣ No finished time, but <b>since / for / ever / just / already / yet</b>? → <b>Present perfect</b>'],tip:'Check the time words first — they decide it.'},
+    ],
+    worked:{q:'Choose the verb: “I ___ (visit) London in 2019.”',steps:['🔍 Find the time clue: <b>in 2019</b>.','📅 Is that time finished? <b>Yes</b> — 2019 is over.','✅ Finished time → <b>past simple</b>: visited.'],answer:'visited'},
+    guided:[
+      {type:'mc',q:'I ___ my wallet — I can’t find it!',ch:['lost','have lost'],c:1,whys:['“lost” = finished past, but the result (can’t find it) matters right now','✓ result affects now → present perfect'],ex:'Result matters now → present perfect.'},
+      {type:'mc',q:'Shakespeare ___ many plays.',ch:['has written','wrote'],c:1,whys:['he’s no longer alive, so it’s a finished period — not present perfect','✓ finished life/time → past simple'],ex:'His life is finished → past simple.'},
+      {type:'type',q:'Type the correct form of “finish”:',sub:'She ___ her homework yesterday.',accept:['finished'],show:'finished',ex:'“yesterday” = finished time → <b>finished</b>.'},
+      {type:'order',q:'Put the words in order:',tiles:['been','to','I','Paris','have'],answer:'I have been to Paris',ex:'Life experience → present perfect.'},
+    ],
+    check:[
+      {type:'mc',q:'I ___ to Japan twice in my life.',ch:['went','have been','have gone','was'],c:1,whys:['“went” needs a finished time (e.g. last year); here it’s life experience','✓ life experience, no finished time → have been','“have gone” means still away / on the way, not “visited”','“was” can’t take “to Japan” this way'],ex:'Life experience → <b>have been</b>.'},
+      {type:'type',q:'Type the correct form of “win”:',sub:'They ___ the title in 2021.',accept:['won'],show:'won',ex:'“in 2021” = finished time → <b>won</b>.'},
+      {type:'mc',q:'She ___ her homework yesterday.',ch:['has finished','finished','has finish','have finished'],c:1,whys:['“yesterday” is finished → present perfect is blocked','✓ finished time → past simple','“has finish” is not a valid form','wrong agreement (she → has, not have)'],ex:'“yesterday” → past simple.'},
+      {type:'type',q:'Type the missing words (negative of “see”):',sub:'We ___ her since Monday.',accept:["haven't seen","have not seen"],show:"haven't seen",ex:'“since” → present perfect; negative → <b>haven’t seen</b>.'},
+      {type:'order',q:'Build the sentence:',tiles:['known','have','We','since','him','2019'],answer:'We have known him since 2019',ex:'“since” → present perfect.'},
+      {type:'fix',q:'This sentence is wrong. Type the correct verb (one word):',wrong:'I have seen him yesterday.',accept:['saw'],show:'saw',ex:'“yesterday” blocks present perfect → <b>saw</b>.'},
+      {type:'mc',q:'___ you ever been to Rome?',ch:['Did','Have','Do','Were'],c:1,whys:['“Did … been” mixes past simple with a participle','✓ “ever” + experience → Have you ever been','“Do … been” is not a valid form','“Were you ever to Rome” isn’t used this way'],ex:'“ever” = experience → <b>Have</b>.'},
+      {type:'type',q:'Type the correct form of “have”:',sub:'We ___ dinner an hour ago.',accept:['had'],show:'had',ex:'“ago” = finished time → <b>had</b>.'},
+      {type:'order',q:'Build the sentence:',tiles:['just','She','left','has'],answer:'She has just left',ex:'“just” → present perfect; it sits between has and the participle.'},
+      {type:'fix',q:'This is wrong. Type the correct verb form (one word):',wrong:'She has finished it yesterday.',accept:['finished'],show:'finished',ex:'“yesterday” → past simple → <b>finished</b>.'},
+    ]},
+
+  B2:{goal:'By the end, you’ll know how to decide 2nd vs 3rd conditional — and produce both cleanly.',
+    teach:[
+      {ic:'💭',lbl:'2nd conditional',h:'Unreal present / future',body:'<b>if + past simple</b> → <b>would + base</b>.',ex:[{ok:true,t:'If I <b>had</b> time, I <b>would help</b>.'}]},
+      {ic:'⏮️',lbl:'3rd conditional',h:'Unreal past (regret)',body:'<b>if + past perfect</b> → <b>would have + participle</b>.',ex:[{ok:true,t:'If I <b>had had</b> time, I <b>would have helped</b>.'}]},
+      {ic:'🔒',lbl:'Golden rule',h:'No “would” in the if-clause',body:'Keep would / would have in the result half only.',ex:[{ok:false,t:'If I <b>would have</b> known…'},{ok:true,t:'If I <b>had</b> known…'}]},
+      {ic:'🧷',lbl:'Fixed phrase',h:'“If I were you…”',body:'Use <b>were</b> for all subjects in careful English.',ex:[{ok:true,t:'If I <b>were</b> you, I would apply.'}]},
+      {ic:'🧭',lbl:'How to decide',h:'Ask 1 question',steps:['1️⃣ Is it about the <b>past</b> (a regret, it can’t change)? → <b>3rd</b>: had + p.p. … would have + p.p.','2️⃣ Is it about <b>now / the future</b> (imaginary)? → <b>2nd</b>: past simple … would + base'],tip:'And never put “would” in the if-clause.'},
+    ],
+    worked:{q:'Complete: “If I ___ (know), I would have told you.”',steps:['🔍 Look at the result: <b>would have told</b> → this is about the <b>past</b>.','⏮️ Past + unreal → <b>3rd conditional</b>.','✅ If-clause = <b>past perfect</b>: had known. (never “would have” in the if-clause)'],answer:'had known'},
+    guided:[
+      {type:'mc',q:'If I ___ taller, I would play basketball.',ch:['were','had been'],c:0,whys:['✓ imaginary now → 2nd conditional, were','“had been” is for the past (3rd conditional)'],ex:'Unreal present → 2nd conditional <b>were</b>.'},
+      {type:'mc',q:'If they had left earlier, they ___ the train.',ch:['would catch','would have caught'],c:1,whys:['“would catch” is 2nd (now); but “had left” points to the past','✓ unreal past → would have caught'],ex:'Unreal past → 3rd conditional.'},
+      {type:'order',q:'Put the words in order:',tiles:['you','were','I','If'],answer:'If I were you',ex:'Fixed phrase: <b>If I were you</b>.'},
+    ],
+    check:[
+      {type:'mc',q:'If I had known, I ___ earlier.',ch:['would come','would have come','will come','came'],c:1,whys:['“would come” is 2nd conditional, but “had known” is past','✓ unreal past → would have come','“will come” is for a real future','“came” drops the “would have”'],ex:'3rd conditional → <b>would have come</b>.'},
+      {type:'mc',q:'If I ___ you, I would apologise.',ch:['am','was','were','will be'],c:2,whys:['“am” is real/present, but this is hypothetical','“was” is common in speech, but “were” is the careful IELTS form','✓ fixed phrase → If I were you','“will be” is future, not hypothetical'],ex:'Fixed phrase → <b>were</b>.'},
+      {type:'mc',q:'Which sentence is correct?',ch:['If it would rain, we would stay home.','If it rained, we would stay home.'],c:1,whys:['“would” in the if-clause is the classic mistake','✓ if-clause keeps past simple → correct'],ex:'No “would” in the if-clause.'},
+      {type:'type',q:'Type the correct form of “study”:',sub:'If she ___ harder, she would have passed.',accept:['had studied'],show:'had studied',ex:'Past regret → 3rd conditional → <b>had studied</b>.'},
+      {type:'type',q:'Type the correct form of “have”:',sub:'If I ___ more money, I would travel.',accept:['had'],show:'had',ex:'Unreal present → 2nd conditional past simple → <b>had</b>.'},
+      {type:'order',q:'Finish the 3rd conditional result — “If you had asked, …”',tiles:['have','I','would','helped'],answer:'I would have helped',ex:'Result half = would have + participle.'},
+      {type:'fix',q:'Wrong conditional. Type the correct if-clause verb (two words):',wrong:'If I would have known, I would have called.',accept:['had known'],show:'had known',ex:'No “would” in the if-clause → <b>had known</b>.'},
+      {type:'mc',q:'If we ___ now, we would catch the bus.',ch:['left','had left','would leave'],c:0,whys:['✓ imaginary present → 2nd conditional, left','“had left” would make it past (3rd conditional)','no “would” in the if-clause'],ex:'Unreal present → 2nd conditional <b>left</b>.'},
+    ]},
+};
+
+const REVIEW={
+  A2:[
+    {type:'mc',q:'Plurals: one child, two ___.',ch:['childs','children'],c:1,ex:'Irregular plural → <b>children</b>.',topic:'Plural nouns'},
+    {type:'mc',q:'___ is a book on the table.',ch:['There','It','They'],c:0,ex:'<b>There is</b> for existence.',topic:'there is / there are'},
+    {type:'type',q:'Type the missing word (ability):',sub:'I ___ swim very well.',accept:['can'],show:'can',ex:'Ability → <b>can</b>.',topic:'Can / can’t'},
+  ],
+  B1:[
+    {type:'mc',q:'Comparatives: This test is ___ than the last.',ch:['more difficult','difficulter','most difficult'],c:0,ex:'Long adjective → <b>more difficult</b>.',topic:'Comparatives'},
+    {type:'mc',q:'Look at those clouds! It ___ rain.',ch:['will','is going to','would'],c:1,ex:'Evidence now → <b>is going to</b>.',topic:'Future: will vs going to'},
+    {type:'mc',q:'Countable/uncountable: How ___ water is left?',ch:['many','much'],c:1,ex:'Uncountable → <b>much</b>.',topic:'Countable & uncountable'},
+    {type:'type',q:'Type the preposition of time:',sub:'I’ll see you ___ Monday.',accept:['on'],show:'on',ex:'Days → <b>on</b>.',topic:'Prepositions of time'},
+  ],
+  B2:[
+    {type:'mc',q:'Passive: The report ___ yesterday.',ch:['was written','wrote','is writing'],c:0,ex:'Passive past → <b>was written</b>.',topic:'The passive voice'},
+    {type:'type',q:'Gerund or infinitive? Type the correct form of “go”:',sub:'I enjoy ___ to the gym.',accept:['going'],show:'going',ex:'“enjoy” + <b>-ing</b>.',topic:'Gerunds vs infinitives'},
+    {type:'mc',q:'Deduction: She’s not answering — she ___ be asleep.',ch:['must','can','would'],c:0,ex:'Strong certainty → <b>must</b>.',topic:'Modals of deduction'},
+  ],
+};
+
+/* ===================== HELPERS ===================== */
+function norm(s){return (s||'').toLowerCase().trim().replace(/[.!?,;]+$/,'').replace(/\s+/g,' ').replace(/[’]/g,"'");}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ===================== STATE ===================== */
+let level=null, stage='goal', ti=0, gi=0, workedDone=false, queue=[], mastered=new Set(), missed=0, cur=null;
+let clockInt=null, elapsed=0;
+let rQueue=[], rMastered=0, rElapsed=0, rClockInt=null, rTotal=0;
+
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('themeBtn').textContent=d?'☾':'☀';}
+function show(id){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===id));window.scrollTo(0,0);}
+
+/* ---- course ---- */
+function chooseLevel(l){
+  level=l;
+  document.getElementById('lvlChip').style.display='flex';
+  document.getElementById('lvlChipTxt').textContent=l+' · '+LNAME[l];
+  document.getElementById('courseName').textContent=l+' Grammar Course';
+  document.getElementById('courseDay').textContent='Day '+(TODAY_INDEX+1)+' of '+SYLLABUS[l].length;
+  document.getElementById('cbar').style.width=((TODAY_INDEX)/SYLLABUS[l].length*100)+'%';
+  document.getElementById('tTitle').textContent=SYLLABUS[l][TODAY_INDEX];
+  document.getElementById('tGoal').textContent=LESSON[l].goal;
+  document.getElementById('reviewSub').textContent=REVIEW[l].length+' items due from earlier days · ~3 min';
+  renderSchedule(l);show('course');
+}
+function renderSchedule(l){
+  const box=document.getElementById('schedule');box.innerHTML='';
+  SYLLABUS[l].forEach(function(topic,i){
+    let cls='day',st='';
+    if(i<TODAY_INDEX){cls+=' done';st='✓';}
+    else if(i===TODAY_INDEX){cls+=' today';st='▶';}
+    else{cls+=' locked';st='🔒';}
+    const sub=i<TODAY_INDEX?'Completed':i===TODAY_INDEX?'Today · ~20 min':'Unlocks day '+(i+1);
+    const d=document.createElement('div');d.className=cls;
+    d.innerHTML='<div class="dn">'+(i+1)+'</div><div class="tt"><b>'+topic+'</b><small>'+sub+'</small></div><div class="st">'+st+'</div>';
+    if(i===TODAY_INDEX)d.onclick=startLesson;
+    box.appendChild(d);
+  });
+}
+
+/* ---- lesson shell ---- */
+function startLesson(){stage='goal';ti=0;gi=0;workedDone=false;elapsed=0;startClock();show('lesson');renderStage();}
+function exitLesson(){stopClock();show('course');}
+function startClock(){stopClock();document.getElementById('clock').textContent='00:00';clockInt=setInterval(function(){elapsed++;document.getElementById('clock').textContent=fmt(elapsed);},1000);}
+function stopClock(){if(clockInt){clearInterval(clockInt);clockInt=null;}}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function setPills(c){const order=['goal','learn','guided','check'];const ci=order.indexOf(c);
+  document.querySelectorAll('#pills .pill').forEach(function(p){const i=order.indexOf(p.dataset.s);p.classList.toggle('active',p.dataset.s===c);p.classList.toggle('done',i<ci&&ci>=0);});}
+function setProg(f){document.getElementById('lprog').style.width=(f*100)+'%';}
+
+function renderStage(){
+  setPills(stage);
+  const L=LESSON[level],body=document.getElementById('lbody');
+  if(stage==='goal'){
+    setProg(0.02);
+    body.innerHTML='<div class="card goal-card"><div class="e">🎯</div><h1>'+SYLLABUS[level][TODAY_INDEX]+'</h1><p>'+L.goal+'</p><button class="btn" onclick="toStage(\'learn\')">📖 Start learning</button></div>';
+  }else if(stage==='learn'){
+    const cards=L.teach,c=cards[ti],last=ti===cards.length-1;
+    setProg(0.05+0.30*(ti/cards.length));
+    let mid='';
+    if(c.body) mid+='<div class="body">'+c.body+'</div>';
+    if(c.steps) mid+='<div class="decide">'+c.steps.map(function(s){return '<div class="s">'+s+'</div>';}).join('')+'</div>';
+    if(c.ex) mid+=c.ex.map(function(e){return '<div class="ex '+(e.ok?'ok':'no')+'"><span class="m">'+(e.ok?'✓':'✗')+'</span><span>'+e.t+'</span></div>';}).join('');
+    if(c.tip) mid+='<div class="tip">💡 '+c.tip+'</div>';
+    body.innerHTML='<div class="card teach"><div class="ic">'+c.ic+'</div><div class="lbl">'+c.lbl+' · '+(ti+1)+'/'+cards.length+'</div><h2>'+c.h+'</h2>'+mid+
+      '<div class="spacer"></div><div class="lnav">'+(ti>0?'<button class="btn ghost" onclick="learnPrev()">←</button>':'')+
+      '<button class="btn grow" onclick="learnNext()">'+(last?"✅ Got it — practise now":"Next →")+'</button></div></div>';
+  }else if(stage==='guided'){
+    if(!workedDone && L.worked){renderWorked();}else{renderGuided();}
+  }else if(stage==='check'){renderCheck();}
+  else if(stage==='done'){renderDone();}
+}
+function toStage(s){stage=s;ti=0;gi=0;if(s==='guided'){workedDone=false;}if(s==='check'){queue=LESSON[level].check.map(function(_,i){return i;});mastered=new Set();missed=0;}renderStage();}
+function learnNext(){const n=LESSON[level].teach.length;if(ti<n-1){ti++;renderStage();}else{toStage('guided');}}
+function learnPrev(){if(ti>0){ti--;renderStage();}}
+
+/* ---- worked example (think-aloud) ---- */
+function renderWorked(){
+  const w=LESSON[level].worked;setProg(0.37);
+  document.getElementById('lbody').innerHTML='<div class="card qcard">'+
+    '<div class="qkick"><span>👀 Worked example</span><span class="ty">watch the thinking</span></div>'+
+    '<div class="q">'+w.q+'</div>'+
+    '<div class="decide">'+w.steps.map(function(s){return '<div class="s">'+s+'</div>';}).join('')+'</div>'+
+    '<div class="ansbox">✅ Answer: <b>'+esc(w.answer)+'</b></div>'+
+    '<div class="q-spacer"></div><button class="btn" onclick="workedNext()">Now you try →</button></div>';
+}
+function workedNext(){workedDone=true;renderStage();}
+
+/* ---- generic question renderer ---- */
+function renderQuestion(item, opts){
+  const box=document.getElementById(opts.target||'lbody');
+  let head=opts.header||'';
+  let qhtml='<div class="qkick"><span>'+opts.kick+'</span><span class="ty">'+typeLabel(item.type)+'</span></div>';
+  if(item.q) qhtml+='<div class="q">'+item.q+'</div>';
+  if(item.type==='fix') qhtml+='<div class="wrongline">❌ '+esc(item.wrong)+'</div>';
+  if(item.sub) qhtml+='<div class="q" style="font-size:18px">'+item.sub.replace('___','<span class="blank">____</span>')+'</div>';
+
+  let ansHTML='', state={resolved:false};
+  if(item.type==='mc'){
+    const keys=['A','B','C','D'];
+    ansHTML='<div class="choices">'+item.ch.map(function(c,i){return '<button class="choice" data-i="'+i+'">'+(item.ch.length>2?'<b style="color:var(--faint);margin-right:8px">'+keys[i]+'</b>':'')+esc(c)+'</button>';}).join('')+'</div>';
+  }else if(item.type==='type'||item.type==='fix'){
+    ansHTML='<input class="inp" id="inp" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Type your answer…"><button class="btn" id="checkBtn" style="margin-top:12px">Check</button>';
+  }else if(item.type==='order'){
+    ansHTML='<div class="tray" id="tray"></div><div class="bank" id="bank"></div><button class="btn" id="checkBtn" disabled>Check</button>';
+  }
+  box.innerHTML=head+'<div class="card qcard">'+qhtml+ansHTML+'<div class="q-spacer"></div><div class="fb" id="fb"></div></div>';
+
+  function resolve(correct, correctText, diagnose){
+    if(state.resolved)return;state.resolved=true;
+    const fb=document.getElementById('fb');
+    fb.className='fb show '+(correct?'ok':'no');
+    let inner='<div class="v">'+(correct?'✓ Correct':'✕ Not quite')+'</div>';
+    if(!correct && diagnose) inner+='<div class="diag">Your answer: '+diagnose+'</div>';
+    if(!correct) inner+='<div class="ans">Correct: <b>'+esc(correctText)+'</b></div>';
+    inner+='<div class="ex-txt">'+item.ex+'</div>';
+    inner+=opts.footer?opts.footer(correct):'';
+    inner+='<button class="btn" id="nextBtn" style="margin-top:14px">'+opts.nextLabel+'</button>';
+    fb.innerHTML=inner;
+    document.getElementById('nextBtn').onclick=function(){opts.onDone(correct);};
+  }
+
+  if(item.type==='mc'){
+    const btns=box.querySelectorAll('.choice');
+    btns.forEach(function(b){b.onclick=function(){
+      if(state.resolved)return;const i=+b.dataset.i,ok=i===item.c;
+      btns.forEach(function(x){x.style.pointerEvents='none';});
+      b.classList.add(ok?'correct':'wrong');if(!ok)btns[item.c].classList.add('correct');
+      resolve(ok,item.ch[item.c], (!ok && item.whys)?('“'+item.ch[i]+'” — '+item.whys[i]):null);
+    };});
+  }else if(item.type==='type'||item.type==='fix'){
+    const inp=document.getElementById('inp'),btn=document.getElementById('checkBtn');
+    inp.focus();
+    function submit(){
+      if(state.resolved)return;const val=norm(inp.value);if(!val)return;
+      const ok=item.accept.some(function(a){return norm(a)===val;});
+      inp.classList.add(ok?'correct':'wrong');inp.disabled=true;btn.style.display='none';
+      resolve(ok,item.show||item.accept[0],null);
+    }
+    btn.onclick=submit;
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter')submit();});
+  }else if(item.type==='order'){
+    const tray=document.getElementById('tray'),bank=document.getElementById('bank'),btn=document.getElementById('checkBtn');
+    let order=[];
+    const scrambled=item.tiles.map(function(w,i){return {w:w,id:i};});
+    function paint(){
+      bank.innerHTML='';tray.innerHTML='';
+      scrambled.forEach(function(t){
+        const used=order.indexOf(t.id)>=0;
+        const el=document.createElement('div');el.className='tile'+(used?' used':'');el.textContent=t.w;
+        el.onclick=function(){if(state.resolved)return;order.push(t.id);paint();};
+        bank.appendChild(el);
+      });
+      order.forEach(function(id,pos){
+        const t=scrambled.find(function(x){return x.id===id;});
+        const el=document.createElement('div');el.className='tile trayed';el.textContent=t.w;
+        el.onclick=function(){if(state.resolved)return;order.splice(pos,1);paint();};
+        tray.appendChild(el);
+      });
+      btn.disabled=order.length!==scrambled.length;
+    }
+    paint();
+    btn.onclick=function(){
+      if(state.resolved)return;
+      const guess=order.map(function(id){return scrambled.find(function(x){return x.id===id;}).w;}).join(' ');
+      const ok=norm(guess)===norm(item.answer);
+      tray.classList.add(ok?'correct':'wrong');btn.style.display='none';
+      resolve(ok,item.answer,null);
+    };
+  }
+}
+function typeLabel(t){return {mc:'choose',type:'type it',fix:'fix it',order:'build it'}[t]||'';}
+
+/* ---- guided ---- */
+function renderGuided(){
+  const items=LESSON[level].guided,it=items[gi];
+  setProg(0.4+0.2*(gi/items.length));
+  const last=gi===items.length-1;
+  renderQuestion(it,{kick:'✏️ Guided practice · '+(gi+1)+' of '+items.length,
+    nextLabel:last?'Start the mastery check →':'Next →',
+    onDone:function(){if(gi<items.length-1){gi++;renderStage();}else{toStage('check');}}});
+}
+
+/* ---- mastery (100%) ---- */
+function renderCheck(){
+  const items=LESSON[level].check,total=items.length,done=mastered.size;
+  setProg(0.6+0.4*(done/total));
+  if(done===total){stage='done';return renderStage();}
+  cur=queue[0];const it=items[cur];
+  const header='<div class="mastery"><span>Mastery</span><div class="mp"><i style="width:'+Math.round(done/total*100)+'%"></i></div><b>'+done+' / '+total+'</b></div>';
+  renderQuestion(it,{kick:'🎯 Prove it · '+(done+1)+' of '+total,header:header,nextLabel:'Continue →',
+    footer:function(correct){return correct?'':'<div class="retrynote">↻ This comes back until you get it right.</div>';},
+    onDone:function(correct){if(correct){mastered.add(cur);queue.shift();}else{queue.shift();queue.push(cur);missed++;}renderStage();}});
+}
+
+/* ---- done ---- */
+function renderDone(){
+  stopClock();setPills('check');document.querySelectorAll('#pills .pill').forEach(function(p){p.classList.add('done');});setProg(1);
+  const n=LESSON[level].check.length;
+  document.getElementById('lbody').innerHTML='<div class="card done-card"><div class="big">🎉</div><h1>Lesson complete — 100%</h1><p>“'+SYLLABUS[level][TODAY_INDEX]+'” mastered.</p>'+
+    '<div class="recap"><b>Time:</b> '+fmt(elapsed)+'<br><b>Mastered:</b> '+n+'/'+n+' (choose, type-it, fix-it &amp; build-it)<br><b>Retries:</b> '+missed+'<br><b>Tomorrow:</b> '+(SYLLABUS[level][TODAY_INDEX+1]||'Course review')+'<br><b>Spaced review:</b> these return in your review deck</div>'+
+    '<button class="btn" onclick="exitLesson()">Back to course</button></div>';
+}
+
+/* ===================== SPACED REVIEW ===================== */
+function startReview(){
+  rQueue=REVIEW[level].map(function(_,i){return i;});rTotal=REVIEW[level].length;rMastered=0;rElapsed=0;
+  document.getElementById('rclock').textContent='00:00';
+  if(rClockInt)clearInterval(rClockInt);
+  rClockInt=setInterval(function(){rElapsed++;document.getElementById('rclock').textContent=fmt(rElapsed);},1000);
+  show('review');renderReview();
+}
+const INTERVALS=['tomorrow','in 3 days','in 1 week','in 2 weeks'];
+function renderReview(){
+  document.getElementById('rprog').style.width=(rMastered/rTotal*100)+'%';
+  if(rMastered===rTotal){clearInterval(rClockInt);
+    document.getElementById('rbody').innerHTML='<div class="card done-card"><div class="big">🔁</div><h1>Review done</h1><p>You refreshed '+rTotal+' items from earlier days.</p><div class="recap">Spaced repetition brings each rule back right before you’d forget it — that’s what turns a one-day 100% into lasting knowledge.</div><button class="btn" onclick="show(\'course\')">Back to course</button></div>';
+    return;}
+  const it=REVIEW[level][rQueue[0]];
+  renderQuestion(it,{target:'rbody',kick:'🔁 Review · '+(rMastered+1)+' of '+rTotal+' · '+it.topic,nextLabel:'Next →',
+    footer:function(correct){const next=correct?INTERVALS[Math.min(rMastered,3)]:'tomorrow';
+      return '<div class="'+(correct?'spacednote':'retrynote')+'">⏱ Next review: '+next+'</div>';},
+    onDone:function(correct){if(correct){rMastered++;rQueue.shift();}else{const id=rQueue.shift();rQueue.push(id);}renderReview();}});
+}
+</script>
+</body>
+</html>

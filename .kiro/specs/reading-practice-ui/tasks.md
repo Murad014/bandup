@@ -19,7 +19,8 @@ Conventions:
     (brand, items, active state, disabled "coming soon" badge, responsive toggle).
   - Add `static/js/nav.js` for the responsive toggle and the navigation guard
     hook (reads an "in progress" flag exposed by the active feature).
-  - Seed the nav list with Reading (`enabled`) and Grammar (`comingSoon`).
+  - Seed the nav list with Reading (`enabled`) and Grammar (`comingSoon`;
+    enabled later by grammar task 7).
   - _Verify_: shell renders with navbar; active item marked `aria-current`;
     Grammar shows as disabled "soon"; toggle works by keyboard at narrow widths.
   - _Requirements: 10.1–10.5, 10.7, 9 (theme shell)_
