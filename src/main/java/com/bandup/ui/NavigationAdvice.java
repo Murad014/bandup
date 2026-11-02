@@ -21,6 +21,6 @@ public class NavigationAdvice {
     public List<NavItem> navItems() {
         return List.of(
                 new NavItem(READING, "Reading", "/reading", true, false),
-                new NavItem(GRAMMAR, "Grammar", "#", false, true));
+                new NavItem(GRAMMAR, "Grammar", "/grammar", true, false));
     }
 }

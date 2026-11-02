@@ -52,3 +52,9 @@ bandup:
   mail:
     enabled: false
     from: ${BANDUP_MAIL_FROM:Orbiko <no-reply@localhost>}
+
+  # Grammar course: "one new lesson per day" counts days in this zone; unfinished
+  # lesson runs older than 7 days are deleted by a nightly job.
+  grammar:
+    day-zone: Asia/Baku
+    cleanup-cron: "0 45 3 * * *"

@@ -78,6 +78,7 @@ body.admin { background: var(--bg); }
 }
 .admin-nav__link[data-key="dashboard"]::before { content: "\25A6"; } /* ▦ */
 .admin-nav__link[data-key="sessions"]::before { content: "\2630"; }  /* ☰ */
+.admin-nav__link[data-key="grammar"]::before { content: "\270E"; }   /* ✎ */
 .admin-nav__link[data-key="instructors"]::before { content: "\2605"; } /* ★ */
 .admin-nav__link.is-active[data-key]::before { opacity: 1; }
 
@@ -389,3 +390,48 @@ body.admin:not(.admin-ready) .admin-main { visibility: hidden; }
 .passage-toolbar { gap: 6px; }
 .passage-toolbar .btn { padding: 7px 14px; font-size: .88rem; }
 .passage-toolbar__tip { font-size: .8rem; }
+
+/* ---- Grammar lessons (grammar design §6.5) ------------------------------ */
+.gp-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.gp-json textarea {
+    width: 100%; min-height: 70vh; resize: vertical; box-sizing: border-box; padding: 12px;
+    font: .82rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--fg);
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); tab-size: 2;
+}
+.gp-json textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); outline: none; }
+.gp-json textarea[readonly] { opacity: .8; }
+.gp-jsonstate { font-size: .82rem; font-weight: 700; margin: 0 0 8px; min-height: 1.2em; }
+.gp-jsonstate.is-ok { color: var(--ok); }
+.gp-jsonstate.is-bad { color: var(--bad); }
+.gp-preview { max-height: calc(70vh + 90px); overflow: auto; }
+.gp-block { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 10px; background: var(--paper); }
+.gp-block > span { display: block; }
+.gp-kick { font: 800 .72rem var(--ui); letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.gp-title { font: 800 1.15rem var(--display); }
+.gp-goal, .gp-body { color: var(--muted); margin-top: 4px; }
+.gp-heading { font-weight: 800; margin-bottom: 4px; }
+.gp-step { margin: 4px 0; padding: 6px 10px; background: var(--surface); border-radius: 8px; }
+.gp-ex { margin: 4px 0; padding: 6px 10px; border-radius: 8px; }
+.gp-ex.is-ok { background: var(--ok-soft); color: var(--ok); }
+.gp-ex.is-bad { background: var(--bad-soft); color: var(--bad); }
+.gp-tip { margin-top: 6px; padding: 6px 10px; border-left: 3px solid var(--sun); background: var(--surface); border-radius: 8px; }
+.gp-section { margin: 18px 0 8px; font: 800 .95rem var(--display); }
+.gp-prompt { font-weight: 700; }
+.gp-sentence, .gp-tiles { margin-top: 4px; }
+.gp-options { margin: 6px 0 0; padding-left: 18px; }
+.gp-options li { margin: 3px 0; color: var(--muted); }
+.gp-options li b { color: var(--fg); font-weight: 600; }
+.gp-options li.is-right b { color: var(--ok); font-weight: 800; }
+.gp-answer { margin-top: 6px; color: var(--ok); }
+.gp-explain { margin-top: 6px; font-size: .9rem; color: var(--muted); }
+.gp-explain > span { display: inline; }
+.gp-lang { display: block; color: var(--muted); font-size: .8rem; }
+.gp-pos { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); }
+.gp-pos input { width: 72px; padding: 7px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); color: var(--fg); }
+.gp-pos[hidden] { display: none; }
+#gErrors code { font-size: .82rem; }
+@media (max-width: 960px) {
+    .gp-split { grid-template-columns: 1fr; }
+    .gp-json textarea { min-height: 50vh; }
+    .gp-preview { max-height: none; }
+}

@@ -11,6 +11,8 @@ public class AdminNavigationAdvice {
 
     public static final String DASHBOARD = "dashboard";
     public static final String SESSIONS = "sessions";
+    /** Grammar lessons (grammar requirement 12). */
+    public static final String GRAMMAR = "grammar";
     /** ADMIN only: guard.js hides the link from authors. */
     public static final String INSTRUCTORS = "instructors";
 
@@ -19,6 +21,7 @@ public class AdminNavigationAdvice {
         return List.of(
                 new AdminNavItem(DASHBOARD, "Dashboard", "/admin"),
                 new AdminNavItem(SESSIONS, "Sessions", "/admin/sessions"),
+                new AdminNavItem(GRAMMAR, "Grammar", "/admin/grammar"),
                 new AdminNavItem(INSTRUCTORS, "Instructors", "/admin/instructors"));
     }
 }

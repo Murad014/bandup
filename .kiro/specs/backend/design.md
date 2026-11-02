@@ -140,6 +140,43 @@ com.bandup
 │   │   │   └── port/         ExerciseCatalog
 │   │   ├── infrastructure/   JdbcExerciseCatalog, CatalogAccessRules
 │   │   └── web/              CatalogController
+│   ├── grammar/              (built; tactical model and API: ../grammar/design.md §3–§5)
+│   │   ├── domain/
+│   │   │   ├── lesson/
+│   │   │   │   ├── aggregate/      GrammarLesson
+│   │   │   │   ├── valueobject/    LessonId, LessonSlug, GrammarLevel, LessonStatus, Revision, Position,
+│   │   │   │   │                   ItemId, LessonText, Topic, LearnCard, WorkedExample, LessonBody,
+│   │   │   │   │                   Item (choose / type / fix / build), GivenAnswer, ItemFeedback
+│   │   │   │   ├── service/        LessonPolicy, AnswerNormaliser, TileShuffler
+│   │   │   │   └── repository/     GrammarLessonRepository
+│   │   │   ├── run/
+│   │   │   │   ├── aggregate/      LessonRun
+│   │   │   │   ├── valueobject/    RunId, LessonRevision, RunOutcome
+│   │   │   │   └── repository/     LessonRunRepository
+│   │   │   ├── progress/
+│   │   │   │   ├── aggregate/      GrammarProgress
+│   │   │   │   ├── valueobject/    LearnerId, CourseLevel, FinishedLesson, LessonState
+│   │   │   │   ├── service/        CourseUnlocking
+│   │   │   │   └── repository/     GrammarProgressRepository
+│   │   │   └── review/
+│   │   │       ├── aggregate/      ReviewCard
+│   │   │       ├── valueobject/    ReviewCardId, Box, ReviewSchedule
+│   │   │       └── repository/     ReviewCardRepository
+│   │   ├── application/      LessonAdmin, LessonInputBuilder, LessonViews, GrammarCourse, LessonRuns,
+│   │   │   │                 GrammarReview, RunCleanup, LessonAccess, Learner, LearnerItems;
+│   │   │   │                 LessonInput, AdminLessonView, LessonSummary
+│   │   │   ├── view/         LearnerViews (learner response records, no answer keys)
+│   │   │   └── port/         TextSanitizer, LessonSummaries, LessonUsage, LearnerCourses, GrammarDays
+│   │   ├── infrastructure/
+│   │   │   ├── persistence/  GrammarLessonEntity (content jsonb), GrammarProgressEntity,
+│   │   │   │                 FinishedLessonRow, LessonRunEntity, ReviewCardEntity, LessonJson,
+│   │   │   │                 Learners, Jpa…Repository ×4
+│   │   │   ├── readmodel/    JdbcLearnerCourses, JdbcLessonSummaries, JdbcLessonUsage
+│   │   │   ├── html/         JsoupTextSanitizer
+│   │   │   ├── config/       ZonedGrammarDays, RunCleanupSchedule
+│   │   │   └── security/     GrammarAccessRules
+│   │   └── web/              GrammarCourseController, GrammarReviewController,
+│   │                         AdminGrammarLessonController
 │   └── content/              (§8; built: domain, persistence, HTML adapters, use cases, admin API)
 │       └── domain/
 │           └── exercise/
@@ -169,7 +206,8 @@ com.bandup
 │           └── security/     ContentAccessRules
 │       └── web/              AdminExerciseController
 └── ui/                       page shells: HomeController, ReadingPageController, AuthPageController
-                              (/login, /register), NavItem, NavigationAdvice; admin/: AdminPageController,
+                              (/login, /register), GrammarPageController (/grammar, /grammar/lessons/{slug},
+                              /grammar/review), NavItem, NavigationAdvice; admin/: AdminPageController,
                               AdminNavItem, AdminNavigationAdvice — no data, no API imports
 ```
 
@@ -845,6 +883,13 @@ GET /api/v1/exercises/filters?lang=  → {skills[], formats[], levels[], types[]
 | DELETE | `/api/v1/admin/passages/{slug}` | ADMIN/AUTHOR | 204 |
 | POST | `/api/v1/admin/passages/{slug}/publish` | ADMIN/AUTHOR | 200 |
 | POST | `/api/v1/admin/passages/{slug}/unpublish` | ADMIN/AUTHOR | 200 |
+| GET | `/api/v1/grammar/levels`, `/course?level=`, `/lessons/{slug}` | public (token optional) | 200 (grammar spec §5.1) |
+| POST | `/api/v1/grammar/lessons/{slug}/runs`, `/runs/{runId}/answers` | public (token optional) | 201 / 200 |
+| GET / PUT | `/api/v1/grammar/me`, `/me/level` | token | 200 / 204 |
+| GET / POST | `/api/v1/grammar/review`, `/review/{cardId}/answer` | token (own cards) | 200 |
+| GET / POST | `/api/v1/admin/grammar/lessons` | ADMIN/AUTHOR | 200 / 201 (grammar spec §5.2) |
+| GET / PUT / DELETE | `/api/v1/admin/grammar/lessons/{slug}` | ADMIN/AUTHOR | 200 / 200 / 204 |
+| POST | `/api/v1/admin/grammar/lessons/{slug}/publish` · `/unpublish` | ADMIN/AUTHOR | 200 |
 
 ### Error mapping (`api.shared.web`)
 
@@ -995,6 +1040,15 @@ Tactical design (7–13):
     `BANDUP_*` settings, the database, cookies, storage keys, the Docker image
     and `window.BandUp*` script globals. Flyway migrations are never edited.
     `UiPagesTest` checks the brand and that "BandUp" is gone from the pages.
+22. **Grammar is its own context** (`api.grammar`, spec `../grammar/`): four
+    aggregates (`lesson`, `run`, `progress`, `review`), each module with its
+    own value objects (no classes shared with Practice or Content). Lessons
+    are AI-written content stored as one jsonb body, imported through the
+    admin API and published like passages; the course has no fixed length.
+    Answer keys stay on the server (every answer is graded there). One new
+    lesson per day per level (day = `bandup.grammar.day-zone`, Asia/Baku);
+    guests get lesson 1 of each level and no saved progress. Tables: V9;
+    seed lessons: V10. Approved by the user task by task (grammar `tasks.md`).
 
 ### Open — product decisions needed
 

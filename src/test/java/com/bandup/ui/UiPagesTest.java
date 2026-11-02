@@ -35,10 +35,16 @@ class UiPagesTest {
                 new String[] {"/", "index"},
                 new String[] {"/reading", "catalog"},
                 new String[] {"/reading/yellowstone-wolves", "reading"},
+                new String[] {"/grammar", "grammar"},
+                new String[] {"/grammar/lessons/a2-articles-1", "grammar-lesson"},
+                new String[] {"/grammar/review", "grammar-review"},
                 new String[] {"/admin", "admin/index"},
                 new String[] {"/admin/sessions", "admin/sessions"},
                 new String[] {"/admin/sessions/new", "admin/session-edit"},
                 new String[] {"/admin/sessions/yellowstone-wolves/edit", "admin/session-edit"},
+                new String[] {"/admin/grammar", "admin/grammar"},
+                new String[] {"/admin/grammar/new", "admin/grammar-edit"},
+                new String[] {"/admin/grammar/a2-articles-1/edit", "admin/grammar-edit"},
                 new String[] {"/login", "login"},
                 new String[] {"/register", "register"})) {
             mvc.perform(get(route[0])).andExpect(status().isOk()).andExpect(view().name(route[1]));
@@ -49,7 +55,8 @@ class UiPagesTest {
     void theNavbarHasItsItemsAndAHiddenAdminLink() throws Exception {
         String home = html("/");
 
-        assertThat(home).contains("href=\"/reading\"", ">Reading<", ">Grammar<", "soon");
+        assertThat(home).contains("href=\"/reading\"", ">Reading<", "href=\"/grammar\"", ">Grammar<")
+                .doesNotContain("app-nav__badge", ">soon<");
         // The brand: Orbiko name, planet logo and favicon on every page; the old name is gone.
         assertThat(home).contains(">Orbiko</span>", "<title>Orbiko", "rel=\"icon\" type=\"image/svg+xml\" href=\"/img/logo.svg\"")
                 .doesNotContain("BandUp", "Band<span>Up");
@@ -58,6 +65,20 @@ class UiPagesTest {
         assertThat(mvc.perform(get("/css/app.css")).andReturn().getResponse().getContentAsString())
                 .contains("[hidden] { display: none !important; }");
         assertThat(html("/reading/yellowstone-wolves")).contains("aria-current=\"page\"");
+    }
+
+    @Test
+    void theGrammarPageIsAShellWithoutLessonContent() throws Exception {
+        String page = html("/grammar");
+        assertThat(page).contains("id=\"grammarRoot\"", "/js/grammar/course.js", "/css/grammar.css",
+                "<title>Grammar · Orbiko</title>");
+        assertThat(page).doesNotContain("Present Perfect", "have been", "accept");
+        String lesson = html("/grammar/lessons/a2-articles-1");
+        assertThat(lesson).contains("data-slug=\"a2-articles-1\"", "/js/grammar/lesson.js", "/css/grammar.css");
+        assertThat(lesson).doesNotContain("honest person", "umbrella", "\"accept\"", "explanation");
+        String review = html("/grammar/review");
+        assertThat(review).contains("id=\"reviewRoot\"", "/js/grammar/review.js", "/css/grammar.css");
+        assertThat(review).doesNotContain("umbrella", "\"accept\"", "explanation");
     }
 
     @Test
@@ -93,6 +114,15 @@ class UiPagesTest {
         assertThat(editor).doesNotContain("riverbanks", "FALSE", "eliminated");
         // A new session has no id: Thymeleaf leaves the empty attribute out, and editor.js reads that as "new".
         assertThat(html("/admin/sessions/new")).contains("<main id=\"editorRoot\">").doesNotContain("data-session-id");
+
+        String grammar = html("/admin/grammar");
+        assertThat(grammar).contains("href=\"/admin/grammar\"", ">Grammar<", "aria-current=\"page\"", "/js/admin/grammar-page.js");
+        assertThat(grammar).doesNotContain("a2-articles-1", "Articles");
+        String lesson = html("/admin/grammar/a2-articles-1/edit");
+        assertThat(lesson).contains("data-lesson-id=\"a2-articles-1\"", "/js/admin/grammar-edit.js");
+        assertThat(lesson).doesNotContain("honest person", "umbrella", "explanation\":");
+        assertThat(html("/admin/grammar/new")).contains("<main id=\"gEditRoot\">").doesNotContain("data-lesson-id");
+        assertThat(html("/admin")).contains("href=\"/admin/grammar\"");
     }
 
     private String html(String path) throws Exception {

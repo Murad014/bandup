@@ -597,6 +597,18 @@ writes only `*_translation` rows. That is what the TRANSLATOR role is limited to
 
 ---
 
+## 6b. Grammar (V9)
+
+Specified in `../grammar/design.md` §7. A grammar lesson is a document: the
+columns hold what lists and rules need (`slug`, `level` A2–C1, `topic_key`,
+English `title`, `position`, `status`, `revision`, `version`) and `content`
+(`jsonb`) holds the body in the lesson format, answer keys included (never
+read by learner queries). Partial unique index: one PUBLISHED lesson per
+`(level, position)`. Learner state: `grammar_progress` (chosen level) with
+`grammar_finished_lesson` (first day finished, times), `grammar_run`
+(`user_id` null = guest; `mastered` = jsonb array of item ids) and
+`grammar_review_card` (box 1–4, `due_on`, unique per user, lesson, item).
+
 ## 7. Seed data (V2 migration)
 
 - `language`: `en` (target and support, enabled), `az` (support, enabled,

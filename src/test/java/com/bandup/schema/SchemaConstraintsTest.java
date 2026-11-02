@@ -28,12 +28,12 @@ class SchemaConstraintsTest {
     // ---------------------------------------------------------------- schema
 
     @Test
-    void createsAll30Tables() {
+    void createsAll35Tables() {
         Integer tables = jdbc.queryForObject("""
                 select count(*) from information_schema.tables
                 where table_schema = 'public' and table_name <> 'flyway_schema_history'
                 """, Integer.class);
-        assertThat(tables).isEqualTo(30); // 28 + login_throttle (V6) + account_token (V8)
+        assertThat(tables).isEqualTo(35); // 28 + login_throttle (V6) + account_token (V8) + 5 grammar tables (V9)
     }
 
     // ------------------------------------------------- V5: ids from the app

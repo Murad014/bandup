@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>Grammar review · Orbiko</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/grammar.css}">
+</head>
+<body>
+<!--
+  The daily grammar review (grammar requirement 6). grammar/review.js loads
+  the due cards from /api/v1/grammar/review; answers are graded on the server
+  and move each card to its next review day. No card content is in this page.
+-->
+<main class="wrap grammar g-lesson" id="reviewRoot">
+    <div class="g-lesson-top">
+        <a class="g-x" href="/grammar" aria-label="Back to the course" title="Back to the course">✕</a>
+        <b class="g-rtitle">🔁 Daily review</b>
+    </div>
+    <p class="g-status" id="rstatus" role="status">Loading your review…</p>
+    <div id="rbody"></div>
+
+    <script type="module" th:src="@{/js/grammar/review.js}"></script>
+</main>
+</body>
+</html>

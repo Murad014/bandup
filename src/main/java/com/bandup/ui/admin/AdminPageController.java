@@ -47,4 +47,25 @@ public class AdminPageController {
         model.addAttribute("sessionId", slug);
         return "admin/session-edit";
     }
+
+    /** Grammar lessons: the list (grammar design §6.5). */
+    @GetMapping("/grammar")
+    public String grammar(Model model) {
+        model.addAttribute("activeKey", AdminNavigationAdvice.GRAMMAR);
+        return "admin/grammar";
+    }
+
+    @GetMapping("/grammar/new")
+    public String newGrammarLesson(Model model) {
+        model.addAttribute("activeKey", AdminNavigationAdvice.GRAMMAR);
+        model.addAttribute("lessonId", "");
+        return "admin/grammar-edit";
+    }
+
+    @GetMapping("/grammar/{slug}/edit")
+    public String editGrammarLesson(@PathVariable String slug, Model model) {
+        model.addAttribute("activeKey", AdminNavigationAdvice.GRAMMAR);
+        model.addAttribute("lessonId", slug);
+        return "admin/grammar-edit";
+    }
 }

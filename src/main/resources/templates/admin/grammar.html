@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::title}, ~{::#pageCss}, ~{::main}, 'grammar')}">
+<head>
+    <title>Grammar · Orbiko Admin</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<!--
+  Grammar lessons (grammar requirement 12, design §6.5). grammar-page.js
+  loads them from /api/v1/admin/grammar/lessons; lessons from n8n arrive here
+  as drafts.
+-->
+<main id="grammarRoot">
+    <div class="admin-row">
+        <h1 class="admin-h1">Grammar lessons</h1>
+        <span class="admin-spacer"></span>
+        <a class="btn btn--primary" th:href="@{/admin/grammar/new}" data-admin-nav-link>New lesson</a>
+    </div>
+
+    <div class="lib-toolbar">
+        <input id="grammarSearch" class="lib-search" type="search"
+               placeholder="Search title, topic or id…" aria-label="Search lessons">
+        <select id="grammarLevel" aria-label="Filter by level">
+            <option value="all">All levels</option>
+            <option value="A2">A2</option>
+            <option value="B1">B1</option>
+            <option value="B2">B2</option>
+            <option value="C1">C1</option>
+        </select>
+        <select id="grammarStatus" aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="PUBLISHED">Published</option>
+            <option value="DRAFT">Draft</option>
+            <option value="ARCHIVED">Archived</option>
+        </select>
+        <span class="admin-spacer"></span>
+        <span id="grammarCount" class="lib-count"></span>
+    </div>
+
+    <p id="grammarStatusLine" class="admin-status">Loading lessons…</p>
+    <p id="grammarNote" class="admin-notice" role="status" hidden></p>
+
+    <table id="grammarTable" class="admin-table" hidden>
+        <thead>
+            <tr><th>Level</th><th>#</th><th>Title</th><th>Topic</th><th>Status</th><th>Check items</th><th>Last change</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="grammarBody"></tbody>
+    </table>
+
+    <div id="grammarEmpty" class="admin-empty" hidden>
+        <p>No grammar lessons yet. Lessons from n8n arrive here as drafts.</p>
+        <a class="btn btn--primary" th:href="@{/admin/grammar/new}" data-admin-nav-link>Create the first lesson</a>
+    </div>
+
+    <script type="module" th:src="@{/js/admin/grammar-page.js}"></script>
+</main>
+</body>
+</html>
