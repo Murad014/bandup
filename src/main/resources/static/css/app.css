@@ -217,6 +217,10 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
 .app-nav__link--disabled:hover { background: transparent; }
 .app-nav__cta { background: var(--accent); color: var(--accent-contrast); box-shadow: var(--shadow-accent); }
 .app-nav__cta:hover { background: var(--accent-hover); }
+.app-nav__count {
+    min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-pill);
+    background: var(--accent); color: var(--accent-contrast); font: 800 .7rem/20px var(--ui); text-align: center;
+}
 .app-nav__badge {
     font: 800 .6rem var(--ui); letter-spacing: .08em; text-transform: uppercase;
     padding: 3px 8px; border-radius: var(--radius-pill);

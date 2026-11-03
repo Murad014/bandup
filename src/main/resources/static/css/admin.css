@@ -79,6 +79,7 @@ body.admin { background: var(--bg); }
 .admin-nav__link[data-key="dashboard"]::before { content: "\25A6"; } /* ▦ */
 .admin-nav__link[data-key="sessions"]::before { content: "\2630"; }  /* ☰ */
 .admin-nav__link[data-key="grammar"]::before { content: "\270E"; }   /* ✎ */
+.admin-nav__link[data-key="vocabulary"]::before { content: "\2261"; } /* ≡ */
 .admin-nav__link[data-key="instructors"]::before { content: "\2605"; } /* ★ */
 .admin-nav__link.is-active[data-key]::before { opacity: 1; }
 
@@ -435,3 +436,16 @@ body.admin:not(.admin-ready) .admin-main { visibility: hidden; }
     .gp-json textarea { min-height: 50vh; }
     .gp-preview { max-height: none; }
 }
+
+/* ---- Vocabulary word cards (vocabulary design §6) ---------------------- */
+.badge--preparing { background: var(--sky-soft); color: var(--sky); }
+.badge--ready { background: var(--ok-soft); color: var(--ok); }
+.badge--failed { background: var(--bad-soft); color: var(--bad); }
+.badge--rejected { background: var(--surface); color: var(--muted); border: 1px dashed var(--line); }
+.vc-form .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 16px; }
+.vc-form .field textarea { min-height: 60px; }
+.vc-options { display: grid; gap: 8px; }
+.vc-option { display: flex; gap: 8px; align-items: center; }
+.vc-option input[type=text] { flex: 1; }
+.vc-error-text { color: var(--bad); font-size: .85rem; margin: 6px 0 0; }
+@media (max-width: 760px) { .vc-form .grid-3 { grid-template-columns: 1fr; } }

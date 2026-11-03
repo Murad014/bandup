@@ -96,7 +96,7 @@ class ReadingBrowserTest extends BrowserTestBase {
 
         tab.eval("document.querySelector('#passage .w[data-g=g1]').click()");
         tab.waitFor("!document.getElementById('pop').hidden");
-        assertThat(tab.text("document.getElementById('pop').textContent")).isEqualTo("eliminatedməhv edilmək");
+        assertThat(tab.text("[...document.getElementById('pop').childNodes].filter(n => !(n.classList && n.classList.contains('pop-save'))).map(n => n.textContent).join('')")).isEqualTo("eliminatedməhv edilmək");
         // No answers anywhere in the page before submitting.
         assertThat(tab.text("document.getElementById('questions').textContent")).doesNotContain("riverbanks", "hunting");
     }
@@ -163,7 +163,7 @@ class ReadingBrowserTest extends BrowserTestBase {
 
         tab.waitFor("document.getElementById('vocabTitle').textContent === 'Word list (English)'");
         tab.eval("document.querySelector('#passage .w[data-g=g1]').click()");
-        assertThat(tab.text("document.getElementById('pop').textContent")).isEqualTo("eliminatedremoved completely");
+        assertThat(tab.text("[...document.getElementById('pop').childNodes].filter(n => !(n.classList && n.classList.contains('pop-save'))).map(n => n.textContent).join('')")).isEqualTo("eliminatedremoved completely");
         assertThat(tab.text("document.getElementById('in4').value")).isEqualTo("riverbanks");
         assertThat(tab.eval("document.getElementById('q1o1').checked").asBoolean()).isTrue();
         assertThat(tab.text("localStorage.getItem('bandup.helpLanguage')")).isEqualTo("en");

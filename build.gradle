@@ -49,6 +49,7 @@ tasks.named('test') {
 	}
 	systemProperty 'spring.profiles.active', 'test'   // not "local": tests set up their own accounts
 	systemProperty 'bandup.media.dir', layout.buildDirectory.dir('test-media').get().asFile.path
+	systemProperty 'bandup.vocabulary.ai.api-key', ''   // tests never call the real OpenRouter (a fake one sets its own key)
 }
 
 // Selenium UI scenarios in a visible Chrome (slowed down, steps highlighted).
@@ -65,6 +66,7 @@ tasks.register('uiTest', Test) {
 	}
 	systemProperty 'spring.profiles.active', 'test'
 	systemProperty 'bandup.media.dir', layout.buildDirectory.dir('test-media').get().asFile.path
+	systemProperty 'bandup.vocabulary.ai.api-key', ''
 	systemProperty 'ui.headless', project.hasProperty('headless')
 	systemProperty 'ui.slowMs', project.findProperty('slowMs') ?: '700'
 	outputs.upToDateWhen { false }

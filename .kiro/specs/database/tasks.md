@@ -122,3 +122,10 @@ when requested.
   - One published grammar lesson per level (A2, B1, B2 from the prototype, a
     new C1), each only if its slug is free, at the end of its course. Still 35 tables.
   - _Verified_: `SeedLessonsTest`.
+
+- [x] 12. `V11__vocabulary.sql`
+  - Vocabulary feature (spec `../vocabulary/design.md` §7): `vocab_word`,
+    `vocab_word_form` (form = primary key: one card per spelling),
+    `vocab_saved_word` (unique learner + card; restrict on the card),
+    `vocab_session`, `vocab_ai_usage`. 40 tables.
+  - _Verified_: `VocabularyPersistenceTest`, `SchemaConstraintsTest` (40 tables).

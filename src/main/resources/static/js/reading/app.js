@@ -199,6 +199,7 @@ export function createReadingApp(options = {}) {
         els.passage.classList.remove("panel__status");
         els.passage.innerHTML = session.passageHtml || ""; // server-sanitized
         ensureTips();
+        announce("bandup:passage", { passage: els.passage, exercise: els.root ? els.root.dataset.sessionId : null });
     }
 
     function ensureTips() {
@@ -473,6 +474,7 @@ export function createReadingApp(options = {}) {
         els.pop.textContent = "";
         els.pop.appendChild(el("b", null, wordEl.textContent));
         els.pop.appendChild(d.createTextNode(meaning));
+        announce("bandup:gloss", { pop: els.pop, word: wordEl }); // vocabulary/save.js adds "Add to my words"
         place(els.pop, wordEl);
     }
     function place(node, anchor) {
@@ -496,6 +498,12 @@ export function createReadingApp(options = {}) {
         savedRange = range.cloneRange();
         place(els.hlBtn, { getBoundingClientRect: () => range.getBoundingClientRect() });
         if (els.pop) els.pop.hidden = true;
+        announce("bandup:selection", { range: range.cloneRange(), button: els.hlBtn,
+            inPassage: !!els.passage && els.passage.contains(range.commonAncestorContainer) });
+    }
+    /** Tells other page scripts (vocabulary/save.js) what happened in the passage. */
+    function announce(name, detail) {
+        if (typeof CustomEvent === "function" && d.dispatchEvent) d.dispatchEvent(new CustomEvent(name, { detail }));
     }
     /** The passage, or question text that doesn't reach into an answer control (wrapping one would break it). */
     function highlightable(range) {
@@ -505,7 +513,10 @@ export function createReadingApp(options = {}) {
         if (d.activeElement && d.activeElement.matches && d.activeElement.matches("#questions input, #questions select")) return false;
         return !range.cloneContents().querySelector("input, select, textarea, button");
     }
-    function hideHighlightButton() { if (els.hlBtn) els.hlBtn.hidden = true; }
+    function hideHighlightButton() {
+        if (els.hlBtn) els.hlBtn.hidden = true;
+        announce("bandup:selection-end", {});
+    }
     function applyHighlight(range) {
         const mark = d.createElement("mark");
         mark.appendChild(range.extractContents());

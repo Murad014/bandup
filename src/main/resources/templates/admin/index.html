@@ -7,7 +7,7 @@
 <body>
 <main>
     <h1 class="admin-h1">Admin dashboard</h1>
-    <p class="admin-sub">Manage Reading and Grammar content.</p>
+    <p class="admin-sub">Manage Reading, Grammar and Vocabulary content.</p>
     <div class="dash-grid">
         <a class="dash-card" th:href="@{/admin/sessions}">
             <h3>Sessions</h3>
@@ -20,6 +20,10 @@
         <a class="dash-card" th:href="@{/admin/grammar}">
             <h3>Grammar</h3>
             <p>Check, edit and publish grammar lessons (from n8n or by hand).</p>
+        </a>
+        <a class="dash-card" th:href="@{/admin/vocabulary}">
+            <h3>Vocabulary</h3>
+            <p>Check and fix the word cards the AI writes for learners' words.</p>
         </a>
     </div>
 </main>

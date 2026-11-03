@@ -68,4 +68,18 @@ public class AdminPageController {
         model.addAttribute("lessonId", slug);
         return "admin/grammar-edit";
     }
+
+    /** Word cards: the list (vocabulary design §6). */
+    @GetMapping("/vocabulary")
+    public String vocabulary(Model model) {
+        model.addAttribute("activeKey", AdminNavigationAdvice.VOCABULARY);
+        return "admin/vocabulary";
+    }
+
+    @GetMapping("/vocabulary/{id}/edit")
+    public String editWordCard(@PathVariable long id, Model model) {
+        model.addAttribute("activeKey", AdminNavigationAdvice.VOCABULARY);
+        model.addAttribute("cardId", id);
+        return "admin/vocabulary-edit";
+    }
 }

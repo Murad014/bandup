@@ -101,7 +101,7 @@ class AdminBrowserTest extends BrowserTestBase {
         learner.navigate(url("/reading/" + slug));
         learner.waitFor("document.querySelectorAll('#questions .q').length === 1");
         learner.eval("document.querySelector('#passage .w[data-g=g1]').click()");
-        assertThat(learner.text("document.getElementById('pop').textContent")).isEqualTo("Beaversqunduzlar");
+        assertThat(learner.text("[...document.getElementById('pop').childNodes].filter(n => !(n.classList && n.classList.contains('pop-save'))).map(n => n.textContent).join('')")).isEqualTo("Beaversqunduzlar");
     }
 
     @Test

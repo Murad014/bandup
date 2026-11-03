@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbiko — Vocabulary (prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Nunito:wght@400;600;700;800&display=swap">
+<!--
+  UI PROTOTYPE ONLY — fake data, grading in the browser. Nothing here is wired to Orbiko.
+  Screens: 1 Reading (add words) · 2 My words · 3 Learn session · 4 Review · 5 Word packs.
+  Open a screen directly with #reading, #words, #learn, #review, #packs.
+-->
+<style>
+:root{
+  --bg:#fff9f2;--paper:#fff;--surface:#fff3e6;--fg:#1e2235;--muted:#626a7d;--line:#f0e4d6;
+  --accent:#ff6b4a;--accent-hover:#f0532f;--accent-soft:#ffe7e0;
+  --teal:#12a594;--teal-soft:#dcf5f1;--sun:#f5a524;--sun-soft:#fff1d6;--sky:#3b82f6;--sky-soft:#e3edff;--grape:#8b5cf6;--grape-soft:#efe8ff;
+  --ok:#14965f;--ok-soft:#e2f6ec;--bad:#e5484d;--bad-soft:#fdecec;--mark:#ffe27a;
+  --ui:"Nunito",system-ui,sans-serif;--body:"Literata",Georgia,serif;
+  --radius:14px;--radius-lg:22px;--pill:999px;
+  --sh1:0 1px 2px rgba(30,34,53,.05),0 2px 8px rgba(30,34,53,.05);--sh2:0 8px 24px rgba(30,34,53,.09);--sha:0 8px 20px rgba(255,107,74,.32);
+}
+:root[data-theme="dark"]{
+  --bg:#14172a;--paper:#1c2038;--surface:#242a4a;--fg:#f4f1ec;--muted:#a7adc2;--line:#2f355a;
+  --accent:#ff8366;--accent-hover:#ff9a82;--accent-soft:#3a2633;
+  --teal:#3fd1bf;--teal-soft:#173c3e;--sun:#ffc054;--sun-soft:#3d3324;--sky:#7fb0ff;--sky-soft:#1f2d52;--grape:#b296ff;--grape-soft:#2c2650;
+  --ok:#4cd896;--ok-soft:#173a2d;--bad:#ff7a7f;--bad-soft:#3f1f28;--mark:#6b5617;
+  --sh1:0 1px 2px rgba(0,0,0,.4);--sh2:0 8px 24px rgba(0,0,0,.45);--sha:0 8px 20px rgba(255,131,102,.25);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--ui);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+[hidden]{display:none!important}
+b{font-weight:800}
+
+/* prototype switcher (not part of the product) */
+.proto{position:sticky;top:0;z-index:50;display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 16px;background:#1e2235;color:#fff;font-size:13px}
+.proto b{margin-right:6px;color:#ffd0c4}
+.proto button{background:#2f355a;border:0;border-radius:8px;padding:5px 10px;color:#fff;cursor:pointer;font-weight:700}
+.proto button.on{background:#ff6b4a}
+.proto .sp{flex:1}
+
+/* navbar (as in the app) */
+.nav{display:flex;align-items:center;gap:8px;height:64px;padding:0 24px;border-bottom:1px solid var(--line);background:var(--bg);overflow-x:auto;white-space:nowrap}
+.nav>*{flex:none}
+body{overflow-x:hidden}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.2rem;margin-right:auto}
+.brand i{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff9a82,#ff6b4a);box-shadow:0 0 0 3px var(--teal-soft)}
+.nav a{padding:8px 14px;border-radius:var(--pill);font-weight:700;color:var(--fg);text-decoration:none;cursor:pointer;position:relative}
+.nav a.on{background:var(--accent-soft);color:var(--accent)}
+.nav .count{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;display:grid;place-items:center}
+.nav .me{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:var(--pill);padding:4px 12px 4px 4px;font-weight:700;background:var(--paper)}
+.nav .me span{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center}
+.theme{border:0;background:none;cursor:pointer;font-size:18px;padding:6px}
+
+.wrap{max-width:760px;margin:0 auto;padding:28px 16px 60px}
+.wide{max-width:980px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--sh1)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--paper);border-radius:var(--pill);padding:10px 18px;font-weight:800;cursor:pointer;text-decoration:none;color:var(--fg)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:var(--sha)}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.text{border-color:transparent;background:none;color:var(--accent);box-shadow:none}
+.btn.lg{padding:14px 22px;font-size:1.05rem}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.45;cursor:default;box-shadow:none}
+h1{font-size:1.7rem;line-height:1.2;margin:0 0 6px}
+.sub{color:var(--muted);margin:0}
+.kick{display:inline-block;font:800 .72rem var(--ui);letter-spacing:.05em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:var(--pill)}
+.chip{display:inline-flex;align-items:center;gap:4px;font:700 .78rem var(--ui);padding:4px 10px;border-radius:var(--pill);background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:var(--pill);font-weight:700;box-shadow:var(--sh2);z-index:60;max-width:calc(100% - 32px)}
+.note{border:1px dashed var(--grape);background:var(--grape-soft);color:var(--fg);border-radius:var(--radius);padding:10px 14px;font-size:.88rem;margin:14px 0}
+.note b{color:var(--grape)}
+
+/* ---- 1. reading ---- */
+.read{display:grid;grid-template-columns:1.25fr 1fr;gap:18px}
+.passage{padding:26px 28px;font:1.06rem/1.85 var(--body)}
+.passage h2{font:800 1.3rem var(--ui);margin:0 0 6px}
+.passage p{margin:0 0 14px}
+.passage .pl{font:800 .8rem var(--ui);color:var(--muted);margin-right:6px}
+.w{border-bottom:1.5px dotted var(--accent);cursor:pointer}
+.w.saved{background:var(--teal-soft);border-bottom:2px solid var(--teal);border-radius:3px}
+.passage ::selection{background:var(--mark)}
+.qs{padding:22px}
+.qs h3{margin:0 0 8px}
+.qs .q{padding:10px 0;border-top:1px solid var(--line);font-size:.95rem}
+.pop{position:absolute;z-index:40;width:290px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--sh2);padding:14px 16px}
+.pop .pw{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.1rem}
+.pop .pw small{font-weight:600;color:var(--muted);font-size:.8rem}
+.pop .pm{margin:6px 0 4px}
+.pop .paz{color:var(--muted);font-size:.9rem;margin-bottom:10px}
+.pop .row{display:flex;gap:8px}
+.say{border:1px solid var(--line);background:var(--surface);border-radius:50%;width:32px;height:32px;cursor:pointer;flex:none}
+.selbar{position:absolute;z-index:40;display:flex;gap:4px;background:var(--fg);border-radius:var(--pill);padding:4px;box-shadow:var(--sh2)}
+.selbar button{border:0;background:none;color:var(--bg);font-weight:800;padding:7px 12px;border-radius:var(--pill);cursor:pointer;font-size:.88rem}
+.selbar button:hover{background:rgba(255,255,255,.14)}
+.basket{padding:18px 20px;margin-top:16px}
+.basket h3{margin:0 0 4px;font-size:1rem}
+.basket .bw{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 12px}
+.basket .bw span{background:var(--teal-soft);color:var(--teal);font-weight:800;border-radius:var(--pill);padding:4px 10px;font-size:.88rem}
+
+/* ---- 2. my words ---- */
+.head{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.head .sp{flex:1}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat{padding:14px 16px}
+.stat b{display:block;font-size:1.6rem;line-height:1.1}
+.stat small{color:var(--muted);font-weight:700}
+.stat.new b{color:var(--sky)}.stat.lrn b{color:var(--sun)}.stat.mst b{color:var(--ok)}
+.todo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
+.todo .card{padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.todo .card h3{margin:0;font-size:1.1rem}
+.todo .card p{margin:0;color:var(--muted);font-size:.92rem;flex:1}
+.todo .learn{border-left:4px solid var(--accent)}
+.todo .rev{border-left:4px solid var(--sun)}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.tabs{display:flex;gap:4px;background:var(--surface);border-radius:var(--pill);padding:4px}
+.tabs button{border:0;background:none;padding:7px 14px;border-radius:var(--pill);font-weight:800;cursor:pointer;color:var(--muted)}
+.tabs button.on{background:var(--paper);color:var(--fg);box-shadow:var(--sh1)}
+.search{flex:1;min-width:160px;border:1px solid var(--line);background:var(--paper);border-radius:var(--pill);padding:9px 14px;font:inherit;color:var(--fg)}
+.add{display:flex;gap:8px;margin-bottom:14px}
+.add input{flex:1}
+.list{display:flex;flex-direction:column;gap:8px}
+.word{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2fr) auto auto;gap:14px;align-items:center;padding:12px 16px}
+.word .ww{font-weight:800;font-size:1.05rem}
+.word .ww small{display:block;font-weight:600;color:var(--muted);font-size:.78rem}
+.word .wm{font-size:.92rem}
+.word .wm small{display:block;color:var(--muted);font-size:.8rem}
+.str{display:flex;gap:3px;align-items:center}
+.str i{width:9px;height:18px;border-radius:3px;background:var(--line)}
+.str.b1 i:nth-child(-n+1),.str.b2 i:nth-child(-n+2),.str.b3 i:nth-child(-n+3){background:var(--sun)}
+.str.b4 i{background:var(--ok)}
+.str em{font-style:normal;font-size:.75rem;color:var(--muted);font-weight:700;margin-left:6px;width:70px}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:6px;border-radius:8px}
+.x:hover{background:var(--bad-soft);color:var(--bad)}
+.state{font:800 .7rem var(--ui);text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:var(--pill)}
+.state.new{background:var(--sky-soft);color:var(--sky)}
+.state.learning{background:var(--sun-soft);color:#b07208}
+:root[data-theme="dark"] .state.learning{color:var(--sun)}
+.state.mastered{background:var(--ok-soft);color:var(--ok)}
+
+/* ---- 3/4. session ---- */
+.top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.xbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--paper);cursor:pointer;flex:none}
+.pills{display:flex;gap:6px;flex:1;list-style:none;margin:0;padding:0}
+.pills li{flex:1;text-align:center;font:800 .75rem var(--ui);color:var(--muted);padding:7px 4px;border-radius:10px;background:var(--surface)}
+.pills li.on{background:var(--accent-soft);color:var(--accent)}
+.pills li.done{color:var(--ok)}
+.bar{height:7px;background:var(--surface);border-radius:var(--pill);overflow:hidden;margin-bottom:18px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:var(--pill);transition:width .3s}
+.mastery{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:.88rem;color:var(--muted);font-weight:700}
+.mastery .t{flex:1;height:8px;background:var(--surface);border-radius:var(--pill);overflow:hidden}
+.mastery .t i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.mastery b{color:var(--fg)}
+.goal,.fin{padding:32px 28px;text-align:center}
+.goal .ic,.fin .ic{font-size:2.6rem;margin-bottom:8px}
+.goal .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0 18px}
+.goal .chips span{background:var(--accent-soft);color:var(--accent);font-weight:800;padding:5px 12px;border-radius:var(--pill)}
+.meet{padding:26px 28px}
+.meet .mh{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.meet .big{font:800 2.2rem/1.1 var(--ui)}
+.meet .ipa{color:var(--muted);font-size:1rem}
+.meet .say{width:40px;height:40px;font-size:1.1rem}
+.meet .tags{display:flex;gap:6px;margin:10px 0 14px;flex-wrap:wrap}
+.meet .mean{font-size:1.15rem;font-weight:700;margin:0 0 6px}
+.meet .az{background:var(--sky-soft);border-radius:10px;padding:8px 12px;font-size:.95rem;margin-bottom:14px}
+.meet .az small{font-weight:800;color:var(--sky);margin-right:6px}
+.meet h4{font:800 .75rem var(--ui);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+.ex{font:1rem/1.6 var(--body);padding:8px 12px;border-left:3px solid var(--teal);background:var(--teal-soft);border-radius:0 10px 10px 0;margin-bottom:6px}
+.ex small{display:block;font:700 .75rem var(--ui);color:var(--muted)}
+.cols{display:flex;flex-wrap:wrap;gap:6px}
+.cols span{border:1px solid var(--line);background:var(--surface);border-radius:var(--pill);padding:4px 12px;font-weight:700;font-size:.9rem}
+.nav2{display:flex;gap:10px;margin-top:22px}
+.nav2 .grow{flex:1}
+.q{padding:24px 26px}
+.qk{display:flex;justify-content:space-between;font:800 .72rem var(--ui);letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.qk span:last-child{color:var(--muted)}
+.qp{font-size:1.15rem;font-weight:700;margin-bottom:6px}
+.qs2{font:1.1rem/1.7 var(--body);margin:10px 0 16px}
+.gap{display:inline-block;min-width:70px;border-bottom:2.5px solid var(--accent);text-align:center;color:var(--accent);font-weight:700}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:10px;align-items:center;text-align:left;padding:13px 16px;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--paper);cursor:pointer;font-weight:700}
+.opt:hover{border-color:var(--accent)}
+.opt .k{color:var(--muted);font-weight:800;width:18px}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.typed{display:flex;gap:10px}
+.inp{flex:1;border:1.5px solid var(--line);border-radius:var(--radius);padding:12px 14px;font:inherit;font-size:1.05rem;background:var(--paper);color:var(--fg)}
+.inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.inp.right{border-color:var(--ok);background:var(--ok-soft)}.inp.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.hint{color:var(--muted);font-size:.9rem;margin:-6px 0 12px;letter-spacing:.2em;font-weight:800}
+.listen{display:flex;justify-content:center;margin:6px 0 16px}
+.listen button{width:84px;height:84px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:2rem;cursor:pointer;box-shadow:var(--sha)}
+.pairs{display:grid;grid-template-columns:1fr 1.6fr;gap:10px}
+.pairs .colm{display:flex;flex-direction:column;gap:8px}
+.pair{padding:11px 14px;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--paper);cursor:pointer;font-weight:700;text-align:left;font-size:.92rem}
+.pair.sel{border-color:var(--accent);background:var(--accent-soft)}
+.pair.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);cursor:default}
+.pair.no{animation:shake .35s;border-color:var(--bad)}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.fb{margin-top:16px;border-radius:var(--radius);padding:14px 16px}
+.fb.ok{background:var(--ok-soft)}.fb.no{background:var(--bad-soft)}
+.fb .v{font-weight:800;margin-bottom:4px}
+.fb.ok .v{color:var(--ok)}.fb.no .v{color:var(--bad)}
+.fb .why{font-size:.93rem;margin:4px 0}
+.fb .back{font:800 .82rem var(--ui);color:#b07208;margin-top:6px}
+:root[data-theme="dark"] .fb .back{color:var(--sun)}
+.fb .nx{font:800 .82rem var(--ui);color:var(--muted);margin-top:6px}
+.fb .btn{margin-top:12px;width:100%}
+.recap{text-align:left;background:var(--surface);border-radius:var(--radius);padding:14px 16px;margin:14px 0 20px;line-height:1.9;color:var(--muted)}
+.recap b{color:var(--fg)}
+.learned{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0 0}
+.learned span{background:var(--ok-soft);color:var(--ok);font-weight:800;border-radius:var(--pill);padding:4px 12px}
+.boxmove{display:inline-block;background:var(--sun-soft);border-radius:var(--pill);padding:2px 10px;font-weight:800;font-size:.8rem;margin-left:6px}
+
+/* ---- 5. packs ---- */
+.packs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pack{padding:18px;display:flex;flex-direction:column;gap:6px}
+.pack .pi{font-size:1.8rem}
+.pack h3{margin:0;font-size:1.05rem}
+.pack p{margin:0;color:var(--muted);font-size:.88rem;flex:1}
+.pack .pwords{font-size:.82rem;color:var(--muted)}
+.lvls{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+
+@media (max-width:800px){
+  .read{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .todo{grid-template-columns:1fr}
+  .packs{grid-template-columns:1fr 1fr}
+  .word{grid-template-columns:1fr auto;gap:6px 10px}
+  .word .wm{grid-column:1/-1;grid-row:2}
+  .word .str{grid-column:1;grid-row:3}
+  .word .x{grid-column:2;grid-row:1}
+  .nav{padding:0 12px}.nav a{padding:8px 9px}.nav .me b{display:none}
+}
+@media (max-width:520px){
+  .packs{grid-template-columns:1fr}
+  .pairs{grid-template-columns:1fr 1.3fr}
+  .passage,.meet,.q{padding:20px}
+  .brand b{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="proto" id="proto">
+  <b>PROTOTYPE</b>
+  <button data-go="reading">1 · Reading: add words</button>
+  <button data-go="words">2 · My words</button>
+  <button data-go="learn">3 · Learn session</button>
+  <button data-go="review">4 · Review</button>
+  <button data-go="packs">5 · Word packs</button>
+  <span class="sp"></span>
+  <button id="reset">Reset demo</button>
+</div>
+
+<nav class="nav">
+  <div class="brand"><i></i><b>Orbiko</b></div>
+  <a data-go="reading">Reading</a>
+  <a>Grammar</a>
+  <a data-go="words" id="navVocab">Vocabulary<span class="count" id="navCount"></span></a>
+  <a>My progress</a>
+  <span class="me"><span>L</span><b>Leyla</b></span>
+  <button class="theme" id="theme" aria-label="Toggle theme">☾</button>
+</nav>
+
+<main id="app"></main>
+
+<script>
+/* ============================== fake data ============================== */
+const SRC = 'Yellowstone wolves';
+const DICT = {
+  predator:{ipa:'/ˈpredətə(r)/',pos:'noun',lvl:'B2',mean:'an animal that kills and eats other animals',az:'yırtıcı heyvan',
+    ex:['Wolves are the top <b>predator</b> in Yellowstone.','Without <b>predators</b>, the number of elk grew quickly.'],col:['top predator','natural predator','predator and prey'],fam:'predatory (adj)'},
+  thrive:{ipa:'/θraɪv/',pos:'verb',lvl:'B2',mean:'to grow or develop well and be healthy',az:'inkişaf etmək, çiçəklənmək',
+    ex:['Young trees began to <b>thrive</b> along the rivers.','Some plants <b>thrive</b> in dry conditions.'],col:['thrive in','thrive on','continue to thrive'],fam:'thriving (adj)'},
+  abundant:{ipa:'/əˈbʌndənt/',pos:'adjective',lvl:'B2',mean:'existing in large amounts; more than enough',az:'bol, çoxlu',
+    ex:['Fish became more <b>abundant</b> in the rivers.','The region has <b>abundant</b> rainfall.'],col:['abundant supply','abundant evidence','abundant wildlife'],fam:'abundance (n)'},
+  decline:{ipa:'/dɪˈklaɪn/',pos:'noun · verb',lvl:'B2',mean:'a gradual fall in amount, quality or importance',az:'azalma, enmə',
+    ex:['The elk population went into <b>decline</b>.','Numbers <b>declined</b> sharply after 1995.'],col:['a sharp decline','in decline','a decline in numbers'],fam:'declining (adj)'},
+  erosion:{ipa:'/ɪˈrəʊʒn/',pos:'noun',lvl:'C1',mean:'the slow damage of land by water, wind or ice',az:'eroziya, aşınma',
+    ex:['Tree roots reduced the <b>erosion</b> of the riverbanks.','Coastal <b>erosion</b> is a serious problem.'],col:['soil erosion','coastal erosion','prevent erosion'],fam:'erode (v)'},
+  riverbank:{ipa:'/ˈrɪvəbæŋk/',pos:'noun',lvl:'B1',mean:'the ground at the side of a river',az:'çay sahili',
+    ex:['Willows grew back along the <b>riverbanks</b>.'],col:['along the riverbank','a steep riverbank'],fam:'—'},
+  reintroduce:{ipa:'/ˌriːɪntrəˈdjuːs/',pos:'verb',lvl:'C1',mean:'to bring an animal or plant back to a place where it used to live',az:'yenidən gətirmək (təbiətə)',ex:[],col:[],fam:''},
+  ecosystem:{ipa:'/ˈiːkəʊsɪstəm/',pos:'noun',lvl:'B2',mean:'all the plants and animals in an area and how they affect each other',az:'ekosistem',ex:[],col:[],fam:''},
+  vegetation:{ipa:'/ˌvedʒəˈteɪʃn/',pos:'noun',lvl:'B2',mean:'plants in general, especially in one area',az:'bitki örtüyü',ex:[],col:[],fam:''},
+  graze:{ipa:'/ɡreɪz/',pos:'verb',lvl:'B2',mean:'(of animals) to eat grass that is growing',az:'otlamaq',ex:[],col:[],fam:''},
+  species:{ipa:'/ˈspiːʃiːz/',pos:'noun',lvl:'B1',mean:'a group of animals or plants of the same kind',az:'növ',ex:[],col:[],fam:''},
+  consequence:{ipa:'/ˈkɒnsɪkwəns/',pos:'noun',lvl:'B2',mean:'a result of something that has happened',az:'nəticə',ex:[],col:[],fam:''},
+  cascade:{ipa:'/kæˈskeɪd/',pos:'noun',lvl:'C1',mean:'a series of things that happen one after another',az:'ardıcıl təsirlər zənciri',ex:[],col:[],fam:''},
+};
+const START = [
+  ['reintroduce','learning',2,'Yellowstone wolves'],['ecosystem','learning',3,'Yellowstone wolves'],['vegetation','learning',1,'Coral reefs'],
+  ['graze','learning',2,'Yellowstone wolves'],['species','mastered',4,'Coral reefs'],['consequence','mastered',4,'Urban heat'],
+  ['cascade','learning',3,'Yellowstone wolves'],['abundant','new',0,SRC],['decline','new',0,'Urban heat'],['erosion','new',0,'Coral reefs'],
+];
+let S; // state
+function reset(){
+  S={ words:START.map(([w,st,box,src])=>({w,st,box,src,added:'Oct 28'})), lastAdded:[] };
+}
+reset();
+
+/* =============================== helpers =============================== */
+const app=document.getElementById('app');
+const h=(html)=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild;};
+const esc=(s)=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const has=(w)=>S.words.some(x=>x.w===w);
+const norm=(s)=>String(s).trim().toLowerCase().replace(/[.!?,;]+$/,'');
+function say(word){try{const u=new SpeechSynthesisUtterance(word);u.lang='en-GB';u.rate=.9;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+function toast(text){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=h(`<div class="toast">${text}</div>`);document.body.append(t);setTimeout(()=>t.remove(),2600);}
+function counts(){const c={all:S.words.length,new:0,learning:0,mastered:0};S.words.forEach(x=>c[x.st]++);return c;}
+function navCount(){const n=counts().new;const el=document.getElementById('navCount');el.textContent=n;el.hidden=!n;}
+function addWord(w,src){
+  w=w.toLowerCase();
+  if(has(w)){toast(`“${esc(w)}” is already in your words`);return false;}
+  S.words.unshift({w,st:'new',box:0,src:src||'Added by you',added:'Today'});
+  navCount();toast(`＋ “${esc(w)}” added to <u>My words</u> — learn it in Vocabulary`);return true;
+}
+
+let screen='reading';
+function go(name){
+  screen=name;location.hash=name;
+  document.querySelectorAll('.proto [data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===name));
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
+  (name==='reading'?document.querySelector('.nav a[data-go="reading"]'):document.getElementById('navVocab')).classList.add('on');
+  closePops();
+  ({reading:Reading,words:Words,learn:LearnStart,review:ReviewStart,packs:Packs})[name]();
+  window.scrollTo(0,0);
+}
+
+/* ========================== 1. Reading: add words ========================== */
+function Reading(){
+  app.innerHTML='';
+  const root=h(`<div class="wrap wide">
+    <div class="read">
+      <div>
+        <article class="card passage" id="passage">
+          <span class="kick">Passage 1 · B2</span>
+          <h2 style="margin-top:10px">The return of the wolves</h2>
+          <p><span class="pl">A</span>When grey wolves were brought back to Yellowstone in 1995, few people expected such wide changes. The wolves were the park's missing <span class="w" data-w="predator">predator</span>, and the elk, which had grazed freely for decades, began to avoid open valleys.</p>
+          <p><span class="pl">B</span>As the elk moved, young willows and aspens started to <span class="w" data-w="thrive">thrive</span> again. Their roots held the soil together and slowed the <span class="w" data-w="erosion">erosion</span> of the riverbanks, so the rivers themselves changed course less often.</p>
+          <p><span class="pl">C</span>Beavers returned to the new trees, and their dams created pools where fish became more <span class="w" data-w="abundant">abundant</span>. Scientists call such a chain of effects a trophic cascade, although some argue that the elk's decline had other causes too.</p>
+        </article>
+        <div class="note"><b>How adding works:</b> tap a <u>dotted word</u> → its meaning + <b>＋ Add to my words</b>. Or <b>select any word</b> in the passage (e.g. “riverbanks”, “decline”) → the black bar offers <b>＋ Add to my words</b> next to Highlight. Saved words get a teal mark. Works during and after the test.</div>
+      </div>
+      <div>
+        <div class="card qs">
+          <h3>Questions 1–6</h3>
+          <p class="sub" style="font-size:.9rem">Do the statements agree with the passage? TRUE / FALSE / NOT GIVEN</p>
+          <div class="q">1. Wolves returned to Yellowstone naturally.</div>
+          <div class="q">2. Elk stopped using open valleys after 1995.</div>
+          <div class="q">3. Willows grew back near the rivers.</div>
+        </div>
+        <div class="card basket" id="basket"></div>
+      </div>
+    </div></div>`);
+  app.append(root);
+  paintSaved();basket();
+  root.querySelectorAll('.w').forEach(w=>w.addEventListener('click',e=>{e.stopPropagation();openPop(w);}));
+  root.querySelector('#passage').addEventListener('mouseup',()=>setTimeout(selBar,10));
+  root.querySelector('#passage').addEventListener('touchend',()=>setTimeout(selBar,300));
+}
+function paintSaved(){document.querySelectorAll('.w').forEach(w=>w.classList.toggle('saved',has(w.dataset.w)));}
+function basket(){
+  const b=document.getElementById('basket');if(!b)return;
+  const fromHere=S.words.filter(x=>x.src===SRC&&x.st==='new');
+  b.innerHTML=`<h3>📚 New words from this passage · ${fromHere.length}</h3>
+    <p class="sub" style="font-size:.88rem">They wait in Vocabulary. Learn them after the test — 5 at a time.</p>
+    <div class="bw">${fromHere.map(x=>`<span>${esc(x.w)}</span>`).join('')||'<span style="background:none;color:var(--muted)">none yet</span>'}</div>
+    <button class="btn primary wide" data-go2="learn" ${fromHere.length?'':'disabled'}>Learn these words →</button>`;
+  b.querySelector('[data-go2]').onclick=()=>go('learn');
+}
+function closePops(){document.querySelectorAll('.pop,.selbar').forEach(p=>p.remove());}
+function place(el,rect){const top=rect.bottom+window.scrollY+8;let left=rect.left+window.scrollX;left=Math.min(left,window.innerWidth-el.offsetWidth-12);el.style.top=top+'px';el.style.left=Math.max(12,left)+'px';}
+function openPop(wEl){
+  closePops();
+  const w=wEl.dataset.w,d=DICT[w];
+  const pop=h(`<div class="pop" role="dialog">
+    <div class="pw">${esc(w)} <small>${esc(d.pos)} · ${esc(d.ipa)}</small><span style="flex:1"></span><button class="say" title="Listen">🔊</button></div>
+    <div class="pm">${esc(d.mean)}</div><div class="paz">🇦🇿 ${esc(d.az)}</div>
+    <div class="row">${has(w)?'<span class="chip" style="color:var(--teal);background:var(--teal-soft)">✓ In my words</span><button class="btn text" data-rm>Remove</button>'
+      :'<button class="btn primary" data-add>＋ Add to my words</button>'}</div></div>`);
+  document.body.append(pop);place(pop,wEl.getBoundingClientRect());
+  pop.querySelector('.say').onclick=()=>say(w);
+  const add=pop.querySelector('[data-add]');if(add)add.onclick=()=>{addWord(w,SRC);paintSaved();basket();openPop(wEl);};
+  const rm=pop.querySelector('[data-rm]');if(rm)rm.onclick=()=>{S.words=S.words.filter(x=>x.w!==w);navCount();paintSaved();basket();closePops();toast(`“${esc(w)}” removed`);};
+}
+function selBar(){
+  const sel=getSelection();const text=String(sel).trim();
+  document.querySelectorAll('.selbar').forEach(p=>p.remove());
+  if(!text||text.split(/\s+/).length>3||!sel.rangeCount)return;
+  const rect=sel.getRangeAt(0).getBoundingClientRect();
+  const bar=h(`<div class="selbar"><button data-hl>🖍 Highlight</button><button data-add>＋ Add “${esc(text.length>18?text.slice(0,18)+'…':text)}” to my words</button></div>`);
+  document.body.append(bar);place(bar,rect);
+  bar.querySelector('[data-hl]').onclick=()=>{toast('Highlighted (as today)');sel.removeAllRanges();bar.remove();};
+  bar.querySelector('[data-add]').onclick=()=>{
+    let w=text.toLowerCase().replace(/[^a-z' -]/g,'').trim();
+    if(w==='riverbanks')w='riverbank'; // the server finds the base form (lemma)
+    if(!DICT[w])DICT[w]={ipa:'',pos:'',lvl:'',mean:'(meaning is fetched when the word is added)',az:'',ex:[],col:[],fam:''};
+    addWord(w,SRC);sel.removeAllRanges();bar.remove();basket();paintSaved();
+  };
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.pop,.selbar,.w'))closePops();});
+
+/* ============================== 2. My words ============================== */
+let tab='all',query='';
+function Words(){
+  const c=counts();const due=S.words.filter(x=>x.st==='learning'&&!x.today).length;
+  app.innerHTML='';
+  const root=h(`<div class="wrap wide">
+    <div class="head"><div><h1>My words</h1><p class="sub">Words you saved from passages and packs. Learn 5 at a time, then review them until they stick.</p></div>
+      <span class="sp"></span><button class="btn" data-packs>📦 Word packs</button></div>
+    <div class="stats">
+      <div class="card stat"><b>${c.all}</b><small>words</small></div>
+      <div class="card stat new"><b>${c.new}</b><small>new — not learned</small></div>
+      <div class="card stat lrn"><b>${c.learning}</b><small>learning</small></div>
+      <div class="card stat mst"><b>${c.mastered}</b><small>mastered</small></div>
+    </div>
+    <div class="todo">
+      <div class="card learn"><span class="kick" style="align-self:flex-start">Learn</span><h3>${c.new?`${Math.min(5,c.new)} new word${Math.min(5,c.new)>1?'s':''} ready`:'No new words'}</h3>
+        <p>${c.new?'Meet each word, practise it, then prove it — a word you miss comes back until you get it.':'Add words from a passage or a pack to learn them.'}</p>
+        <button class="btn primary" data-learn ${c.new?'':'disabled'}>Start learning →</button></div>
+      <div class="card rev"><span class="kick" style="align-self:flex-start;background:var(--sun-soft);color:#b07208">Daily review</span><h3>${due} words due</h3>
+        <p>Words come back on day 1, 3, 7 and 14. ~${Math.max(1,Math.ceil(due/3))} min.</p>
+        <button class="btn" data-review ${due?'':'disabled'}>Review now</button></div>
+    </div>
+    <div class="add"><input class="search" id="newWord" placeholder="Add a word yourself, e.g. “sustainable”" aria-label="Add a word"><button class="btn" id="addBtn">＋ Add</button></div>
+    <div class="tools">
+      <div class="tabs" id="tabs">${['all','new','learning','mastered'].map(t=>`<button data-t="${t}" class="${t===tab?'on':''}">${t[0].toUpperCase()+t.slice(1)} · ${c[t]}</button>`).join('')}</div>
+      <input class="search" id="q" placeholder="Search my words…" value="${esc(query)}" aria-label="Search">
+    </div>
+    <div class="list" id="list"></div>
+  </div>`);
+  app.append(root);
+  root.querySelector('[data-packs]').onclick=()=>go('packs');
+  root.querySelector('[data-learn]').onclick=()=>go('learn');
+  root.querySelector('[data-review]').onclick=()=>go('review');
+  root.querySelector('#tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;tab=b.dataset.t;Words();};
+  root.querySelector('#q').oninput=e=>{query=e.target.value;list();};
+  const addIt=()=>{const v=root.querySelector('#newWord').value.trim().toLowerCase();if(!v)return;
+    if(!DICT[v])DICT[v]={ipa:'',pos:'',lvl:'',mean:'(meaning is fetched when the word is added)',az:'',ex:[],col:[],fam:''};
+    if(addWord(v,'Added by you'))Words();};
+  root.querySelector('#addBtn').onclick=addIt;root.querySelector('#newWord').onkeydown=e=>{if(e.key==='Enter')addIt();};
+  list();
+}
+function list(){
+  const box=document.getElementById('list');
+  const rows=S.words.filter(x=>(tab==='all'||x.st===tab)&&(!query||x.w.includes(query.toLowerCase())));
+  const label={0:'not learned',1:'tomorrow',2:'in 3 days',3:'in 1 week',4:'in 2 weeks'};
+  box.innerHTML=rows.map(x=>{const d=DICT[x.w]||{};return `<div class="card word">
+    <div class="ww">${esc(x.w)} <small>${esc(d.pos||'')} ${d.lvl?'· '+d.lvl:''}</small></div>
+    <div class="wm">${esc(d.mean||'')}<small>from: ${esc(x.src)} · added ${esc(x.added)}</small></div>
+    <div class="str b${x.box}" title="Memory strength">${x.st==='new'?'<span class="state new">new</span>':x.st==='mastered'?'<span class="state mastered">✓ mastered</span>':'<i></i><i></i><i></i><i></i><em>'+label[x.box]+'</em>'}</div>
+    <button class="x" data-rm="${esc(x.w)}" title="Remove" aria-label="Remove ${esc(x.w)}">✕</button></div>`;}).join('')||'<p class="sub">No words here.</p>';
+  box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{S.words=S.words.filter(x=>x.w!==b.dataset.rm);navCount();Words();});
+}
+
+/* ============================ 3. Learn session ============================ */
+let L;
+function LearnStart(){
+  const words=S.words.filter(x=>x.st==='new').slice(0,5).map(x=>x.w);
+  if(!words.length){app.innerHTML='';app.append(h(`<div class="wrap"><div class="card goal"><div class="ic">📭</div><h1>No new words</h1><p class="sub">Add words from a passage or a word pack first.</p><br><button class="btn primary" onclick="go('reading')">Open a passage</button></div></div>`));return;}
+  L={words,stage:'goal',card:0,secs:0,timer:null,retries:0,mastered:0};
+  shell(['goal','meet','practise','master'],['Goal','Meet','Practise','Master']);
+  goalCard();
+}
+function shell(keys,labels){
+  app.innerHTML='';
+  app.append(h(`<div class="wrap"><div class="top"><button class="xbtn" id="xb" aria-label="Leave">✕</button>
+    <ol class="pills" id="pills">${keys.map((k,i)=>`<li data-s="${k}">${labels[i]}</li>`).join('')}</ol></div>
+    <div class="bar"><i id="pbar" style="width:2%"></i></div><div id="body"></div></div>`));
+  document.getElementById('xb').onclick=()=>{if(confirm('Leave? Words you already mastered stay mastered.'))go('words');};
+}
+function stage(s,frac){document.querySelectorAll('#pills li').forEach((li,i,all)=>{const at=[...all].findIndex(x=>x.dataset.s===s);li.classList.toggle('on',i===at);li.classList.toggle('done',i<at||s==='done');});document.getElementById('pbar').style.width=Math.round(frac*100)+'%';}
+const body=()=>document.getElementById('body');
+
+function goalCard(){
+  stage('goal',.02);
+  body().innerHTML='';
+  const c=h(`<div class="card goal"><div class="ic">🎯</div><h1>Learn ${L.words.length} new word${L.words.length>1?'s':''}</h1>
+    <p class="sub">By the end you'll know what they mean, how to say them and how to use them in a sentence.</p>
+    <div class="chips">${L.words.map(w=>`<span>${esc(w)}</span>`).join('')}</div>
+    <p class="sub" style="font-size:.88rem;font-weight:700">⏱ About 10 minutes · meet → practise → master</p><br>
+    <button class="btn primary lg">📖 Start</button></div>`);
+  c.querySelector('button').onclick=()=>{L.card=0;meet();};
+  body().append(c);
+}
+function meet(){
+  const w=L.words[L.card],d=DICT[w];stage('meet',.05+.3*(L.card/L.words.length));
+  say(w);
+  const last=L.card===L.words.length-1;
+  const c=h(`<div class="card meet">
+    <div class="qk"><span>📖 New word · ${L.card+1} of ${L.words.length}</span><span>from: ${esc(SRC)}</span></div>
+    <div class="mh"><span class="big">${esc(w)}</span><button class="say" title="Listen">🔊</button><span class="ipa">${esc(d.ipa)}</span></div>
+    <div class="tags"><span class="chip">${esc(d.pos)}</span><span class="chip">${esc(d.lvl)}</span></div>
+    <p class="mean">${esc(d.mean)}</p>
+    <div class="az"><small>AZ</small>${esc(d.az)}</div>
+    ${d.ex.length?`<h4>In the passage and beyond</h4>${d.ex.map((e,i)=>`<div class="ex">${i===0?`<small>📄 ${esc(SRC)}</small>`:''}${e}</div>`).join('')}`:''}
+    ${d.col.length?`<h4>Goes with</h4><div class="cols">${d.col.map(x=>`<span>${esc(x)}</span>`).join('')}</div>`:''}
+    ${d.fam&&d.fam!=='—'?`<h4>Word family</h4><div class="cols"><span>${esc(d.fam)}</span></div>`:''}
+    <div class="nav2">${L.card?'<button class="btn" data-b>← Back</button>':''}<button class="btn primary grow" data-n>${last?'✅ Got them — practise':'Next word →'}</button></div></div>`);
+  c.querySelector('.say').onclick=()=>say(w);
+  const b=c.querySelector('[data-b]');if(b)b.onclick=()=>{L.card--;meet();};
+  c.querySelector('[data-n]').onclick=()=>{if(last)practise();else{L.card++;meet();}};
+  body().innerHTML='';body().append(c);
+}
+
+/* items: grading here only for the prototype (the real app grades on the server, like Grammar) */
+function practise(){
+  const items=[meaningItem(L.words[0])];
+  if(L.words.length>=3)items.push({t:'match'});
+  let i=0;
+  const next=()=>{if(i>=items.length)return master();stage('practise',.4+.2*(i/items.length));
+    const it=items[i];const k=`✏️ Practise · ${i+1} of ${items.length}`;
+    (it.t==='match'?matchItem(k,()=>{i++;next();}):choose(it,k,null,()=>{i++;next();}));};
+  next();
+}
+const hintOf=(w)=>w[0]+' '+'_ '.repeat(w.length-1).trim();
+function meaningItem(w){
+  const others=Object.keys(DICT).filter(x=>x!==w&&DICT[x].mean&&!DICT[x].mean.startsWith('(')).slice(0,12);
+  const pickd=[0,4,8].map(i=>others[(i+w.length)%others.length]);
+  const opts=[DICT[w].mean,...pickd.map(x=>DICT[x].mean)];const order=[2,0,3,1];
+  const shuffled=order.map(i=>opts[i]);
+  return {t:'meaning',w,kick:'Choose the meaning',p:`What does <b>${esc(w)}</b> mean?`,opts:shuffled,a:shuffled.indexOf(DICT[w].mean),
+    why:shuffled.map(o=>{const x=Object.keys(DICT).find(k=>DICT[k].mean===o);return x===w?'':`that is “${x}”`;}),ex:`<b>${esc(w)}</b> — ${esc(DICT[w].mean)}.`};
+}
+function itemFor(w){
+  const ready=masterItems().find(x=>x.w===w);
+  return ready||{id:'g-'+w,t:'type',w,kick:'Type the word',p:DICT[w].mean,hint:hintOf(w),ex:`<b>${esc(w)}</b> ${DICT[w].ipa?esc(DICT[w].ipa):''}`};
+}
+function masterItems(){return [
+  {id:'m1',t:'gap',w:'thrive',kick:'Complete the sentence',p:'Choose the word that fits.',s:'Young trees began to ___ along the rivers.',opts:['thrive','decline','erode','graze'],a:0,why:['','“decline” means to get less — the trees grew','“erode” is what water does to land','“graze” is what animals do'],ex:'The trees <b>grew well</b> → <b>thrive</b>.'},
+  {id:'m2',t:'type',w:'erosion',kick:'Type the word',p:'the slow damage of land by water, wind or ice',hint:'e _ _ _ _ _ _',s:'Tree roots slowed the ___ of the riverbanks.',ex:'<b>erosion</b> (noun) — the verb is <i>erode</i>.'},
+  {id:'m3',t:'listen',w:'abundant',kick:'Listen and type',p:'Type the word you hear.',ex:'<b>abundant</b> /əˈbʌndənt/ — stress on the 2nd syllable.'},
+  {id:'m4',t:'gap',w:'decline',kick:'Which word goes with it?',p:'Choose the word that makes a natural phrase.',s:'There was a sharp ___ in the number of elk.',opts:['decline','predator','erosion','abundance'],a:0,why:['','“a sharp predator” isn’t a phrase','erosion happens to land, not to numbers','“a sharp abundance” isn’t natural'],ex:'<b>a sharp decline in</b> + numbers — a common IELTS Task 1 phrase.'},
+  {id:'m5',t:'az',w:'predator',kick:'Translate',p:'Type the English word for:',az:'yırtıcı heyvan',hint:'p _ _ _ _ _ _ _',ex:'<b>predator</b> — the animal that hunts. The hunted animal is the <i>prey</i>.'},
+];}
+function master(){
+  const queue=L.words.map(itemFor);const total=queue.length;L.mastered=0;
+  const next=()=>{
+    if(!queue.length)return learnDone(total);
+    stage('master',.6+.4*(L.mastered/total));
+    const it=queue[0];
+    const header=`<div class="mastery"><span>Mastery</span><div class="t"><i style="width:${Math.round(L.mastered/total*100)}%"></i></div><b>${L.mastered} / ${total}</b></div>`;
+    const done=(ok)=>{queue.shift();if(ok)L.mastered++;else{L.retries++;queue.push(it);}next();};
+    const k=`🎯 Prove it · ${L.mastered+1} of ${total}`;
+    if(it.t==='gap')choose(it,k,header,done,true);else typeItem(it,k,header,done,true);
+  };
+  next();
+}
+function choose(it,kick,header,done,master){
+  const c=h(`<div>${header||''}<div class="card q"><div class="qk"><span>${kick}</span><span>${esc(it.kick)}</span></div>
+    <div class="qp">${it.p}</div>${it.s?`<div class="qs2">${esc(it.s).replace('___','<span class="gap">?</span>')}</div>`:''}
+    <div class="opts">${it.opts.map((o,i)=>`<button class="opt" data-i="${i}"><span class="k">${'ABCD'[i]}</span>${esc(o)}</button>`).join('')}</div><div id="fb"></div></div></div>`);
+  c.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i,ok=i===it.a;c.querySelectorAll('.opt').forEach(x=>x.disabled=true);
+    b.classList.add(ok?'right':'wrong');if(!ok)c.querySelector(`.opt[data-i="${it.a}"]`).classList.add('right');
+    if(it.s)c.querySelector('.gap').textContent=it.opts[it.a];
+    feedback(c,ok,ok?'':(it.why[i].startsWith('“')?it.why[i]:`Your answer “${esc(it.opts[i])}” — ${it.why[i]}`),it.opts[it.a],it.ex||'',master,()=>done(ok));
+  });
+  body().innerHTML='';body().append(c);
+}
+function typeItem(it,kick,header,done,master){
+  const c=h(`<div>${header||''}<div class="card q"><div class="qk"><span>${kick}</span><span>${esc(it.kick)}</span></div>
+    ${it.t==='listen'?`<div class="qp">${esc(it.p)}</div><div class="listen"><button title="Play">🔊</button></div>`
+      :it.t==='az'?`<div class="qp">${esc(it.p)}</div><div class="qs2">🇦🇿 <b>${esc(it.az)}</b></div>`
+      :`<div class="qp">${esc(it.p)}</div>${it.s?`<div class="qs2">${esc(it.s).replace('___','<span class="gap">?</span>')}</div>`:''}`}
+    ${it.hint?`<div class="hint">${esc(it.hint)}</div>`:''}
+    <div class="typed"><input class="inp" placeholder="Type the word…" autocomplete="off" spellcheck="false"><button class="btn primary">Check</button></div><div id="fb"></div></div></div>`);
+  const inp=c.querySelector('.inp'),btn=c.querySelector('.typed .btn');
+  if(it.t==='listen'){const p=c.querySelector('.listen button');p.onclick=()=>say(it.w);setTimeout(()=>say(it.w),300);}
+  const check=()=>{const v=inp.value;if(!v.trim())return inp.focus();const ok=norm(v)===it.w;inp.disabled=true;btn.hidden=true;inp.classList.add(ok?'right':'wrong');
+    if(c.querySelector('.gap')&&ok)c.querySelector('.gap').textContent=it.w;
+    feedback(c,ok,ok?'':`You typed “${esc(v)}”.`,it.w,it.ex,master,()=>done(ok));};
+  btn.onclick=check;inp.onkeydown=e=>{if(e.key==='Enter')check();};
+  body().innerHTML='';body().append(c);setTimeout(()=>inp.focus(),50);
+}
+function matchItem(kick,done){
+  const ws=L.words.slice();const ms=ws.map(w=>DICT[w].mean).sort(()=>Math.random()-.5);
+  let pick=null,left=ws.length;
+  const c=h(`<div class="card q"><div class="qk"><span>${kick}</span><span>match</span></div><div class="qp">Tap a word, then its meaning.</div><br>
+    <div class="pairs"><div class="colm">${ws.map(w=>`<button class="pair" data-w="${esc(w)}">${esc(w)}</button>`).join('')}</div>
+    <div class="colm">${ms.map(m=>`<button class="pair" data-m="${esc(m)}">${esc(m)}</button>`).join('')}</div></div><div id="fb"></div></div>`);
+  c.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{if(b.classList.contains('ok'))return;c.querySelectorAll('[data-w]').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');pick=b;});
+  c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{if(!pick||b.classList.contains('ok'))return;
+    if(DICT[pick.dataset.w].mean===b.dataset.m){[pick,b].forEach(x=>{x.classList.remove('sel');x.classList.add('ok');});pick=null;left--;
+      if(!left)feedback(c,true,'','','All pairs matched.',false,done);}
+    else{b.classList.add('no');setTimeout(()=>b.classList.remove('no'),400);}});
+  body().innerHTML='';body().append(c);
+}
+function feedback(c,ok,why,right,ex,master,next,extra){
+  const fb=c.querySelector('#fb');
+  fb.innerHTML=`<div class="fb ${ok?'ok':'no'}"><div class="v">${ok?'✓ Correct':'✕ Not quite'}</div>
+    ${why?`<div class="why">${why}</div>`:''}${!ok&&right?`<div class="why">Correct: <b>${esc(right)}</b></div>`:''}
+    ${ex?`<div class="why">${ex}</div>`:''}${master&&!ok?'<div class="back">↻ This word comes back until you get it right.</div>':''}
+    ${extra||''}<button class="btn primary">Continue →</button></div>`;
+  const b=fb.querySelector('.btn');b.onclick=next;b.focus();
+}
+function learnDone(total){
+  stage('done',1);
+  L.words.forEach(w=>{const x=S.words.find(y=>y.w===w);if(x){x.st='learning';x.box=1;x.today=true;}});navCount();
+  const c=h(`<div class="card fin"><div class="ic">🎉</div><h1>${L.words.length} new word${L.words.length>1?'s':''} learned</h1><p class="sub">You got every word right at least once.</p>
+    <div class="learned">${L.words.map(w=>`<span>✓ ${esc(w)}</span>`).join('')}</div>
+    <div class="recap"><b>Mastered:</b> ${total}/${total} tasks · <b>Retries:</b> ${L.retries}<br>
+    <b>Next:</b> these words come back in your <b>daily review tomorrow</b>, then in 3 days, 1 week and 2 weeks.<br>
+    <b>New words left:</b> ${counts().new} ${counts().new?'— you can learn another 5 now':''}</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">${counts().new?`<button class="btn primary" data-more>Learn ${Math.min(5,counts().new)} more</button>`:''}<button class="btn" data-back>Back to my words</button></div></div>`);
+  const m=c.querySelector('[data-more]');if(m)m.onclick=()=>go('learn');c.querySelector('[data-back]').onclick=()=>go('words');
+  body().innerHTML='';body().append(c);
+}
+
+/* ================================ 4. Review ================================ */
+function ReviewStart(){
+  const items=[
+    {id:'r1',t:'gap',w:'reintroduce',box:2,kick:'Complete the sentence',p:'Choose the word that fits.',s:'Wolves were ___ to the park in 1995 after 70 years.',opts:['reintroduced','grazed','declined','thrived'],a:0,why:['','“grazed” — animals eat grass','“declined” means got fewer','“thrived” doesn’t take “to the park”'],ex:'<b>reintroduce</b> = bring back to where it used to live.'},
+    {id:'r2',t:'type',w:'ecosystem',box:3,kick:'Type the word',p:'all the plants and animals in an area and how they affect each other',hint:'e _ _ _ _ _ _ _ _',s:'Wolves changed the whole ___ of the park.',ex:'<b>ecosystem</b> — one word.'},
+    {id:'r3',t:'listen',w:'vegetation',box:1,kick:'Listen and type',p:'Type the word you hear.',ex:'<b>vegetation</b> /ˌvedʒəˈteɪʃn/'},
+    {id:'r4',t:'az',w:'graze',box:2,kick:'Translate',p:'Type the English word for:',az:'otlamaq',hint:'g _ _ _ _',ex:'<b>graze</b> — elk graze in open valleys.'},
+  ];
+  const total=items.length;let done=0,retries=0;const queue=items.slice();const first=new Set();
+  shell(['review'],['🔁 Daily review']);document.querySelector('.bar').hidden=true;
+  const nextDue={1:'tomorrow',2:'in 3 days',3:'in 1 week',4:'in 2 weeks'};
+  const next=()=>{
+    if(!queue.length)return revDone(total,retries);
+    stage('review',done/total);
+    const it=queue[0];
+    const header=`<div class="mastery"><span>Reviewed</span><div class="t"><i style="width:${Math.round(done/total*100)}%"></i></div><b>${done} / ${total}</b></div>`;
+    const end=(ok)=>{queue.shift();if(ok)done++;else{retries++;queue.push(it);}next();};
+    const k=`🏷 from: ${esc((S.words.find(y=>y.w===it.w)||{}).src||'')} · box ${it.box}`;
+    // schedule line, shown in the feedback (only the first answer of the day moves the word)
+    const firstTime=!first.has(it.id);first.add(it.id);
+    const sched=(ok)=>{if(!firstTime)return `<div class="nx">⏱ Next review: tomorrow <span class="boxmove">stays in box 1</span></div>`;
+      const nb=ok?Math.min(4,it.box+1):1;const x=S.words.find(y=>y.w===it.w);if(x){x.box=nb;if(nb===4&&ok&&it.box===4)x.st='mastered';}
+      return `<div class="nx">⏱ Next review: ${nextDue[nb]} <span class="boxmove">box ${it.box} → ${nb}</span></div>`;};
+    feedbackHook=sched;
+    if(it.t==='gap')choose(it,k,header,end,true);else typeItem(it,k,header,end,true);
+  };
+  next();
+}
+let feedbackHook=null;
+const _fb=feedback;
+feedback=function(c,ok,why,right,ex,master,next,extra){return _fb(c,ok,why,right,ex,master,next,extra||(screen==='review'&&feedbackHook?feedbackHook(ok):''));};
+function revDone(total,retries){
+  stage('done',1);
+  const c=h(`<div class="card fin"><div class="ic">✅</div><h1>Review done</h1><p class="sub">Every due word is reviewed. See you tomorrow!</p>
+    <div class="recap"><b>Reviewed:</b> ${total} words · <b>Retries:</b> ${retries}<br><b>Tip:</b> a word moves up a box when you get it right first time; a miss sends it back to box 1.</div>
+    <button class="btn primary" data-back>Back to my words</button></div>`);
+  c.querySelector('[data-back]').onclick=()=>go('words');body().innerHTML='';body().append(c);
+}
+
+/* =============================== 5. Word packs =============================== */
+function Packs(){
+  const packs=[
+    ['🌍','Environment','B2',20,'climate, emission, sustainable, biodiversity, habitat…'],
+    ['🎓','Education','B2',20,'curriculum, literacy, tuition, assessment, vocational…'],
+    ['💻','Technology','B2',20,'innovation, device, automation, privacy, digital…'],
+    ['🏥','Health','B2',20,'obesity, diagnosis, epidemic, nutrition, sedentary…'],
+    ['📈','Task 1: trends','B2',16,'fluctuate, plateau, surge, steady, gradual…'],
+    ['✍️','Task 2: linking','C1',16,'nevertheless, whereas, consequently, albeit…'],
+    ['🏙','Cities','B1',20,'congestion, suburb, infrastructure, commute…'],
+    ['🔬','Science','C1',20,'hypothesis, empirical, phenomenon, variable…'],
+    ['🌱','Everyday A2','A2',20,'borrow, receipt, delay, appointment…'],
+  ];
+  app.innerHTML='';
+  const root=h(`<div class="wrap wide"><div class="head"><div><h1>Word packs</h1><p class="sub">Ready lists of IELTS words by topic. Add a pack and its words join <b>My words</b> as new.</p></div><span class="sp"></span><button class="btn" data-back>← My words</button></div>
+    <div class="lvls">${['All','A2','B1','B2','C1'].map((l,i)=>`<span class="chip" style="${i?'':'background:var(--accent-soft);color:var(--accent)'}">${l}</span>`).join('')}</div>
+    <div class="packs">${packs.map(([i,t,l,n,ws])=>`<div class="card pack"><div class="pi">${i}</div><h3>${t}</h3><p class="pwords">${ws}</p><p><span class="chip">${l}</span> <span class="chip">${n} words</span></p><button class="btn" data-pack="${t}">＋ Add pack</button></div>`).join('')}</div>
+    <div class="note"><b>Content like Grammar:</b> packs are written by AI (n8n) and published by an admin (Admin → Vocabulary), with meanings, examples, collocations and Azerbaijani.</div></div>`);
+  app.append(root);
+  root.querySelector('[data-back]').onclick=()=>go('words');
+  root.querySelectorAll('[data-pack]').forEach(b=>b.onclick=()=>{b.disabled=true;b.textContent='✓ Added — 20 new words';toast(`📦 “${esc(b.dataset.pack)}” added to My words`);});
+}
+
+/* ================================== start ================================== */
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+document.getElementById('reset').onclick=()=>{reset();navCount();go(screen);};
+const themeBtn=document.getElementById('theme');
+themeBtn.onclick=()=>{const d=document.documentElement;const dark=d.dataset.theme!=='dark';d.dataset.theme=dark?'dark':'light';themeBtn.textContent=dark?'☀':'☾';};
+navCount();
+go(['reading','words','learn','review','packs'].includes(location.hash.slice(1))?location.hash.slice(1):'reading');
+</script>
+</body>
+</html>

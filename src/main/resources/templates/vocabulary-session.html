@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>Vocabulary · Orbiko</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/vocabulary.css}">
+</head>
+<body>
+<!--
+  A learn session (Goal → Meet → Practise → Master) or the daily review
+  (vocabulary requirements 5, 6). vocabulary/session.js starts it on the
+  server; every answer is graded there. No answers are in this page.
+-->
+<main class="wrap vocab v-session" id="sessionRoot" th:attr="data-kind=${kind}">
+    <p class="v-status" id="sStatus" role="status">Starting…</p>
+    <div id="sTop" hidden>
+        <div class="v-top">
+            <button type="button" class="v-x" id="sExit" aria-label="Leave" title="Leave">✕</button>
+            <ol class="v-pills" id="sPills" aria-label="Steps"></ol>
+        </div>
+        <div class="v-bar" id="sBarBox" aria-hidden="true"><i id="sBar"></i></div>
+    </div>
+    <div id="sBody"></div>
+
+    <script type="module" th:src="@{/js/vocabulary/session.js}"></script>
+</main>
+</body>
+</html>

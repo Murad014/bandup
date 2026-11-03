@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::title}, ~{::#pageCss}, ~{::main}, 'vocabulary')}">
+<head>
+    <title>Vocabulary · Orbiko Admin</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<!--
+  Word cards (vocabulary requirement 8). vocabulary-page.js loads them from
+  /api/v1/admin/vocabulary/words. Cards are written by the AI the first time
+  a learner saves a word; fix or regenerate them here.
+-->
+<main id="vocabRoot">
+    <div class="admin-row">
+        <h1 class="admin-h1">Word cards</h1>
+    </div>
+    <div class="lib-toolbar">
+        <input id="vcSearch" class="lib-search" type="search" placeholder="Search a word…" aria-label="Search words">
+        <select id="vcStatus" aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="READY">Ready</option>
+            <option value="PREPARING">Preparing</option>
+            <option value="FAILED">Failed</option>
+            <option value="REJECTED">Rejected</option>
+        </select>
+        <span class="admin-spacer"></span>
+        <span id="vcCount" class="lib-count"></span>
+    </div>
+    <p id="vcStatusLine" class="admin-status">Loading word cards…</p>
+    <p id="vcNote" class="admin-notice" role="status" hidden></p>
+    <table id="vcTable" class="admin-table" hidden>
+        <thead>
+            <tr><th>Word</th><th>Level</th><th>Status</th><th>Saved by</th><th>Written by</th><th>Last change</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="vcBody"></tbody>
+    </table>
+    <div id="vcEmpty" class="admin-empty" hidden>
+        <p>No word cards yet. They appear when learners save words.</p>
+    </div>
+    <div class="admin-row"><span class="admin-spacer"></span><button type="button" class="btn" id="vcMore" hidden>Show more</button></div>
+
+    <script type="module" th:src="@{/js/admin/vocabulary-page.js}"></script>
+</main>
+</body>
+</html>

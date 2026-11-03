@@ -58,3 +58,16 @@ bandup:
   grammar:
     day-zone: Asia/Baku
     cleanup-cron: "0 45 3 * * *"
+
+  # Vocabulary: word cards are written once per word by an AI on OpenRouter.
+  # BANDUP_OPENROUTER_API_KEY must never be committed; without it, words already
+  # in the database still work and new words get "can't be prepared right now".
+  vocabulary:
+    day-zone: Asia/Baku
+    cleanup-cron: "0 50 3 * * *"
+    ai:
+      api-key: ${BANDUP_OPENROUTER_API_KEY:}
+      model: ${BANDUP_VOCABULARY_MODEL:anthropic/claude-haiku-5.5}
+      base-url: https://openrouter.ai/api/v1
+      timeout: 30s
+      daily-limit: 30

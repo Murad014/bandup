@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::title}, ~{::#pageCss}, ~{::main}, 'vocabulary')}">
+<head>
+    <title>Word card · Orbiko Admin</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<!--
+  One word card (vocabulary requirement 8; card-format.md). Every field's
+  wrapper has data-field = the API's error path, so a 422 error shows at its
+  field. An edit applies to every learner at once.
+-->
+<main id="vcEditRoot" th:attr="data-card-id=${cardId}">
+    <div class="editor-topbar">
+        <div class="editor-topbar__title">
+            <h1 class="admin-h1" id="vcTitle">Word card</h1>
+            <span id="vcBadge" class="badge badge--ready">ready</span>
+            <span id="vcInfo" class="admin-sub editor-revision"></span>
+            <span id="vcDirty" class="dirty-dot" hidden title="Unsaved changes">●</span>
+        </div>
+        <div class="editor-actions">
+            <button id="vcSave" type="button" class="btn btn--primary">Save</button>
+            <button id="vcRegenerate" type="button" class="btn">Regenerate with AI</button>
+            <button id="vcDelete" type="button" class="btn btn--danger">Delete</button>
+        </div>
+    </div>
+
+    <div id="vcNotice" class="admin-notice" role="status" hidden></div>
+    <div id="vcErrors" class="admin-error" role="alert" hidden></div>
+
+    <form class="card vc-form" id="vcForm" autocomplete="off">
+        <div class="grid-2">
+            <div class="field" data-field="lemma"><label for="lemma">Base form (lemma)</label><input id="lemma" type="text" spellcheck="false"></div>
+            <div class="field" data-field="forms"><label for="forms">All forms, comma-separated (learners' spellings that open this card)</label><input id="forms" type="text" spellcheck="false"></div>
+        </div>
+        <div class="grid-3">
+            <div class="field" data-field="pos"><label for="pos">Part of speech</label><input id="pos" type="text" placeholder="noun · verb"></div>
+            <div class="field" data-field="level"><label for="level">Level</label>
+                <select id="level"><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></div>
+            <div class="field" data-field="ipa"><label for="ipa">IPA</label><input id="ipa" type="text" placeholder="/…/"></div>
+        </div>
+        <div class="grid-2">
+            <div class="field" data-field="meaning.en"><label for="meaningEn">Meaning (simple English, without the word)</label><textarea id="meaningEn"></textarea></div>
+            <div class="field" data-field="meaning.az"><label for="meaningAz">Azerbaijani</label><textarea id="meaningAz"></textarea></div>
+        </div>
+        <div class="grid-2">
+            <div class="field" data-field="examples[0]"><label for="example0">Example 1</label><textarea id="example0"></textarea></div>
+            <div class="field" data-field="examples[1]"><label for="example1">Example 2</label><textarea id="example1"></textarea></div>
+        </div>
+        <div class="grid-2">
+            <div class="field" data-field="collocations"><label for="collocations">Word pairs (one per line, 1–4)</label><textarea id="collocations"></textarea></div>
+            <div class="field" data-field="family"><label for="family">Word family (one per line, 0–4)</label><textarea id="family"></textarea></div>
+        </div>
+        <div class="grid-2">
+            <div class="field" data-field="gap.sentence"><label for="gapSentence">Gap sentence (one ___)</label><input id="gapSentence" type="text"></div>
+            <div class="field" data-field="gap.answer"><label for="gapAnswer">Gap answer (one of the forms)</label><input id="gapAnswer" type="text"></div>
+        </div>
+        <div class="field" data-field="pair.sentence"><label for="pairSentence">Word pair sentence (one ___)</label><input id="pairSentence" type="text"></div>
+        <div class="field" data-field="pair.options">
+            <span class="cover-field__label">Options (mark the right one)</span>
+            <div class="vc-options" id="pairOptions"></div>
+        </div>
+        <div class="field" data-field="wrongMeanings">
+            <label for="wrong0">Wrong meanings (for “choose the meaning”)</label>
+            <input id="wrong0" type="text" aria-label="Wrong meaning 1">
+            <input id="wrong1" type="text" aria-label="Wrong meaning 2">
+            <input id="wrong2" type="text" aria-label="Wrong meaning 3">
+        </div>
+    </form>
+
+    <script type="module" th:src="@{/js/admin/vocabulary-edit.js}"></script>
+</main>
+</body>
+</html>

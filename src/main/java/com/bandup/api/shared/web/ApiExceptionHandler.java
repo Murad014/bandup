@@ -17,6 +17,7 @@ import com.bandup.api.shared.application.ConflictException;
 import com.bandup.api.shared.application.ForbiddenException;
 import com.bandup.api.shared.application.InvalidRequestException;
 import com.bandup.api.shared.application.NotFoundException;
+import com.bandup.api.shared.application.ServiceUnavailableException;
 import com.bandup.api.shared.application.TooManyRequestsException;
 import com.bandup.api.shared.application.UnauthenticatedException;
 import com.bandup.api.shared.domain.error.DomainException;
@@ -52,6 +53,11 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     ProblemDetail conflict(ConflictException e) {
         return ApiProblems.of(HttpStatus.CONFLICT, "Conflict", e.getMessage());
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    ProblemDetail unavailable(ServiceUnavailableException e) {
+        return ApiProblems.of(HttpStatus.SERVICE_UNAVAILABLE, "Not available", e.getMessage());
     }
 
     @ExceptionHandler(UnauthenticatedException.class)

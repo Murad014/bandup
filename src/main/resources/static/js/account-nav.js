@@ -5,7 +5,7 @@
    There is no Admin link: admins open /admin themselves (user decision).
    ========================================================================= */
 
-import { init, onChange, logout } from "./auth.js";
+import { apiFetch, currentUser, init, onChange, logout } from "./auth.js";
 
 const signIn = document.querySelector("[data-nav-signin]");
 const account = document.querySelector("[data-nav-account]");
@@ -40,7 +40,25 @@ function render(user) {
     document.querySelectorAll("[data-nav-fullname]").forEach((n) => { n.textContent = display; });
     document.querySelectorAll("[data-nav-role]").forEach((r) => { r.textContent = user ? roleOf(user) : ""; });
     if (!user) setMenu(false);
+    newWords(user);
 }
+
+/** The number of new words to learn, on the navbar's Vocabulary link (signed in only). */
+async function newWords(user) {
+    const badge = document.querySelector("[data-nav-new-words]");
+    if (!badge) return;
+    badge.hidden = true;
+    if (!user) return;
+    try {
+        const page = await apiFetch("/api/v1/vocabulary/words?size=1");
+        const fresh = page && page.counts ? page.counts.fresh : 0;
+        badge.textContent = fresh > 99 ? "99+" : String(fresh);
+        badge.hidden = !fresh;
+    } catch (e) {
+        /* no badge then */
+    }
+}
+document.addEventListener("bandup:words-changed", () => currentUser().then(newWords).catch(() => {}));
 
 function setMenu(open) {
     if (!menu || !toggle) return;
