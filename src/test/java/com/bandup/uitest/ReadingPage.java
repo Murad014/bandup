@@ -36,14 +36,18 @@ final class ReadingPage {
         return ui.driver().findElements(By.cssSelector("#questions .q")).size();
     }
 
-    /** Clicks a glossed word in the passage and returns the meaning the popover shows. */
+    /** Clicks a glossed word in the passage and returns the meaning the popover shows (not its "save word" row). */
     String meaningOf(String word) {
         WebElement w = ui.driver().findElements(By.cssSelector("#passage .w")).stream()
                 .filter(e -> e.getText().equals(word)).findFirst().orElseThrow();
         ui.show(w);
         w.click();
         ui.pause();
-        return ui.find(By.id("pop")).getText().replaceFirst("^" + word + "\\s*", "");
+        String text = ui.find(By.id("pop")).getText();
+        for (WebElement save : ui.driver().findElements(By.cssSelector("#pop .pop-save"))) {
+            text = text.replace(save.getText(), "");
+        }
+        return text.replaceFirst("^" + word + "\\s*", "").strip();
     }
 
     void chooseHelpLanguage(String language) {

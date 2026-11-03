@@ -16,11 +16,13 @@ public class NavigationAdvice {
     public static final String HOME = "home";
     public static final String READING = "reading";
     public static final String GRAMMAR = "grammar";
+    public static final String VOCABULARY = "vocabulary";
 
     @ModelAttribute("navItems")
     public List<NavItem> navItems() {
         return List.of(
                 new NavItem(READING, "Reading", "/reading", true, false),
-                new NavItem(GRAMMAR, "Grammar", "/grammar", true, false));
+                new NavItem(GRAMMAR, "Grammar", "/grammar", true, false),
+                new NavItem(VOCABULARY, "Vocabulary", "/vocabulary", true, false));
     }
 }

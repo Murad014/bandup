@@ -31,12 +31,14 @@ class AccessibilityBrowserTest extends BrowserTestBase {
     void publicPagesHaveNamedControls() throws Exception {
         HeadlessChrome.Tab tab = chrome.newTab(url("/"));
         for (String page : List.of("/", "/login", "/register", "/reading/yellowstone-wolves", "/grammar",
-                "/grammar?level=B1", "/grammar/review")) {
+                "/grammar?level=B1", "/grammar/review", "/vocabulary")) {
             tab.navigate(url(page));
             if (page.startsWith("/reading")) {
                 tab.waitFor("document.querySelectorAll('#questions .q').length === 6");
             }
-            if (page.equals("/grammar/review")) {
+            if (page.equals("/vocabulary")) {
+                tab.waitFor("!document.getElementById('vGuest').hidden");
+            } else if (page.equals("/grammar/review")) {
                 tab.waitFor("document.querySelector('.g-msg') !== null");
             } else if (page.startsWith("/grammar")) {
                 tab.waitFor(page.contains("level") ? "document.querySelector('.g-day') !== null"
@@ -62,6 +64,9 @@ class AccessibilityBrowserTest extends BrowserTestBase {
         tab.navigate(url("/admin/grammar"));
         tab.waitFor("document.querySelector('#grammarBody tr[data-id]') !== null");
         assertThat(tab.eval(UNNAMED).toString()).as("grammar list").isEqualTo("[]");
+        tab.navigate(url("/admin/vocabulary"));
+        tab.waitFor("document.getElementById('vcStatusLine').hidden");
+        assertThat(tab.eval(UNNAMED).toString()).as("vocabulary list").isEqualTo("[]");
         tab.navigate(url("/admin/grammar/a2-articles-1/edit"));
         tab.waitFor("document.querySelector('#gPreview [data-item]') !== null");
         assertThat(tab.eval(UNNAMED).toString()).as("grammar editor").isEqualTo("[]");

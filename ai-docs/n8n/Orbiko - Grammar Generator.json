@@ -1,0 +1,874 @@
+{
+  "name": "Orbiko - Grammar Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "New Orbiko Grammar Lesson",
+        "formDescription": "One lesson teaches one rule. It is written by Claude, checked, solved blind by GPT, and saved in Orbiko as a DRAFT (Admin → Grammar).",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Level",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "A2"
+                  },
+                  {
+                    "option": "B1"
+                  },
+                  {
+                    "option": "B2"
+                  },
+                  {
+                    "option": "C1"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Topic",
+              "requiredField": true,
+              "placeholder": "Present perfect vs past simple"
+            },
+            {
+              "fieldLabel": "Topic key",
+              "placeholder": "optional, e.g. present-perfect (lessons with the same key form one topic)"
+            },
+            {
+              "fieldLabel": "Rule to teach",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "e.g. Present perfect for experience and results now (ever, never, just, already) vs past simple with finished time (yesterday, in 2019, ago)"
+            },
+            {
+              "fieldLabel": "Lesson no",
+              "fieldType": "number",
+              "placeholder": "1 (2, 3 … for a deeper lesson on the same topic)"
+            },
+            {
+              "fieldLabel": "Azerbaijani help",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "no"
+                  },
+                  {
+                    "option": "yes"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Notes",
+              "fieldType": "textarea",
+              "placeholder": "optional wishes, e.g. use IELTS Writing contexts"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3ff2be4d-c6d1-4283-838d-fac0f8a3aee7",
+      "name": "On form submission",
+      "webhookId": "3a6f512b-e305-4c7b-9ba3-d82117429a91"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Build brief: turns the form into a clean brief for the AI. Stops with a clear message\n// if something is wrong (no AI call is made).\nconst f = $json;\nconst pick = (label) => String(f[label] ?? '').trim();\n\nconst LEVELS = {\n  A2: { name: 'A2 Elementary', sentences: 'short sentences (at most 12 words), everyday words, simple present/past contexts (home, work, travel, food)' },\n  B1: { name: 'B1 Intermediate', sentences: 'sentences of at most 16 words, common words, everyday and study contexts' },\n  B2: { name: 'B2 Upper-Intermediate', sentences: 'sentences of at most 22 words, some academic and IELTS-like contexts (education, environment, technology, society)' },\n  C1: { name: 'C1 Advanced', sentences: 'natural complex sentences, formal and academic register, contexts useful for IELTS Writing Task 2 and Speaking Part 3' },\n};\nconst CHECK_ITEMS = { A2: 7, B1: 7, B2: 8, C1: 8 };\n\nconst level = pick('Level').toUpperCase();\nif (!LEVELS[level]) throw new Error('Pick a level: A2, B1, B2 or C1.');\n\nconst topicLabel = pick('Topic');\nif (!topicLabel) throw new Error('Write the topic, e.g. \"Present perfect vs past simple\".');\nif (topicLabel.length > 80) throw new Error('The topic must be at most 80 characters.');\n\nconst slug = (s) => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')\n  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');\nconst topicKey = slug(pick('Topic key') || topicLabel).slice(0, 60).replace(/-+$/, '');\nif (topicKey.length < 2) throw new Error('The topic key needs at least 2 letters or digits.');\n\nconst rule = pick('Rule to teach');\nif (!rule) throw new Error('Write the one rule this lesson teaches.');\n\nconst no = Number(pick('Lesson no') || 1);\nif (!Number.isInteger(no) || no < 1 || no > 99) throw new Error('Lesson no must be a whole number from 1 to 99.');\n\nconst id = `${level.toLowerCase()}-${topicKey}-${no}`.slice(0, 80);\nconst azerbaijani = pick('Azerbaijani help').toLowerCase() === 'yes';\n\nreturn {\n  json: {\n    runId: id + '-' + Date.now(),\n    id,\n    level,\n    levelName: LEVELS[level].name,\n    language: LEVELS[level].sentences,\n    topic: { key: topicKey, label: topicLabel },\n    rule,\n    lessonNo: no,\n    notes: pick('Notes'),\n    azerbaijani,\n    practiceItems: 3,\n    checkItems: CHECK_ITEMS[level],\n    minutes: 20,\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "28859482-3e16-42dd-866e-1b4167f8ee5a",
+      "name": "Build brief"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=BRIEF:\n{{ JSON.stringify($json, null, 2) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an expert English grammar teacher and course writer for IELTS learners (many of them Azerbaijani speakers). You write ONE short grammar lesson (about 20 minutes) from the BRIEF you are given. Return ONLY one JSON object: no markdown, no text before or after it.\n\n### WHAT THE LESSON DOES\n- It teaches exactly ONE rule: brief.rule, at level brief.levelName. Use brief.language for every sentence and example.\n- Flow: a goal, 3-6 short learn cards, one worked example that thinks aloud, brief.practiceItems practice items, brief.checkItems check items (the learner must get every check item right; wrong ones come back).\n- Teach the reasoning: the \"How to decide\" card gives 2-4 numbered decision steps; the worked example applies exactly those steps.\n- If brief.lessonNo > 1, the learner already did lesson 1 on this topic: go one step deeper (harder cases, exceptions, mixing with related forms), do not repeat lesson 1.\n- brief.notes (if any) are extra wishes from the teacher; follow them unless they break a rule below.\n- All examples and items are original, natural English, correct in British and American English. No names of real living people, no brands, no politics.\n\n### JSON SHAPE (field names exactly like this)\n{\n  \"id\": brief.id,\n  \"level\": brief.level,\n  \"topic\": { \"key\": brief.topic.key, \"label\": brief.topic.label },\n  \"title\": \"...\",                        // <= 120 chars, names the rule, e.g. \"Present Perfect vs Past Simple\"\n  \"goal\": \"By the end, you'll ...\",      // <= 300 chars, one sentence\n  \"minutes\": brief.minutes,\n  \"learn\": [                             // 3-6 cards (format allows 3-8)\n    { \"icon\": \"🌉\", \"label\": \"The idea\", \"heading\": \"...\", \"body\": \"...\", \"examples\": [ { \"ok\": true, \"text\": \"...\" } ] },\n    { \"icon\": \"🧭\", \"label\": \"How to decide\", \"heading\": \"...\", \"steps\": [ \"1️⃣ ...\", \"2️⃣ ...\" ], \"tip\": \"...\" },\n    { \"icon\": \"⚠️\", \"label\": \"Common mistake\", \"heading\": \"...\", \"examples\": [ { \"ok\": false, \"text\": \"...\" }, { \"ok\": true, \"text\": \"...\" } ] }\n  ],\n  \"worked\": { \"question\": \"...\", \"steps\": [ \"🔍 ...\", \"✅ ...\" ], \"answer\": \"...\" },\n  \"practice\": [ items with ids p1, p2, ... ],\n  \"check\":    [ items with ids c1, c2, ... ]\n}\nLearn card fields: \"icon\" (exactly one emoji), \"label\" (<= 80 chars), \"heading\" (<= 160), then at least one of \"body\" (<= 1000), \"steps\" (1-5, each <= 300), \"examples\" (1-4 of {\"ok\": true/false, \"text\"}, each <= 300); optional \"tip\" (<= 300). Leave out fields you don't use (no empty strings, no nulls).\n\"worked\": \"question\" (<= 300), \"steps\" 2-5 (each <= 300), \"answer\" plain text.\n\n### ITEMS\nEvery item has \"id\", \"type\", \"prompt\" (<= 300) and \"explanation\" (<= 600: why the right answer is right, using the rule's words).\n- \"choose\": \"prompt\" with exactly one ___ gap (or a question), \"options\" 2-4 plain texts (different from each other), \"answer\" = 0-based index of the right option, \"whys\" = one text per option: for each WRONG option name the learner's likely mistake (\"“went” is past simple, but ‘since’ needs present perfect\"); for the right option start with \"✓ \".\n- \"type\": \"prompt\" (the instruction, e.g. \"Type the correct form of “win”:\"), \"sentence\" with exactly one ___ gap, \"accept\" = 1-5 plain answers of at most 4 words each (include every correct variant: contractions and full forms, e.g. \"haven't seen\", \"have not seen\"), optional \"show\" = the answer to show.\n- \"fix\": \"prompt\" (\"This sentence is wrong. Type the correct …:\"), \"wrong\" = a plain sentence with ONE typical learner mistake, \"accept\" = 1-5 corrections (the corrected word(s) only, or the whole corrected sentence — say which in the prompt), optional \"show\". The wrong sentence itself must not be accepted.\n- \"build\": \"prompt\" (\"Build the sentence:\"), \"tiles\" = 3-12 single words (punctuation attached to the word, e.g. \"2019?\"), \"answer\" = the sentence made of exactly those words, each used once. Put the tiles in a MIXED order (never already in answer order).\n\n### RULES FOR GOOD ITEMS\n- Exactly ONE answer is correct. For \"type\" and \"fix\", every other correct answer a learner could type must be in \"accept\"; if too many answers are possible, rewrite the sentence so it isn't.\n- The context must decide the answer (time words, situation, meaning), not guessing.\n- Practice: mostly \"choose\" (recognition), one production item. Check: test PRODUCTION: at least 2 \"choose\", at least 1 \"type\", 1 \"fix\" and 1 \"build\"; never two items with the same sentence.\n- Spread the cases: the main rule, the \"How to decide\" signals, the common mistake.\n- Plain values (\"options\", \"answer\", \"accept\", \"show\", \"tiles\", \"wrong\") are plain text: no HTML.\n- Texts (title, goal, labels, headings, body, steps, tip, examples, prompts, whys, explanations, worked question/steps) may use only <b>, <i> and <br>. Use <b> for the key words of the rule. No other HTML, no markdown.\n- Use “curly quotes” around quoted words in texts.\n\n### LANGUAGES\nIf brief.azerbaijani is false, every text is a plain English string.\nIf brief.azerbaijani is true, write these texts as {\"en\": \"...\", \"az\": \"...\"} with a natural Azerbaijani translation: goal, every learn card's label, heading, body, steps and tip, and every item's explanation. Keep English examples, prompts, options, sentences and answers in English only (plain strings). The \"az\" text keeps the English example words in English.\n\n### IF THE BRIEF HAS \"fix\"\nYour previous answer had problems (fix.errors). Return the whole corrected lesson, fixing every listed problem and keeping everything else.\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        448,
+        0
+      ],
+      "id": "12cbab35-2517-4962-ab72-441a8bd6922c",
+      "name": "Claude - Write lesson"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-opus-5.5",
+        "options": {
+          "maxTokens": 16000,
+          "temperature": 0.7,
+          "timeout": 360000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        528,
+        192
+      ],
+      "id": "a1ac3927-8f37-485c-bc74-f42ee8809229",
+      "name": "OpenRouter Claude (write)",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dpn5HvakafrXc0hQ",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Code validators: checks Claude's lesson against Orbiko's lesson format (the same rules the\n// server applies, lesson-format.md) and the brief. Output: valid, errors (sent back to Claude),\n// warnings (FYI), the parsed lesson.\nconst brief = $('Build brief').first().json;\nconst raw = String($json.text ?? $json.output ?? '');\nconst errors = [];\nconst warnings = [];\n\nconst normalise = (s) => String(s ?? '').replace(/[’‘]/g, \"'\").trim().replace(/\\s+/g, ' ')\n  .replace(/[.!?,;\\s]+$/, '').toLowerCase();\nconst words = (s) => { const n = normalise(s); return n ? n.split(' ') : []; };\nconst bag = (list) => list.slice().sort().join('\\u0001');\nconst isText = (v) => typeof v === 'string' || (v && typeof v === 'object' && !Array.isArray(v));\n\n// 1. Parse the JSON (also accepts it wrapped in ```json fences)\nlet lesson;\ntry {\n  lesson = JSON.parse(raw.trim().replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/, ''));\n  if (!lesson || typeof lesson !== 'object' || Array.isArray(lesson)) throw new Error('not one JSON object');\n} catch (e) {\n  return { json: { valid: false, errors: ['The output is not one valid JSON object: ' + e.message], warnings, lesson: null, brief, raw } };\n}\n\n// A text: a string (English) or {en, az}. Only <b>, <i>, <br> allowed.\nfunction text(value, field, max, required = true) {\n  if (value === undefined || value === null) {\n    if (required) errors.push(`${field}: write the English text.`);\n    return;\n  }\n  if (!isText(value)) { errors.push(`${field}: must be a string or {\"en\": …, \"az\": …}.`); return; }\n  const values = typeof value === 'string' ? { en: value } : value;\n  if (!String(values.en ?? '').trim()) errors.push(`${field}: write the English text (en).`);\n  for (const [lang, v] of Object.entries(values)) {\n    if (typeof v !== 'string') { errors.push(`${field}.${lang}: must be a string.`); continue; }\n    if (lang !== 'en' && !v.trim()) errors.push(`${field}.${lang}: this text is empty.`);\n    if (v.length > max) errors.push(`${field}${lang === 'en' ? '' : '.' + lang}: use at most ${max} characters (now ${v.length}).`);\n    const tags = (v.match(/<\\/?([a-z0-9]+)[^>]*>/gi) || []).map((t) => t.replace(/[<\\/>]/g, '').split(/\\s/)[0].toLowerCase());\n    const bad = tags.filter((t) => !['b', 'i', 'br'].includes(t));\n    if (bad.length) errors.push(`${field}: only <b>, <i> and <br> are allowed (found <${bad[0]}>).`);\n    if (/\\*\\*/.test(v)) errors.push(`${field}: no markdown; use <b> for bold.`);\n  }\n  if (brief.azerbaijani && typeof value === 'object' && value.az === undefined) {\n    warnings.push(`${field}: no Azerbaijani text.`);\n  }\n}\nfunction plain(value, field) {\n  if (typeof value !== 'string' || !value.trim()) { errors.push(`${field}: give a plain text.`); return false; }\n  if (/<[^>]+>/.test(value)) errors.push(`${field}: plain text only, no HTML.`);\n  return true;\n}\nfunction count(list, min, max, field, what) {\n  const n = Array.isArray(list) ? list.length : 0;\n  if (!Array.isArray(list) && list !== undefined) errors.push(`${field}: must be a list.`);\n  if (n < min || n > max) errors.push(`${field}: use ${min} to ${max} ${what} (now ${n}).`);\n  return Array.isArray(list) ? list : [];\n}\n\n// 2. Lesson fields and the brief\nif (lesson.id !== brief.id) errors.push(`id: must be \"${brief.id}\".`);\nif (lesson.level !== brief.level) errors.push(`level: must be \"${brief.level}\".`);\nif (!lesson.topic || lesson.topic.key !== brief.topic.key) errors.push(`topic.key: must be \"${brief.topic.key}\".`);\ntext(lesson.topic && lesson.topic.label, 'topic.label', 80);\ntext(lesson.title, 'title', 120);\ntext(lesson.goal, 'goal', 300);\nif (lesson.minutes !== undefined && !(Number.isInteger(lesson.minutes) && lesson.minutes >= 5 && lesson.minutes <= 40)) {\n  errors.push('minutes: a lesson takes 5 to 40 minutes.');\n}\nif (lesson.position !== undefined && lesson.position !== null) errors.push('position: leave it out (the admin decides on publish).');\n\n// 3. Learn cards\ncount(lesson.learn, 3, 8, 'learn', 'learn cards').forEach((card, i) => {\n  const f = `learn[${i}]`;\n  if (!card || typeof card !== 'object') { errors.push(`${f}: must be an object.`); return; }\n  if (typeof card.icon !== 'string' || !card.icon.trim() || card.icon.length > 8) errors.push(`${f}.icon: give one emoji.`);\n  text(card.label, f + '.label', 80);\n  text(card.heading, f + '.heading', 160);\n  if (card.body !== undefined) text(card.body, f + '.body', 1000);\n  if (card.tip !== undefined) text(card.tip, f + '.tip', 300);\n  const steps = card.steps === undefined ? [] : count(card.steps, 1, 5, f + '.steps', 'steps');\n  steps.forEach((s, k) => text(s, `${f}.steps[${k}]`, 300));\n  const examples = card.examples === undefined ? [] : count(card.examples, 1, 4, f + '.examples', 'examples');\n  examples.forEach((e, k) => {\n    if (!e || typeof e.ok !== 'boolean') errors.push(`${f}.examples[${k}].ok: must be true or false.`);\n    text(e && e.text, `${f}.examples[${k}].text`, 300);\n  });\n  if (card.body === undefined && !steps.length && !examples.length) errors.push(`${f}: a learn card needs a body, steps or examples.`);\n});\n\n// 4. Worked example\nconst w = lesson.worked;\nif (!w || typeof w !== 'object') errors.push('worked: give the worked example.');\nelse {\n  text(w.question, 'worked.question', 300);\n  count(w.steps, 2, 5, 'worked.steps', 'steps').forEach((s, k) => text(s, `worked.steps[${k}]`, 300));\n  plain(w.answer, 'worked.answer');\n}\n\n// 5. Items\nconst ids = new Set();\nfunction items(list, name, prefix, min, max) {\n  return count(list, min, max, name, name === 'check' ? 'check items' : 'practice items').map((item, i) => {\n    const f = `${name}[${i}]`;\n    if (!item || typeof item !== 'object') { errors.push(`${f}: must be an object.`); return null; }\n    if (!new RegExp('^' + prefix + '[1-9][0-9]{0,2}$').test(String(item.id))) errors.push(`${f}.id: use ids like ${prefix}1, ${prefix}2, …`);\n    else if (ids.has(item.id)) errors.push(`${f}.id: the id ${item.id} is used twice.`);\n    ids.add(item.id);\n    text(item.prompt, f + '.prompt', 300);\n    text(item.explanation, f + '.explanation', 600);\n    if (item.type === 'choose') {\n      const options = count(item.options, 2, 4, f + '.options', 'options');\n      options.forEach((o, k) => plain(o, `${f}.options[${k}]`));\n      if (new Set(options.map((o) => String(o).trim().toLowerCase())).size !== options.length) errors.push(`${f}.options: two options are the same.`);\n      if (!Number.isInteger(item.answer) || item.answer < 0 || item.answer >= options.length) errors.push(`${f}.answer: the index of the right option (0 = first).`);\n      if (item.whys === undefined) warnings.push(`${f}: no whys.`);\n      else {\n        if (!Array.isArray(item.whys) || item.whys.length !== options.length) errors.push(`${f}.whys: give one why per option.`);\n        else item.whys.forEach((why, k) => text(why, `${f}.whys[${k}]`, 300));\n      }\n    } else if (item.type === 'type' || item.type === 'fix') {\n      if (item.type === 'type') {\n        if (typeof item.sentence !== 'string' || (item.sentence.match(/___/g) || []).length !== 1) errors.push(`${f}.sentence: needs exactly one ___ gap.`);\n        else if (/<[^>]+>/.test(item.sentence)) errors.push(`${f}.sentence: plain text only, no HTML.`);\n      } else {\n        plain(item.wrong, f + '.wrong');\n      }\n      const accept = count(item.accept, 1, 5, f + '.accept', 'accepted answers');\n      accept.forEach((a, k) => plain(a, `${f}.accept[${k}]`));\n      const norm = accept.map(normalise);\n      if (new Set(norm).size !== norm.length) errors.push(`${f}.accept: two accepted answers are the same (ignoring case and end punctuation).`);\n      if (item.type === 'type' && norm.some((a) => a.split(' ').length > 4)) errors.push(`${f}.accept: an accepted answer has more than 4 words.`);\n      if (item.type === 'fix' && item.wrong && norm.includes(normalise(item.wrong))) errors.push(`${f}.accept: the wrong sentence can't be an accepted answer.`);\n      if (item.show !== undefined && item.show !== null && !plain(item.show, f + '.show')) { /* reported */ }\n    } else if (item.type === 'build') {\n      const tiles = count(item.tiles, 2, 12, f + '.tiles', 'tiles');\n      tiles.forEach((t, k) => plain(t, `${f}.tiles[${k}]`));\n      if (plain(item.answer, f + '.answer')) {\n        if (bag(words(tiles.join(' '))) !== bag(words(item.answer))) errors.push(`${f}.answer: must use exactly the tiles' words, each once.`);\n        else if (normalise(tiles.join(' ')) === normalise(item.answer)) errors.push(`${f}.tiles: the tiles are already in answer order; mix them.`);\n      }\n    } else {\n      errors.push(`${f}.type: must be choose, type, fix or build.`);\n    }\n    return item;\n  }).filter(Boolean);\n}\nitems(lesson.practice, 'practice', 'p', 2, 6);\nconst check = items(lesson.check, 'check', 'c', 5, 15);\n\n// 6. A good mix in the check (the server needs 2 types; the brief asks for production)\nconst types = check.map((c) => c.type);\nif (new Set(types).size < 2) errors.push('check: use at least two different item types.');\nfor (const [type, min] of [['choose', 2], ['type', 1], ['fix', 1], ['build', 1]]) {\n  if (types.filter((t) => t === type).length < min) errors.push(`check: use at least ${min} \"${type}\" item${min > 1 ? 's' : ''}.`);\n}\nif (check.length !== brief.checkItems) warnings.push(`check: ${check.length} items (asked for ${brief.checkItems}).`);\nconst sentences = check.map((c) => normalise(c.sentence || c.wrong || c.answer && c.type === 'build' && c.answer || '')).filter(Boolean);\nif (new Set(sentences).size !== sentences.length) errors.push('check: two items use the same sentence.');\n\nreturn { json: { valid: errors.length === 0, errors, warnings, lesson, brief, raw } };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "ba3833fc-ea0a-4c3c-90b5-e9bb4ac7ac50",
+      "name": "Code validators"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "3dc42dbc-d6c3-46f5-b000-5bdaa2df1b62",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "9ef7fbca-bda3-4f60-b11f-3a24ec67f98b",
+      "name": "Valid?"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Prepare retry: sends the brief back to Claude with the problems found. After 2 retries it stops.\nconst MAX_RETRIES = 2;\nconst v = $json;\nconst attempt = $runIndex + 1;\n\nif (attempt > MAX_RETRIES) {\n  throw new Error(`Gave up after ${MAX_RETRIES} retries: ` + v.errors.join(' | '));\n}\n\nreturn {\n  json: {\n    ...v.brief,\n    retries: attempt,\n    fix: { errors: v.errors, previous: v.raw },\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        224
+      ],
+      "id": "9580999d-ff12-4a72-b190-3235d8f29487",
+      "name": "Prepare retry"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Prepare solve: the lesson's items WITHOUT answers, whys or explanations, for a blind solve.\nconst lesson = $json.lesson;\nconst en = (t) => (t && typeof t === 'object' ? t.en : t) ?? '';\nconst strip = (s) => String(s).replace(/<br\\s*\\/?>/gi, ' ').replace(/<[^>]+>/g, '');\n\nconst sheet = [...lesson.practice, ...lesson.check].map((item) => {\n  const q = { id: item.id, type: item.type, prompt: strip(en(item.prompt)) };\n  if (item.type === 'choose') q.options = item.options;\n  if (item.type === 'type') q.sentence = item.sentence;\n  if (item.type === 'fix') q.wrong = item.wrong;\n  if (item.type === 'build') q.tiles = item.tiles;\n  return q;\n});\n\nreturn { json: { lesson: $json.lesson, brief: $json.brief, sheetJson: JSON.stringify(sheet, null, 2) } };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -96
+      ],
+      "id": "91f04e85-4a1b-4526-951b-8c14b46c703e",
+      "name": "Prepare solve"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=LEVEL: {{ $json.brief.levelName }}\nRULE TAUGHT: {{ $json.brief.rule }}\n\nITEMS:\n{{ $json.sheetJson }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a careful English teacher checking a grammar exercise. Answer every item on your own, then judge it. Return ONLY one JSON object, no other text:\n{\"answers\": [{\"id\": \"c1\", \"answer\": \"...\", \"otherCorrect\": [], \"problem\": \"\"}]}\n- \"answer\": your answer. choose → the exact text of the right option. type → only the word(s) for the ___ gap. fix → what the prompt asks for (the corrected word(s) or the whole corrected sentence). build → the full sentence made of all the tiles.\n- \"otherCorrect\": every OTHER answer that is also grammatically correct and natural here (other options, other forms, contractions or full forms). Empty list if none.\n- \"problem\": empty, or one sentence if the item is unclear, unnatural, has a typo, or the tiles can make more than one correct sentence.\nAnswer every item, in the same order.\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1472,
+        -96
+      ],
+      "id": "4403b2fb-f5d1-4d63-b0c1-c4137ac1bba0",
+      "name": "GPT - Blind solve"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5",
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.2,
+          "timeout": 360000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        96
+      ],
+      "id": "33875eac-8322-43a8-aebe-dea90fa85a1d",
+      "name": "OpenRouter GPT (solve)",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dpn5HvakafrXc0hQ",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Compare: the blind solver's answers against the lesson's keys. Flags an item when the solver\n// got another answer, found a second correct answer that isn't accepted, or saw a problem.\nconst v = $('Prepare solve').first().json;\nconst lesson = v.lesson;\nconst raw = String($json.text ?? $json.output ?? '');\nconst normalise = (s) => String(s ?? '').replace(/[’‘]/g, \"'\").trim().replace(/\\s+/g, ' ')\n  .replace(/[.!?,;\\s]+$/, '').toLowerCase();\n\nlet solved;\ntry {\n  solved = JSON.parse(raw.trim().replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/, '')).answers;\n  if (!Array.isArray(solved)) throw new Error('no \"answers\" list');\n} catch (e) {\n  throw new Error('The blind solver did not return valid JSON: ' + e.message + '. Run the workflow again.');\n}\nconst byId = new Map(solved.map((a) => [a.id, a]));\n\nconst flagged = [];\nfor (const item of [...lesson.practice, ...lesson.check]) {\n  const a = byId.get(item.id);\n  const problems = [];\n  let key;\n  let ok;\n  if (item.type === 'choose') {\n    key = [item.options[item.answer]];\n    ok = (x) => normalise(x) === normalise(item.options[item.answer]);\n  } else if (item.type === 'build') {\n    key = [item.answer];\n    ok = (x) => normalise(x) === normalise(item.answer);\n  } else {\n    key = item.accept;\n    ok = (x) => item.accept.some((acc) => normalise(acc) === normalise(x));\n  }\n  if (!a) problems.push('The solver skipped this item.');\n  else {\n    if (!ok(a.answer)) problems.push(`A careful solver answered “${a.answer}”.`);\n    const others = (Array.isArray(a.otherCorrect) ? a.otherCorrect : []).filter((x) => !ok(x));\n    if (others.length) problems.push(`The solver says these are also correct: ${others.map((x) => '“' + x + '”').join(', ')}.`);\n    if (a.problem && String(a.problem).trim()) problems.push('Solver note: ' + String(a.problem).trim());\n  }\n  if (problems.length) flagged.push({ id: item.id, type: item.type, key, problems });\n}\n\nreturn { json: { ok: flagged.length === 0, flagged, lesson, brief: v.brief } };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        -96
+      ],
+      "id": "97402377-a5be-4dac-a205-a8b541fee6dc",
+      "name": "Compare"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "4c0a8903-adbf-4f0d-8359-138b5e7cfd8d",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        2048,
+        -96
+      ],
+      "id": "b3ae1ea1-39d0-4701-8d8b-4c8cc15006ab",
+      "name": "All correct?"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Prepare fix: sends only the flagged items back to Claude. After 2 fixes it stops the flow.\nconst MAX_FIXES = 2;\nconst v = $json;\nconst attempt = $runIndex + 1;\n\nconst list = v.flagged.map((f) =>\n  `${f.id} (${f.type})\\n  Your key: ${f.key.join(' / ')}\\n  Problem: ${f.problems.join(' ')}`).join('\\n\\n');\n\nif (attempt > MAX_FIXES) {\n  throw new Error(`Still flagged after ${MAX_FIXES} fixes: ` + list.replace(/\\n\\s*/g, ' ') + ' || Run the workflow again or fix it in Admin → Grammar.');\n}\n\nreturn {\n  json: {\n    brief: v.brief,\n    lessonJson: JSON.stringify(v.lesson, null, 2),\n    flaggedText: list,\n    fixAttempt: attempt,\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        160
+      ],
+      "id": "6b1eba04-e253-4942-9a2c-3096842ec433",
+      "name": "Prepare fix"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=BRIEF:\n{{ JSON.stringify($json.brief, null, 2) }}\n\nYOUR LESSON:\n{{ $json.lessonJson }}\n\nITEMS FLAGGED BY THE CHECKER:\n{{ $json.flaggedText }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are the English grammar teacher who wrote the lesson below. An independent checker solved every item blind and flagged some of them: it gave another answer, found a second correct answer that your key doesn't accept, or saw a problem.\nFor EACH flagged item decide who is right, then:\n- If the checker's other answer is also correct: for \"type\"/\"fix\" add it to \"accept\" (at most 5 values) when it is a fair variant, or rewrite the sentence so only one answer fits; for \"choose\" change the options or the sentence so exactly one option is right; for \"build\" change the tiles or answer so only one sentence can be made.\n- If your key was wrong, correct it.\n- If the checker misunderstood because the item is unclear, make the context decide the answer (a time word, a clearer situation).\n- Update the explanation and the whys to match.\nExactly one answer must be right afterwards. Do not change anything that was not flagged, unless your fix requires it.\nKeep all the rules: the same JSON shape and ids, the same item counts and types, plain values without HTML, texts with only <b>, <i>, <br>, build tiles in mixed order using exactly the answer's words.\nReturn ONLY the full corrected lesson as one JSON object, no other text.\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2496,
+        160
+      ],
+      "id": "88745287-ba1d-44cf-bf1b-6bef61301e79",
+      "name": "Claude - Fix flagged items"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-opus-5.5",
+        "options": {
+          "maxTokens": 16000,
+          "temperature": 0.4,
+          "timeout": 360000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        352
+      ],
+      "id": "2c27e05f-8b4e-4097-8a8b-3daddbe91050",
+      "name": "OpenRouter Claude (fix)",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dpn5HvakafrXc0hQ",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Build Orbiko JSON: the checked lesson as the body for POST /api/v1/admin/grammar/lessons.\n// It arrives in Admin → Grammar as a DRAFT; the admin publishes it.\nconst lesson = { ...$json.lesson };\ndelete lesson.position;\nif (!lesson.minutes) lesson.minutes = $json.brief.minutes;\nreturn { json: { lesson, brief: $json.brief } };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        -192
+      ],
+      "id": "70467c06-b858-4b01-8945-002900a66803",
+      "name": "Build Orbiko JSON"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6921166f-b8f3-4ac0-8098-5c9be9602064",
+              "name": "baseUrl",
+              "value": "http://host.docker.internal:8080",
+              "type": "string"
+            },
+            {
+              "id": "31eec543-cbf1-4fc2-b3da-1edb014de281",
+              "name": "email",
+              "value": "admin@example.com",
+              "type": "string"
+            },
+            {
+              "id": "1e4d0de2-efe1-4e17-8cfd-07762bae52f9",
+              "name": "password",
+              "value": "CHANGE-ME",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2496,
+        -192
+      ],
+      "id": "1235ec1f-75af-4e7f-b048-c369ae01169a",
+      "name": "Orbiko settings"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.baseUrl }}/api/v1/auth/login",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ email: $json.email, password: $json.password }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2720,
+        -192
+      ],
+      "id": "f44a9f25-561b-41eb-a3b1-2fb6a7734c00",
+      "name": "Orbiko - Login"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Orbiko settings').first().json.baseUrl }}/api/v1/admin/grammar/lessons",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Build Orbiko JSON').first().json.lesson) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2944,
+        -192
+      ],
+      "id": "577863ad-92d3-4265-a462-330926032f36",
+      "name": "Orbiko - Create draft"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "335a8ed8-bda3-4163-a8d3-ff1ad26bc682",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 201,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        3168,
+        -192
+      ],
+      "id": "ae7a6110-0b2c-43a9-b661-e14c1bd98e15",
+      "name": "Created?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0ee34290-645f-487b-bd49-b8ab9c1f0627",
+              "name": "result",
+              "value": "Draft created. Open Orbiko → Admin → Grammar to check and publish it.",
+              "type": "string"
+            },
+            {
+              "id": "1cd1c197-c874-47a4-aa8a-a7a6317d5a6f",
+              "name": "id",
+              "value": "={{ $json.body.id }}",
+              "type": "string"
+            },
+            {
+              "id": "e0538d14-eb71-471e-9798-00eb62bf778b",
+              "name": "level",
+              "value": "={{ $json.body.level }}",
+              "type": "string"
+            },
+            {
+              "id": "65bfe77d-a8fc-4d5b-9820-6ff5d5f1d860",
+              "name": "title",
+              "value": "={{ $json.body.title.en }}",
+              "type": "string"
+            },
+            {
+              "id": "43645e46-f044-4aca-90a8-d891d1b1dd57",
+              "name": "status",
+              "value": "={{ $json.body.status }}",
+              "type": "string"
+            },
+            {
+              "id": "ea9854b6-f7f3-4e66-ac8c-d06dadb713f0",
+              "name": "checkItems",
+              "value": "={{ $json.body.check.length }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3392,
+        -288
+      ],
+      "id": "e7d83e74-e432-4bc2-a8e8-481dfc33929b",
+      "name": "Done"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Report Orbiko error: stops the flow with Orbiko's answer (every problem with its JSON path).\nconst r = $json;\nconst body = r.body || {};\nconst details = Array.isArray(body.errors) && body.errors.length\n  ? body.errors.map((e) => `${e.field}: ${e.message}`).join(' | ')\n  : (body.detail || JSON.stringify(body).slice(0, 500));\nconst hint = r.statusCode === 409 ? ' (a lesson with this id exists: use another \"Lesson no\")'\n  : r.statusCode === 401 || r.statusCode === 403 ? ' (check email/password in \"Orbiko settings\")' : '';\nthrow new Error(`Orbiko answered ${r.statusCode}: ${details}${hint}`);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3392,
+        -96
+      ],
+      "id": "dba86659-513c-42f8-a73f-ac267e9e92a8",
+      "name": "Report Orbiko error"
+    },
+    {
+      "parameters": {
+        "content": "## Orbiko - Grammar Generator\nForm → **Claude writes** one lesson (lesson-format.md) → **code checks** the format (the server's rules; up to 2 retries) → **GPT solves it blind** → flagged items go back to **Claude** (up to 2 fixes) → saved in Orbiko as a **DRAFT**.\nThe admin checks the preview in **Admin → Grammar** and publishes it.",
+        "width": 640,
+        "height": 260
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -360
+      ],
+      "id": "db60275d-199d-4da1-a87b-127af5b926db",
+      "name": "Note how"
+    },
+    {
+      "parameters": {
+        "content": "## Orbiko settings\nSet **baseUrl**, **email** and **password** (an ADMIN or AUTHOR account) in *Orbiko settings*.\n- Local (n8n in Docker): `http://host.docker.internal:8080`\n- Production: `https://your-domain`\nThe password is stored in this workflow: don't share the exported file.",
+        "width": 520,
+        "height": 300,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        -560
+      ],
+      "id": "d72140c8-b94d-48b9-949a-b23770ae4433",
+      "name": "Note settings"
+    },
+    {
+      "parameters": {
+        "content": "## Models\nClaude writes and fixes (`anthropic/claude-opus-5.5`, temperature 0.7 / 0.4). GPT solves blind (`openai/gpt-5`, 0.2).\nAll three use the **OpenRouter account** credential; pick another model in each node if you like.",
+        "width": 520,
+        "height": 260
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        -420
+      ],
+      "id": "65099baa-151d-49b2-a8ef-d77f77a920fe",
+      "name": "Note models"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Build brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build brief": {
+      "main": [
+        [
+          {
+            "node": "Claude - Write lesson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Claude (write)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Claude - Write lesson",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - Write lesson": {
+      "main": [
+        [
+          {
+            "node": "Code validators",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code validators": {
+      "main": [
+        [
+          {
+            "node": "Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid?": {
+      "main": [
+        [
+          {
+            "node": "Prepare solve",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare retry": {
+      "main": [
+        [
+          {
+            "node": "Claude - Write lesson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare solve": {
+      "main": [
+        [
+          {
+            "node": "GPT - Blind solve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter GPT (solve)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "GPT - Blind solve",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT - Blind solve": {
+      "main": [
+        [
+          {
+            "node": "Compare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare": {
+      "main": [
+        [
+          {
+            "node": "All correct?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All correct?": {
+      "main": [
+        [
+          {
+            "node": "Build Orbiko JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare fix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare fix": {
+      "main": [
+        [
+          {
+            "node": "Claude - Fix flagged items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Claude (fix)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Claude - Fix flagged items",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - Fix flagged items": {
+      "main": [
+        [
+          {
+            "node": "Code validators",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Orbiko JSON": {
+      "main": [
+        [
+          {
+            "node": "Orbiko settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orbiko settings": {
+      "main": [
+        [
+          {
+            "node": "Orbiko - Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orbiko - Login": {
+      "main": [
+        [
+          {
+            "node": "Orbiko - Create draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orbiko - Create draft": {
+      "main": [
+        [
+          {
+            "node": "Created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Created?": {
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report Orbiko error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

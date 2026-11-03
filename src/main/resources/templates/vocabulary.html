@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>My words · Orbiko</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/vocabulary.css}">
+</head>
+<body>
+<!--
+  My words (vocabulary requirement 4). vocabulary/words.js fills it from
+  /api/v1/vocabulary/words; words being prepared by the AI are polled.
+-->
+<main class="wrap vocab" id="vocabRoot">
+    <p class="v-status" id="vStatus" role="status">Loading your words…</p>
+
+    <section class="v-card v-guest" id="vGuest" hidden>
+        <div class="v-guest__icon" aria-hidden="true">📚</div>
+        <h1>Build your own word list</h1>
+        <p>Save words you don't know from any passage, learn them 5 at a time, and review them until they stick.</p>
+        <a class="btn btn--primary" id="vSignIn" href="/login?next=%2Fvocabulary">Sign in to start</a>
+    </section>
+
+    <section id="vPage" hidden>
+        <div class="v-head">
+            <div>
+                <h1>My words</h1>
+                <p class="v-sub">Words you saved from passages or typed yourself. Learn 5 at a time, then review them until they stick.</p>
+            </div>
+        </div>
+
+        <div class="v-stats">
+            <div class="v-card v-stat"><b id="vAll">0</b><small>words</small></div>
+            <div class="v-card v-stat v-stat--new"><b id="vNew">0</b><small>new — not learned</small></div>
+            <div class="v-card v-stat v-stat--learning"><b id="vLearning">0</b><small>learning</small></div>
+            <div class="v-card v-stat v-stat--mastered"><b id="vMastered">0</b><small>mastered</small></div>
+        </div>
+
+        <div class="v-todo">
+            <div class="v-card v-todo__learn">
+                <span class="v-kick">Learn</span>
+                <h2 id="vLearnTitle"></h2>
+                <p id="vLearnText"></p>
+                <a class="btn btn--primary" id="vLearnGo" href="/vocabulary/learn" hidden>Start learning →</a>
+            </div>
+            <div class="v-card v-todo__review">
+                <span class="v-kick v-kick--sun">Daily review</span>
+                <h2 id="vReviewTitle"></h2>
+                <p id="vReviewText"></p>
+                <a class="btn" id="vReviewGo" href="/vocabulary/review" hidden>Review now</a>
+            </div>
+        </div>
+
+        <form class="v-add" id="vAdd" autocomplete="off">
+            <input class="v-input" id="vAddInput" maxlength="40" placeholder="Add a word yourself, e.g. “sustainable”"
+                   aria-label="Add a word" spellcheck="false" autocapitalize="none">
+            <button class="btn" type="submit" id="vAddBtn">＋ Add</button>
+        </form>
+        <p class="v-msg" id="vAddMsg" role="status" hidden></p>
+
+        <div class="v-tools">
+            <div class="v-tabs" id="vTabs" role="group" aria-label="Show words">
+                <button type="button" data-state="all" class="is-on" aria-pressed="true">All</button>
+                <button type="button" data-state="new" aria-pressed="false">New</button>
+                <button type="button" data-state="learning" aria-pressed="false">Learning</button>
+                <button type="button" data-state="mastered" aria-pressed="false">Mastered</button>
+            </div>
+            <input class="v-input v-search" id="vSearch" type="search" placeholder="Search my words…" aria-label="Search my words">
+        </div>
+
+        <div class="v-list" id="vList"></div>
+        <p class="v-empty" id="vEmpty" hidden></p>
+        <div class="v-more"><button type="button" class="btn" id="vMore" hidden>Show more words</button></div>
+    </section>
+
+    <script type="module" th:src="@{/js/vocabulary/words.js}"></script>
+</main>
+</body>
+</html>

@@ -179,6 +179,27 @@ mark { background: var(--mark); color: var(--mark-fg); border-radius: 3px; curso
 }
 #pop b { display: block; font-size: .75rem; opacity: .7; font-weight: 500; }
 
+/* Saving words to My words (vocabulary requirement 1). */
+#saveWordBtn {
+    position: absolute; z-index: 30; background: var(--accent); color: var(--accent-contrast); border: 0;
+    padding: 6px 12px; font: 700 .85rem var(--ui); border-radius: 6px; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+}
+#pop .pop-save { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+#pop .pop-save button, #pop .pop-save a {
+    border: 0; border-radius: 6px; padding: 5px 10px; font: 700 .8rem var(--ui); cursor: pointer; text-decoration: none;
+    background: var(--accent); color: var(--accent-contrast);
+}
+#pop .pop-save .pop-saved { font: 700 .8rem var(--ui); color: var(--teal); }
+#pop .pop-save button.pop-remove { background: transparent; color: var(--paper); opacity: .75; text-decoration: underline; padding: 5px 2px; }
+#pop .pop-save small { font-size: .75rem; opacity: .8; }
+.w.is-saved, .v-saved { background: var(--teal-soft); border-bottom: 2px solid var(--teal); border-radius: 3px; }
+.pwords { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.pwords h3 { margin: 0 0 4px; font: 800 .95rem var(--display); }
+.pwords p { margin: 0 0 10px; color: var(--muted); font-size: .85rem; }
+.pwords__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.pwords__chips span { background: var(--teal-soft); color: var(--teal); font-weight: 800; border-radius: var(--radius-pill); padding: 3px 10px; font-size: .85rem; }
+
 /* ---- Vocabulary word list -------------------------------------------- */
 details.vocab { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
 details.vocab summary { cursor: pointer; font-weight: 600; }

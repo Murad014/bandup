@@ -114,6 +114,8 @@ Example list driving the navbar:
 [ { key:"reading", label:"Reading", href:"/reading/…", enabled:true  },
   { key:"grammar", label:"Grammar", href:"/grammar",   enabled:true,  comingSoon:false } ]
   (Grammar was enabled by grammar task 7; see ../grammar/design.md §6)
+  { key:"vocabulary", label:"Vocabulary", href:"/vocabulary", enabled:true, comingSoon:false }
+  (added by vocabulary task 7, with a count of new words; see ../vocabulary/design.md §6)
 ```
 
 - The controller passes this list plus the `activeKey` for the current page.

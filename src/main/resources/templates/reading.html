@@ -128,6 +128,8 @@
                 <summary id="vocabTitle">Word list</summary>
                 <div class="vlist" id="vlist"></div>
             </details>
+            <!-- New words the learner saved from this passage (vocabulary/save.js). -->
+            <section class="pwords" id="passageWords" aria-live="polite" hidden></section>
         </section>
 
         <div class="splitter" id="splitter" role="separator" tabindex="0" aria-orientation="vertical"
@@ -148,6 +150,7 @@
 
     <!-- Floating selection-highlight action and vocab popover (positioned by JS). -->
     <button id="hlBtn" type="button" hidden>Highlight</button>
+    <button id="saveWordBtn" type="button" hidden>＋ Add to my words</button>
     <div id="pop" hidden></div>
 
     <script type="module" th:src="@{/js/reading.js}"></script>

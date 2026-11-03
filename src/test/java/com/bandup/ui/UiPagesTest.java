@@ -38,6 +38,9 @@ class UiPagesTest {
                 new String[] {"/grammar", "grammar"},
                 new String[] {"/grammar/lessons/a2-articles-1", "grammar-lesson"},
                 new String[] {"/grammar/review", "grammar-review"},
+                new String[] {"/vocabulary", "vocabulary"},
+                new String[] {"/vocabulary/learn", "vocabulary-session"},
+                new String[] {"/vocabulary/review", "vocabulary-session"},
                 new String[] {"/admin", "admin/index"},
                 new String[] {"/admin/sessions", "admin/sessions"},
                 new String[] {"/admin/sessions/new", "admin/session-edit"},
@@ -45,6 +48,8 @@ class UiPagesTest {
                 new String[] {"/admin/grammar", "admin/grammar"},
                 new String[] {"/admin/grammar/new", "admin/grammar-edit"},
                 new String[] {"/admin/grammar/a2-articles-1/edit", "admin/grammar-edit"},
+                new String[] {"/admin/vocabulary", "admin/vocabulary"},
+                new String[] {"/admin/vocabulary/1/edit", "admin/vocabulary-edit"},
                 new String[] {"/login", "login"},
                 new String[] {"/register", "register"})) {
             mvc.perform(get(route[0])).andExpect(status().isOk()).andExpect(view().name(route[1]));
@@ -79,6 +84,16 @@ class UiPagesTest {
         String review = html("/grammar/review");
         assertThat(review).contains("id=\"reviewRoot\"", "/js/grammar/review.js", "/css/grammar.css");
         assertThat(review).doesNotContain("umbrella", "\"accept\"", "explanation");
+    }
+
+    @Test
+    void theVocabularyPagesAreShellsWithTheirNavbarItem() throws Exception {
+        String words = html("/vocabulary");
+        assertThat(words).contains("id=\"vocabRoot\"", "/js/vocabulary/words.js", "/css/vocabulary.css",
+                "href=\"/vocabulary\"", ">Vocabulary<", "data-nav-new-words", "aria-current=\"page\"");
+        assertThat(html("/vocabulary/learn")).contains("data-kind=\"learn\"", "/js/vocabulary/session.js");
+        assertThat(html("/vocabulary/review")).contains("data-kind=\"review\"").doesNotContain("\"answer\"");
+        assertThat(html("/reading/yellowstone-wolves")).contains("id=\"saveWordBtn\"", "id=\"passageWords\"");
     }
 
     @Test
@@ -122,7 +137,9 @@ class UiPagesTest {
         assertThat(lesson).contains("data-lesson-id=\"a2-articles-1\"", "/js/admin/grammar-edit.js");
         assertThat(lesson).doesNotContain("honest person", "umbrella", "explanation\":");
         assertThat(html("/admin/grammar/new")).contains("<main id=\"gEditRoot\">").doesNotContain("data-lesson-id");
-        assertThat(html("/admin")).contains("href=\"/admin/grammar\"");
+        assertThat(html("/admin")).contains("href=\"/admin/grammar\"", "href=\"/admin/vocabulary\"");
+        assertThat(html("/admin/vocabulary")).contains(">Vocabulary<", "/js/admin/vocabulary-page.js");
+        assertThat(html("/admin/vocabulary/7/edit")).contains("data-card-id=\"7\"", "/js/admin/vocabulary-edit.js");
     }
 
     private String html(String path) throws Exception {

@@ -10,6 +10,7 @@ import { api } from "./reading/api.js";
 import { currentUser } from "./auth.js";
 import { HELP_LANGUAGES } from "./reading/core.js";
 import { initReaderSettings } from "./reading/settings.js";
+import { initWordSaving } from "./vocabulary/save.js";
 
 const KEY = "bandup.helpLanguage";
 
@@ -41,6 +42,7 @@ async function helpLanguage() {
 
 async function start() {
     initReaderSettings(); // text size, layout, colours... (saved on this device)
+    initWordSaving(); // "Add to my words" on dotted and selected words (vocabulary requirement 1)
     const picker = document.getElementById("helpLang");
     if (picker && picker.options.length === 0) {
         HELP_LANGUAGES.forEach((l) => picker.add(new Option(l.name, l.code)));

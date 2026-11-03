@@ -177,6 +177,26 @@ com.bandup
 │   │   │   └── security/     GrammarAccessRules
 │   │   └── web/              GrammarCourseController, GrammarReviewController,
 │   │                         AdminGrammarLessonController
+│   ├── vocabulary/           (built; tactical model and API: ../vocabulary/design.md §2–§5)
+│   │   ├── domain/
+│   │   │   ├── word/      aggregate WordCard; WordId, Lemma, WordForm, CardStatus, CardSource, CefrLevel,
+│   │   │   │              CardContent, Meaning, GapTask, PairTask; WordNormaliser, WordGate, CardPolicy;
+│   │   │   │              WordCardRepository
+│   │   │   ├── saved/     aggregate SavedWord; SavedWordId, LearnerId, WordState, Box, ReviewSchedule,
+│   │   │   │              WordSource; SavedWordRepository
+│   │   │   └── session/   aggregate WordSession; SessionId, SessionKind, TaskId, TaskPhase, Task (7 types),
+│   │   │                  GivenAnswer, Grade, SessionWord, TaskFeedback; TaskBuilder, AnswerNormaliser;
+│   │   │                  WordSessionRepository
+│   │   ├── application/   SaveWord, CardWriter, CardResults, CardRetryJob, SessionCleanup, MyWords,
+│   │   │   │              WordLookup, WordSessions, WordCardAdmin, WordViews, VocabularyRules, Learner;
+│   │   │   │              view/ (VocabularyViews, SessionViews, AdminCardViews)
+│   │   │   └── port/      WordCardAi, AiUsage, PassageContext, LearnerWords, CardSummaries, CardQueue,
+│   │   │                  VocabularyDays, VocabularySettings
+│   │   ├── infrastructure/ ai/ (OpenRouterWordCards, CardPrompt, AiProperties), persistence/ (entities,
+│   │   │                  Jpa…Repository ×3, CardJson, SessionJson, Learners), readmodel/ (JdbcLearnerWords,
+│   │   │                  JdbcAiUsage, JdbcPassageContext, JdbcCardSummaries), config/ (VocabularyConfig,
+│   │   │                  AfterCommitCardQueue, CardRetrySchedule, ZonedVocabularyDays), security/
+│   │   └── web/           WordController, WordSessionController, AdminWordCardController
 │   └── content/              (§8; built: domain, persistence, HTML adapters, use cases, admin API)
 │       └── domain/
 │           └── exercise/
@@ -207,7 +227,8 @@ com.bandup
 │       └── web/              AdminExerciseController
 └── ui/                       page shells: HomeController, ReadingPageController, AuthPageController
                               (/login, /register), GrammarPageController (/grammar, /grammar/lessons/{slug},
-                              /grammar/review), NavItem, NavigationAdvice; admin/: AdminPageController,
+                              /grammar/review), VocabularyPageController (/vocabulary,
+                              /vocabulary/learn, /vocabulary/review), NavItem, NavigationAdvice; admin/: AdminPageController,
                               AdminNavItem, AdminNavigationAdvice — no data, no API imports
 ```
 
@@ -890,6 +911,10 @@ GET /api/v1/exercises/filters?lang=  → {skills[], formats[], levels[], types[]
 | GET / POST | `/api/v1/admin/grammar/lessons` | ADMIN/AUTHOR | 200 / 201 (grammar spec §5.2) |
 | GET / PUT / DELETE | `/api/v1/admin/grammar/lessons/{slug}` | ADMIN/AUTHOR | 200 / 200 / 204 |
 | POST | `/api/v1/admin/grammar/lessons/{slug}/publish` · `/unpublish` | ADMIN/AUTHOR | 200 |
+| GET | `/api/v1/vocabulary/lookup?text=` | public | 200 / 404 (never calls the AI) |
+| GET / POST / DELETE | `/api/v1/vocabulary/words` (`?state&q&exercise&page&size` or `?ids=`), `/words/{id}`, `/words/{id}/retry` | token | 200 / 201 / 204 / 202; 422, 429, 503 (vocabulary spec §5.1) |
+| POST / GET | `/api/v1/vocabulary/sessions`, `/sessions/{id}`, `/sessions/{id}/answers` | token (own sessions) | 201 / 200 |
+| GET / PUT / POST / DELETE | `/api/v1/admin/vocabulary/words[/{id}[/regenerate]]` | ADMIN/AUTHOR | 200 / 202 / 204 (vocabulary spec §5.2) |
 
 ### Error mapping (`api.shared.web`)
 
@@ -1049,6 +1074,13 @@ Tactical design (7–13):
     lesson per day per level (day = `bandup.grammar.day-zone`, Asia/Baku);
     guests get lesson 1 of each level and no saved progress. Tables: V9;
     seed lessons: V10. Approved by the user task by task (grammar `tasks.md`).
+23. **Vocabulary is its own context** (`api.vocabulary`, spec `../vocabulary/`):
+    three aggregates (`word`, `saved`, `session`). Every word has one shared
+    card; the database is always asked first and the app calls OpenRouter
+    (JDK `HttpClient`) only for a word no card has, once, after commit and
+    outside any transaction. The key is `BANDUP_OPENROUTER_API_KEY` (never
+    committed; without it known words still work). The shared kernel gained
+    `ServiceUnavailableException` (503). Tables: V11.
 
 ### Open — product decisions needed
 

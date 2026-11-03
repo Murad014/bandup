@@ -34,8 +34,9 @@
                    class="app-nav__link" data-nav-link
                    th:classappend="${item.key() == activeKey} ? ' is-active' : ''"
                    th:href="${item.href()}"
-                   th:text="${item.label()}"
-                   th:attr="aria-current=${item.key() == activeKey} ? 'page' : null">Reading</a>
+                   th:attr="aria-current=${item.key() == activeKey} ? 'page' : null"><span th:text="${item.label()}">Reading</span><span
+                        th:if="${item.key() == 'vocabulary'}" class="app-nav__count" data-nav-new-words hidden
+                        title="New words to learn"></span></a>
 
                 <!-- Planned / disabled feature -->
                 <span th:unless="${item.enabled()}"
