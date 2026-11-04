@@ -35,7 +35,9 @@ The UI follows the approved prototype `ai-docs/vocabulary/Orbiko — Vocabulary.
   (answered right in box 4).
 - **Learn session**: up to 5 NEW words taught and checked in one go.
 - **Review session**: up to 20 due words.
-- **Day**: a calendar day in the configured zone (default `Asia/Baku`).
+- **Day**: a calendar day in the configured zone (default `Asia/Baku`). The
+  server counts days ("tomorrow", "in 3 days", "added today"); pages never
+  count with the browser's clock, which may be on another day.
 
 ---
 

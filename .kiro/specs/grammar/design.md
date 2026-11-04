@@ -259,7 +259,7 @@ them as text.
 GET  /levels                     → [{level, name, lessonCount}]
 GET  /course?level=&topic=&page=0&size=50 (max 100)
                                  → {level, available, finished, next: {slug, title} | null,
-                                    review: {due, nextDueOn} | null (guests),
+                                    review: {due, nextDueOn, nextInDays} | null (guests),
                                     topics: [{key, label}],
                                     lessons: [{slug, position, title, topic {key, label}, minutes,
                                                state: DONE|NEXT|LOCKED, lockedReason?}],
@@ -279,7 +279,7 @@ POST /runs/{runId}/answers  {itemId, answer: number | string | [string]}
 GET  /review?lang=               → {cards: [{cardId, topic {key, label}, lessonTitle, item: ItemView}],
                                     dueTotal}                        (token required)
 POST /review/{cardId}/answer {answer}
-                                 → {correct, expected, why?, explanation, box, nextDueOn, changed}
+                                 → {correct, expected, why?, explanation, box, nextDueOn, nextInDays, changed}
                                                                      (token required; 404 not the caller's)
 
 ItemView = {id, type, prompt, sentence?, wrong?, options?, tiles?}   ← no answer/accept/show/whys/explanation
@@ -396,7 +396,7 @@ blank. Errors: 401 → "Sign in to continue"; 403 → the server's reason; 404 �
 A top bar (✕ back to the course, "🔁 Daily review") and a "Reviewed n / N"
 bar. Each due card is shown with `items.js`, labelled "🏷 topic · lesson
 title". Feedback adds "⏱ Next review: tomorrow / in 3 days / in 1 week / in
-2 weeks" from the server's `nextDueOn`; a wrong card also gets "↻ This comes
+2 weeks" from the server's `nextInDays` (decision 12); a wrong card also gets "↻ This comes
 back until you get it right" and goes to the back of the session (the server
 changes the schedule only on the first answer of the day). Done card:
 cards reviewed, retries, and "Review more" when more than 20 were due.
@@ -512,3 +512,9 @@ probed). Day zone and cleanup time: `bandup.grammar.day-zone` (Asia/Baku),
     checks, GPT solves blind, Claude fixes), saving DRAFTs only; the admin
     always publishes. Its code validators repeat `LessonPolicy`, so a
     format change updates both.
+12. **The server counts the days, not the browser** (bug found in CI at
+    20:17 UTC, already the next day in Baku): due dates are days in the
+    server's zone, so the browser's own clock may be on another day. The
+    API sends `nextInDays` next to `nextDueOn` and pages only turn it into
+    words. Browser tests run Chrome in a zone whose date is not Baku's
+    (`HeadlessChrome.awayFromBaku`), so this is caught at any hour.

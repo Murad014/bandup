@@ -39,7 +39,9 @@ with three changes:
 - **Item**: one question. Types: `choose`, `type`, `fix`, `build`.
 - **Run**: one pass of a learner through one lesson.
 - **Review card**: one check item of a finished lesson, scheduled for review.
-- **Day**: a calendar day in the configured zone (default `Asia/Baku`).
+- **Day**: a calendar day in the configured zone (default `Asia/Baku`). The
+  server counts days ("tomorrow", "in 3 days", "added today"); pages never
+  count with the browser's clock, which may be on another day.
 
 ---
 

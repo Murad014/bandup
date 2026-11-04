@@ -55,7 +55,8 @@ public class MyWords {
         String s = state(state);
         int p = Math.max(0, page);
         int n = Math.min(Math.max(1, size), MAX_PAGE);
-        return new WordsPage(words.counts(me), words.due(me, days.today()), words.newReady(me),
+        LocalDate today = days.today();
+        return new WordsPage(words.counts(me), today, words.due(me, today), words.newReady(me),
                 words.page(me, s, query, exercise, p, n), p, n, words.total(me, s, query, exercise));
     }
 

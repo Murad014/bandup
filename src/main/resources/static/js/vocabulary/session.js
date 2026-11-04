@@ -18,11 +18,8 @@ const $ = (id) => document.getElementById(id);
 const body = $("sBody");
 const STAGES = kind === "learn" ? [["goal", "Goal"], ["meet", "Meet"], ["practise", "Practise"], ["master", "Master"]]
     : [["review", "🔁 Daily review"]];
-const NEXT = (iso) => {
-    const [y, m, d] = iso.split("-").map(Number);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const days = Math.round((new Date(y, m - 1, d) - today) / 86400000);
+/** {@code days} is counted by the server from its today: the browser's clock may be on another day. */
+const NEXT = (days) => {
     if (days <= 1) return "tomorrow";
     if (days % 7 === 0) return "in " + (days === 7 ? "1 week" : days / 7 + " weeks");
     return "in " + days + " days";
@@ -246,10 +243,10 @@ function footer(feedback) {
         const line = el("div", "v-fb__next");
         if (s.mastered) line.append("🏆 Mastered — this word won't come back.");
         else if (!s.changed) {
-            line.append("⏱ Next review: " + NEXT(s.nextDueOn));
+            line.append("⏱ Next review: " + NEXT(s.nextInDays));
             line.append(el("span", "v-boxmove", "stays in box " + s.box));
         } else {
-            line.append("⏱ Next review: " + NEXT(s.nextDueOn));
+            line.append("⏱ Next review: " + NEXT(s.nextInDays));
             line.append(el("span", "v-boxmove", "box " + s.from + " → " + s.box));
         }
         box.append(line);

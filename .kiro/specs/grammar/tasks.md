@@ -173,6 +173,18 @@ fixes: failing test first. No code before the user approves this spec.
     a throwaway n8n (25 nodes, all links).
   - _Requirements: 13_
 
+- [x] Bug: "Next review" text counted from the browser's clock
+  - Found when the GitHub build ran at 20:17 UTC (already the next day in
+    Baku): 3 browser tests saw "in 2 days" / "on Thursday" instead of
+    "tomorrow". Learners outside Baku's zone saw the same.
+  - Failing test first: `HeadlessChrome` runs Chrome in a zone whose date is
+    not Baku's (`awayFromBaku`), so the 3 tests failed at any hour.
+  - Fix: the API sends `nextInDays` (course review, review answers,
+    vocabulary schedule) and the vocabulary page's `today`; the pages only
+    turn numbers into words (design decision 12; vocabulary decision 13).
+    API tests check the new fields; a browser check of "added today" catches
+    the old code (mutation).
+
 ## Later (not v1)
 
 - Azerbaijani help on screen; streaks / XP; grammar on "My progress".

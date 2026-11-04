@@ -42,12 +42,11 @@ function failed(error) {
     }
 }
 
-/** "tomorrow", "in 3 days", "in 1 week", "in 2 weeks" (from the learner's today). */
-export function nextReviewText(iso) {
-    const [y, m, d] = iso.split("-").map(Number);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const days = Math.round((new Date(y, m - 1, d) - today) / 86400000);
+/**
+ * "tomorrow", "in 3 days", "in 1 week", "in 2 weeks". {@code days} is counted by
+ * the server from its today: the browser's clock may be on another day.
+ */
+export function nextReviewText(days) {
     if (days <= 0) return "today";
     if (days === 1) return "tomorrow";
     if (days % 7 === 0) return "in " + days / 7 + (days === 7 ? " week" : " weeks");
@@ -83,7 +82,7 @@ async function session(data) {
                 footer: (feedback) => {
                     const box = el("div");
                     if (!feedback.correct) box.append(el("div", "g-fb__retry", "↻ This comes back until you get it right."));
-                    box.append(el("div", "g-fb__next", "⏱ Next review: " + nextReviewText(feedback.nextDueOn)));
+                    box.append(el("div", "g-fb__next", "⏱ Next review: " + nextReviewText(feedback.nextInDays)));
                     return box;
                 },
             });

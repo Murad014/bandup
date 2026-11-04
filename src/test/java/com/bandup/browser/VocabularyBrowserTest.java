@@ -49,6 +49,9 @@ class VocabularyBrowserTest extends BrowserTestBase {
         add(tab, "Predator");
         tab.waitFor("document.querySelector('.v-word[data-word=\"predator\"]') !== null");
         assertThat(tab.text("document.getElementById('vAddMsg').textContent")).isEqualTo("＋ “predator” added.");
+        // counted from the server's day, though this browser's clock is on another day (HeadlessChrome.awayFromBaku)
+        assertThat(tab.text("document.querySelector('.v-word[data-word=\"predator\"] .v-word__mean').textContent"))
+                .contains("added today");
         AI.delay(1500);
         add(tab, "riverbanks");
         tab.waitFor("document.getElementById('vAddMsg').textContent.includes('preparing')");

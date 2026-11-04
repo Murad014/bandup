@@ -35,8 +35,9 @@ public final class VocabularyViews {
     public record Counts(int all, int fresh, int learning, int mastered) {
     }
 
-    /** The My words page. */
-    public record WordsPage(Counts counts, int due, int newReady, List<SavedWordView> words, int page, int size,
+    /** The My words page. @param today the server's day ("added today / yesterday" is counted from it) */
+    public record WordsPage(Counts counts, LocalDate today, int due, int newReady, List<SavedWordView> words, int page,
+            int size,
             long total) {
     }
 

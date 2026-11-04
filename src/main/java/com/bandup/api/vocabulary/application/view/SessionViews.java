@@ -40,7 +40,14 @@ public final class SessionViews {
             int total, boolean finished, ScheduleView schedule) {
     }
 
-    /** A reviewed word's new schedule; {@code changed} false when it was already answered today. */
-    public record ScheduleView(int from, int box, LocalDate nextDueOn, boolean changed, boolean mastered) {
+    /**
+     * A reviewed word's new schedule.
+     *
+     * @param nextInDays days from the server's today to {@code nextDueOn} (the page never counts with its own clock);
+     *                   null once mastered
+     * @param changed    false when it was already answered today
+     */
+    public record ScheduleView(int from, int box, LocalDate nextDueOn, Integer nextInDays, boolean changed,
+            boolean mastered) {
     }
 }

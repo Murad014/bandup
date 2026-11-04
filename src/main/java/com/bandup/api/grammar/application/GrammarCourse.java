@@ -1,5 +1,7 @@
 package com.bandup.api.grammar.application;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -92,8 +94,10 @@ public class GrammarCourse {
         NextLesson next = (me.isPresent() ? facts.firstUnfinished() : facts.firstOfCourse())
                 .map(e -> new NextLesson(e.slug(), Learner.pick(e.title(), chain))).orElse(null);
         ReviewInfo review = me.map(id -> {
-            ReviewSummary summary = courses.reviewSummary(id, days.today());
-            return new ReviewInfo(summary.due(), summary.nextDueOn());
+            LocalDate today = days.today();
+            ReviewSummary summary = courses.reviewSummary(id, today);
+            return new ReviewInfo(summary.due(), summary.nextDueOn(),
+                    summary.nextDueOn() == null ? null : (int) ChronoUnit.DAYS.between(today, summary.nextDueOn()));
         }).orElse(null);
         List<TopicView> topics = courses.topics(level.name()).stream()
                 .map(t -> new TopicView(t.key(), Learner.pick(t.label(), chain))).toList();
