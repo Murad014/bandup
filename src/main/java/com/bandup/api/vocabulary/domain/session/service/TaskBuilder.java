@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
 import com.bandup.api.shared.domain.ddd.DomainService;
+import com.bandup.api.vocabulary.domain.saved.valueobject.SavedWordId;
 import com.bandup.api.vocabulary.domain.session.valueobject.SessionKind;
 import com.bandup.api.vocabulary.domain.session.valueobject.SessionWord;
 import com.bandup.api.vocabulary.domain.session.valueobject.Task;
@@ -19,7 +21,8 @@ import com.bandup.api.vocabulary.domain.session.valueobject.TaskId;
  * words (3+, all with different meanings), then one master task per word, rotating gap / type from meaning
  * / listen / pair / translate. REVIEW: one task per word, rotating pair / gap
  * / type from meaning / translate — never listen, which would give the word
- * to the browser. Options are shuffled with the session's seed.
+ * to the browser. RECALL: one translate per word with no hint (requirement
+ * 11.3). Options are shuffled with the session's seed.
  */
 @DomainService
 public final class TaskBuilder {
@@ -28,6 +31,15 @@ public final class TaskBuilder {
     private static final List<String> REVIEW_ROTATION = List.of("pair", "gap", "type", "translate");
 
     public List<Task> build(SessionKind kind, List<SessionWord> words, long seed) {
+        return build(kind, words, seed, Map.of());
+    }
+
+    /**
+     * @param alsoAccepted RECALL only: per word, the spellings of the learner's other words with the same
+     *                     Azerbaijani meaning (requirement 11.4)
+     */
+    public List<Task> build(SessionKind kind, List<SessionWord> words, long seed,
+            Map<SavedWordId, List<String>> alsoAccepted) {
         if (words.isEmpty()) {
             throw new IllegalArgumentException("A session needs words");
         }
@@ -39,6 +51,15 @@ public final class TaskBuilder {
             if (words.size() >= 3 && distinct) {
                 tasks.add(match(TaskId.of(2), words, random));
             }
+        }
+        if (kind == SessionKind.RECALL) {
+            for (SessionWord w : words) {
+                List<String> accept = new ArrayList<>(accepted(w));
+                accept.addAll(alsoAccepted.getOrDefault(w.saved(), List.of()));
+                tasks.add(new Task.Translate(TaskId.of(tasks.size() + 1), w.saved(), w.meaningAz(), "",
+                        List.copyOf(new LinkedHashSet<>(accept))));
+            }
+            return List.copyOf(tasks);
         }
         for (int i = 0; i < words.size(); i++) {
             SessionWord word = words.get(i);

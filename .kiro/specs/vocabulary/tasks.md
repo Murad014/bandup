@@ -136,6 +136,24 @@ user approves each task before the next starts.
   - Done: backend design §4, §9 and decision 23; navbar note; the full suite
     and `uiTest` green.
 
+- [x] 13. Recall (Azerbaijani → English)
+  - Prototype screen 6 approved by the user (no hint, "Recall" name).
+  - `SessionKind.RECALL`, `V12__vocabulary_recall.sql` (session kind check),
+    `LearnerWords.recallable`, `TaskBuilder` recall tasks, `WordSessions`;
+    `/vocabulary/recall`, the My words card, recall mode in `session.js`.
+  - _Verify_: unit tests (no hint, synonyms accepted, wrong comes back);
+    API test (10 at most, learned words only, one per Azerbaijani meaning,
+    boxes and due days unchanged, no answer in the payload, 422 with nothing
+    learned); browser test (card, a wrong word comes back, done screen with
+    the score and missed words); mutation checks.
+  - Done: `TaskBuilderTest` (2), `VocabularySessionApiTest` (3: ten learned
+    words, no hint, no answer in the payload, "I don't remember" as
+    `answer: null` (`GivenAnswer.DontKnow`), nothing moved, a new mix; one word
+    per Azerbaijani meaning, the other accepted; 422 with nothing learned),
+    `VocabularyBrowserTest` (card → recall → missed word comes back → "2 / 3"
+    with the missed word; boxes unchanged), `UiPagesTest`. 8 mutations caught.
+  - _Requirements: 11_
+
 ## Later (not v1)
 
 - Word packs (prototype screen 5), generated in advance.

@@ -14,6 +14,7 @@
     color: var(--accent); background: var(--accent-soft); padding: 4px 10px; border-radius: var(--radius-pill);
 }
 .v-kick--sun { color: color-mix(in srgb, var(--sun) 70%, var(--fg)); background: var(--sun-soft); }
+.v-kick--grape { color: var(--grape); background: var(--grape-soft); }
 .v-chip {
     display: inline-flex; align-items: center; font: 700 .78rem var(--ui); padding: 4px 10px; border-radius: var(--radius-pill);
     background: var(--surface); color: var(--muted); border: 1px solid var(--line);
@@ -36,13 +37,14 @@
 .v-stat--new b { color: var(--sky); }
 .v-stat--learning b { color: color-mix(in srgb, var(--sun) 80%, var(--fg)); }
 .v-stat--mastered b { color: var(--ok); }
-.v-todo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+.v-todo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
 .v-todo .v-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
 .v-todo h2 { margin: 0; font: 800 1.1rem var(--display); }
 .v-todo p { margin: 0; color: var(--muted); font-size: .92rem; flex: 1; }
 .v-todo .btn { align-self: stretch; }
 .v-todo__learn { border-left: 4px solid var(--accent) !important; }
 .v-todo__review { border-left: 4px solid var(--sun) !important; }
+.v-todo__recall { border-left: 4px solid var(--grape) !important; }
 .v-add { display: flex; gap: 8px; margin-bottom: 8px; }
 .v-input {
     flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--paper); color: var(--fg);
@@ -217,3 +219,11 @@
     .v-pill { font-size: .68rem; padding: 6px 2px; }
     .v-meet__word { font-size: 1.8rem; }
 }
+
+/* ---- Recall (Azerbaijani → English; requirement 11) ---- */
+.v-az--big { font: 800 2rem/1.2 var(--display); margin: 6px 0 16px; overflow-wrap: anywhere; }
+.v-skip { background: none; border: 0; color: var(--muted); font: 700 .88rem var(--ui); cursor: pointer;
+    padding: 10px 0 0; text-decoration: underline; }
+.v-skip:hover, .v-skip:focus-visible { color: var(--fg); }
+.v-score { font: 800 2.4rem var(--display); color: var(--grape); margin: 4px 0; }
+.v-chips--missed span { background: var(--bad-soft); color: var(--bad); }

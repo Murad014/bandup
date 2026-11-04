@@ -41,6 +41,7 @@ class UiPagesTest {
                 new String[] {"/vocabulary", "vocabulary"},
                 new String[] {"/vocabulary/learn", "vocabulary-session"},
                 new String[] {"/vocabulary/review", "vocabulary-session"},
+                new String[] {"/vocabulary/recall", "vocabulary-session"},
                 new String[] {"/admin", "admin/index"},
                 new String[] {"/admin/sessions", "admin/sessions"},
                 new String[] {"/admin/sessions/new", "admin/session-edit"},
@@ -93,6 +94,8 @@ class UiPagesTest {
                 "href=\"/vocabulary\"", ">Vocabulary<", "data-nav-new-words", "aria-current=\"page\"");
         assertThat(html("/vocabulary/learn")).contains("data-kind=\"learn\"", "/js/vocabulary/session.js");
         assertThat(html("/vocabulary/review")).contains("data-kind=\"review\"").doesNotContain("\"answer\"");
+        assertThat(html("/vocabulary/recall")).contains("data-kind=\"recall\"").doesNotContain("\"answer\"");
+        assertThat(html("/vocabulary")).contains("id=\"vRecallGo\"", "href=\"/vocabulary/recall\"");
         assertThat(html("/reading/yellowstone-wolves")).contains("id=\"saveWordBtn\"", "id=\"passageWords\"");
     }
 

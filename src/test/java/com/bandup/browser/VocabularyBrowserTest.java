@@ -221,6 +221,54 @@ class VocabularyBrowserTest extends BrowserTestBase {
     }
 
     @Test
+    void aRecallAsksInAzerbaijaniWithNoHintAndMovesNothing() throws Exception {
+        bank("predator", "erosion", "decline");
+        HeadlessChrome.Tab tab = chrome.newTab(url("/"));
+        signIn(tab, registerLearner(tab, "Samir"), PASSWORD);
+        for (String w : List.of("predator", "erosion", "decline")) {
+            tab.eval("import('/js/vocabulary/api.js').then(m => m.save('" + w + "', null))");
+        }
+        LocalDate later = LocalDate.now(ZoneId.of("Asia/Baku")).plusDays(3);
+        String samir = "user_id = (select id from app_user where display_name = 'Samir')";
+        tab.waitFor("true");
+        for (int i = 0; i < 50 && jdbc.queryForObject("select count(*) from vocab_saved_word where " + samir, Integer.class) < 3; i++) {
+            Thread.sleep(100);
+        }
+        jdbc.update("update vocab_saved_word set state = 'LEARNING', box = 2, due_on = ? where " + samir, later);
+
+        tab.navigate(url("/vocabulary"));
+        tab.waitFor("!document.getElementById('vRecallGo').hidden");
+        assertThat(tab.text("document.getElementById('vRecallTitle').textContent")).isEqualTo("3 words, mixed");
+        tab.eval("document.getElementById('vRecallGo').click()");
+        tab.waitFor("location.pathname === '/vocabulary/recall'");
+        tab.waitFor("document.querySelector('.v-q') !== null");
+        assertThat(tab.text("document.querySelector('.v-pill').textContent")).contains("Recall");
+        assertThat(tab.text("String(document.querySelector('.v-q .v-hint'))")).as("no hint").isEqualTo("null");
+        String first = tab.text("document.querySelector('.v-az--big').textContent").replace("🇦🇿 az ", "");
+        tab.eval("document.querySelector('[data-dont-know]').click()");
+        tab.waitFor("document.querySelector('.v-fb__verdict') !== null");
+        assertThat(tab.text("document.querySelector('.v-fb').textContent"))
+                .contains("✕ Not quite", "Correct: " + first, "comes back until you get it right");
+        shot(tab, "recall");
+        next(tab);
+        for (int i = 0; i < 3; i++) {
+            tab.waitFor("document.querySelector('.v-q .v-fb[hidden]') !== null");
+            String word = tab.text("document.querySelector('.v-az--big').textContent").replace("🇦🇿 az ", "");
+            typeAnswer(tab, word.toUpperCase() + "s");
+            next(tab);
+        }
+        tab.waitFor("document.getElementById('sessionDone') !== null");
+        assertThat(tab.text("document.getElementById('recallScore').textContent")).isEqualTo("2 / 3");
+        assertThat(tab.text("document.getElementById('recallMissed').textContent")).isEqualTo(first);
+        assertThat(tab.text("document.getElementById('sessionDone').textContent"))
+                .contains("right on the first try", "haven’t changed", "Again with other words");
+        shot(tab, "recall-done");
+        assertThat(jdbc.queryForObject("select count(*) from vocab_saved_word where " + samir
+                + " and state = 'LEARNING' and box = 2 and due_on = ? and last_answered_on is null", Integer.class, later))
+                .as("recall moves nothing").isEqualTo(3);
+    }
+
+    @Test
     void guestsAreAskedToSignInAndEmptySessionsSaySo() throws Exception {
         HeadlessChrome.Tab tab = chrome.newTab(url("/vocabulary"));
         tab.waitFor("!document.getElementById('vGuest').hidden");

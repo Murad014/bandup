@@ -214,6 +214,20 @@ h1{font-size:1.7rem;line-height:1.2;margin:0 0 6px}
 .learned span{background:var(--ok-soft);color:var(--ok);font-weight:800;border-radius:var(--pill);padding:4px 12px}
 .boxmove{display:inline-block;background:var(--sun-soft);border-radius:var(--pill);padding:2px 10px;font-weight:800;font-size:.8rem;margin-left:6px}
 
+/* ---- 6. recall ---- */
+.todo.three{grid-template-columns:repeat(3,1fr)}
+.todo .rc{border-left:4px solid var(--grape)}
+.kick.grape{background:var(--grape-soft);color:var(--grape)}
+.rc-az{font:800 2rem/1.2 var(--ui);margin:6px 0 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rc-az small{font:700 .8rem var(--ui);color:var(--muted);background:var(--surface);border-radius:var(--pill);padding:3px 10px}
+.rc-skip{background:none;border:0;color:var(--muted);font:700 .88rem var(--ui);cursor:pointer;padding:8px 0 0;text-decoration:underline}
+.rc-skip:hover{color:var(--fg)}
+.rc-say{border:0;background:var(--surface);border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:1rem;vertical-align:middle;margin-left:4px}
+.rc-score{font:800 2.4rem var(--ui);color:var(--grape);margin:4px 0}
+.missed{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0 0}
+.missed span{background:var(--bad-soft);color:var(--bad);font-weight:800;border-radius:var(--pill);padding:4px 12px}
+.rc-note{font-size:.85rem;color:var(--muted);margin-top:10px}
+
 /* ---- 5. packs ---- */
 .packs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .pack{padding:18px;display:flex;flex-direction:column;gap:6px}
@@ -226,7 +240,7 @@ h1{font-size:1.7rem;line-height:1.2;margin:0 0 6px}
 @media (max-width:800px){
   .read{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
-  .todo{grid-template-columns:1fr}
+  .todo,.todo.three{grid-template-columns:1fr}
   .packs{grid-template-columns:1fr 1fr}
   .word{grid-template-columns:1fr auto;gap:6px 10px}
   .word .wm{grid-column:1/-1;grid-row:2}
@@ -251,6 +265,7 @@ h1{font-size:1.7rem;line-height:1.2;margin:0 0 6px}
   <button data-go="learn">3 · Learn session</button>
   <button data-go="review">4 · Review</button>
   <button data-go="packs">5 · Word packs</button>
+  <button data-go="recall">6 · Recall (AZ → EN)</button>
   <span class="sp"></span>
   <button id="reset">Reset demo</button>
 </div>
@@ -326,7 +341,7 @@ function go(name){
   document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
   (name==='reading'?document.querySelector('.nav a[data-go="reading"]'):document.getElementById('navVocab')).classList.add('on');
   closePops();
-  ({reading:Reading,words:Words,learn:LearnStart,review:ReviewStart,packs:Packs})[name]();
+  ({reading:Reading,words:Words,learn:LearnStart,review:ReviewStart,packs:Packs,recall:RecallStart})[name]();
   window.scrollTo(0,0);
 }
 
@@ -418,13 +433,16 @@ function Words(){
       <div class="card stat lrn"><b>${c.learning}</b><small>learning</small></div>
       <div class="card stat mst"><b>${c.mastered}</b><small>mastered</small></div>
     </div>
-    <div class="todo">
+    <div class="todo three">
       <div class="card learn"><span class="kick" style="align-self:flex-start">Learn</span><h3>${c.new?`${Math.min(5,c.new)} new word${Math.min(5,c.new)>1?'s':''} ready`:'No new words'}</h3>
         <p>${c.new?'Meet each word, practise it, then prove it — a word you miss comes back until you get it.':'Add words from a passage or a pack to learn them.'}</p>
         <button class="btn primary" data-learn ${c.new?'':'disabled'}>Start learning →</button></div>
       <div class="card rev"><span class="kick" style="align-self:flex-start;background:var(--sun-soft);color:#b07208">Daily review</span><h3>${due} words due</h3>
         <p>Words come back on day 1, 3, 7 and 14. ~${Math.max(1,Math.ceil(due/3))} min.</p>
         <button class="btn" data-review ${due?'':'disabled'}>Review now</button></div>
+      <div class="card rc"><span class="kick grape" style="align-self:flex-start">Recall · 🇦🇿 → 🇬🇧</span><h3>${recallPool().length?`${Math.min(10,recallPool().length)} words, mixed`:'Nothing to recall yet'}</h3>
+        <p>${recallPool().length?'See the Azerbaijani, type the English. Practice only — your review days don’t change.':'Learn some words first — then test yourself here any time.'}</p>
+        <button class="btn" data-recall ${recallPool().length?'':'disabled'}>Start recall</button></div>
     </div>
     <div class="add"><input class="search" id="newWord" placeholder="Add a word yourself, e.g. “sustainable”" aria-label="Add a word"><button class="btn" id="addBtn">＋ Add</button></div>
     <div class="tools">
@@ -437,6 +455,7 @@ function Words(){
   root.querySelector('[data-packs]').onclick=()=>go('packs');
   root.querySelector('[data-learn]').onclick=()=>go('learn');
   root.querySelector('[data-review]').onclick=()=>go('review');
+  root.querySelector('[data-recall]').onclick=()=>go('recall');
   root.querySelector('#tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;tab=b.dataset.t;Words();};
   root.querySelector('#q').oninput=e=>{query=e.target.value;list();};
   const addIt=()=>{const v=root.querySelector('#newWord').value.trim().toLowerCase();if(!v)return;
@@ -650,6 +669,64 @@ function revDone(total,retries){
   c.querySelector('[data-back]').onclick=()=>go('words');body().innerHTML='';body().append(c);
 }
 
+/* ====================== 6. Recall: Azerbaijani → English ====================== */
+/* Learned words only (learning + mastered), 10 at random, one per Azerbaijani
+   meaning (so the answer is never ambiguous). Practice only: boxes don't move. */
+function recallPool(){
+  const seen=new Set();
+  return S.words.filter(x=>x.st!=='new'&&DICT[x.w]&&DICT[x.w].az)
+    .sort(()=>Math.random()-.5)
+    .filter(x=>{const az=DICT[x.w].az;if(seen.has(az))return false;seen.add(az);return true;});
+}
+const formsOf=(w)=>[w,w+'s',w+'es',w+'d',w+'ed',w+'ing',w.replace(/e$/,'')+'ing'];
+function RecallStart(){
+  const words=recallPool().slice(0,10).map(x=>x.w);
+  if(!words.length){app.innerHTML='';app.append(h(`<div class="wrap"><div class="card goal"><div class="ic">🧠</div><h1>Nothing to recall yet</h1><p class="sub">Learn a few words first — then come back and test yourself.</p><br><button class="btn primary" onclick="go('words')">Back to my words</button></div></div>`));return;}
+  const total=words.length,queue=words.slice(),missed=new Set();let done=0;
+  shell(['recall'],['🔁 Recall · 🇦🇿 → 🇬🇧']);document.querySelector('.bar').hidden=true;
+  document.getElementById('xb').onclick=()=>go('words');   // nothing to lose: practice only
+  const next=()=>{
+    if(!queue.length)return recallDone(words,missed);
+    stage('recall',done/total);
+    const w=queue[0],d=DICT[w];
+    const c=h(`<div><div class="mastery"><span>Recalled</span><div class="t"><i style="width:${Math.round(done/total*100)}%"></i></div><b>${done} / ${total}</b></div>
+      <div class="card q"><div class="qk"><span>Type it in English</span><span>${esc(d.pos)}${d.lvl?' · '+esc(d.lvl):''}</span></div>
+      <div class="rc-az">🇦🇿 ${esc(d.az)}</div>
+      <div class="typed"><input class="inp" placeholder="Type the English word…" autocomplete="off" spellcheck="false" autocapitalize="off" aria-label="English word"><button class="btn primary">Check</button></div>
+      <button class="rc-skip">I don’t remember — show me</button><div id="fb"></div></div></div>`);
+    const inp=c.querySelector('.inp'),btn=c.querySelector('.typed .btn'),skip=c.querySelector('.rc-skip');
+    const end=(ok)=>{queue.shift();if(ok)done++;else queue.push(w);next();};
+    const ex=(d.ex[0]||d.mean)+` <button class="rc-say" title="Listen" aria-label="Listen">🔊</button>`;
+    const answer=(v)=>{
+      const ok=v!==null&&formsOf(w).includes(norm(v));
+      if(!ok)missed.add(w);
+      inp.disabled=true;btn.hidden=true;skip.hidden=true;inp.classList.add(ok?'right':'wrong');
+      if(v===null)inp.value='';
+      feedback(c,ok,ok?`<b>${esc(w)}</b> — ${esc(d.mean)}`:(v===null?'':`You typed “${esc(v)}”.`),w,ex,true,()=>end(ok));
+      c.querySelector('.rc-say').onclick=()=>say(w);
+      if(ok)say(w);
+    };
+    const check=()=>{if(!inp.value.trim())return inp.focus();answer(inp.value);};
+    btn.onclick=check;inp.onkeydown=e=>{if(e.key==='Enter')check();};
+    skip.onclick=()=>answer(null);
+    body().innerHTML='';body().append(c);setTimeout(()=>inp.focus(),50);
+  };
+  next();
+}
+function recallDone(words,missed){
+  stage('done',1);
+  const first=words.length-missed.size;
+  const c=h(`<div class="card fin"><div class="ic">${missed.size?'💪':'🏆'}</div><h1>Recall done</h1>
+    <div class="rc-score">${first} / ${words.length}</div><p class="sub">right on the first try</p>
+    ${missed.size?`<div class="missed">${[...missed].map(w=>`<span>${esc(w)}</span>`).join('')}</div><p class="rc-note">You typed these right in the end. Try them again tomorrow.</p>`
+      :'<div class="learned"><span>Every word, first try!</span></div>'}
+    <div class="recap"><b>Words:</b> ${words.length} · <b>Missed:</b> ${missed.size}<br>
+    <b>Note:</b> recall is practice — your daily review and boxes haven’t changed.</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn primary" data-again>🔁 Again with other words</button><button class="btn" data-back>Back to my words</button></div></div>`);
+  c.querySelector('[data-again]').onclick=()=>go('recall');c.querySelector('[data-back]').onclick=()=>go('words');
+  body().innerHTML='';body().append(c);
+}
+
 /* =============================== 5. Word packs =============================== */
 function Packs(){
   const packs=[
@@ -679,7 +756,7 @@ document.getElementById('reset').onclick=()=>{reset();navCount();go(screen);};
 const themeBtn=document.getElementById('theme');
 themeBtn.onclick=()=>{const d=document.documentElement;const dark=d.dataset.theme!=='dark';d.dataset.theme=dark?'dark':'light';themeBtn.textContent=dark?'☀':'☾';};
 navCount();
-go(['reading','words','learn','review','packs'].includes(location.hash.slice(1))?location.hash.slice(1):'reading');
+go(['reading','words','learn','review','packs','recall'].includes(location.hash.slice(1))?location.hash.slice(1):'reading');
 </script>
 </body>
 </html>

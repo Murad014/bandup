@@ -43,6 +43,12 @@ function summary(page) {
         ? "Words come back after 1, 3, 7 and 14 days. ~" + Math.max(1, Math.ceil(page.due / 3)) + " min."
         : "Learned words come back here when they are due.";
     $("vReviewGo").hidden = !page.due;
+    const learned = page.counts.learning + page.counts.mastered;
+    $("vRecallTitle").textContent = learned ? plural(Math.min(10, learned), "word") + ", mixed" : "Nothing to recall yet";
+    $("vRecallText").textContent = learned
+        ? "See the Azerbaijani, type the English. Practice only — your review days don’t change."
+        : "Learn some words first — then test yourself here any time.";
+    $("vRecallGo").hidden = !learned;
     document.querySelectorAll("#vTabs button").forEach((b) => {
         const key = b.dataset.state;
         const n = { all: page.counts.all, new: page.counts.fresh, learning: page.counts.learning, mastered: page.counts.mastered }[key];

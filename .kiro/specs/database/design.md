@@ -620,7 +620,8 @@ when two learners save the same new word at once. `vocab_saved_word`: one per
 learner and card (unique), state NEW/LEARNING/MASTERED, box 1–4, `due_on`, the
 source passage (`set null` if it is deleted) and sentence; a card someone saved
 can't be deleted (`restrict`). `vocab_session` keeps word snapshots and tasks
-with their keys as jsonb (never read by learner queries). `vocab_ai_usage`
+with their keys as jsonb (never read by learner queries); its `kind` is LEARN,
+REVIEW or RECALL (V12). `vocab_ai_usage`
 counts each learner's AI cards per day. 40 tables.
 
 ## 7. Seed data (V2 migration)

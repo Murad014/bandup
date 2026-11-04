@@ -103,6 +103,29 @@ class TaskBuilderTest {
     }
 
     @Test
+    void aRecallAsksEachWordFromItsAzerbaijaniWithNoHint() {
+        List<SessionWord> words = SessionWords.five();
+        List<Task> tasks = builder.build(SessionKind.RECALL, words, 9);
+        assertThat(tasks).extracting(Task::type).containsOnly("translate").hasSize(5);
+        assertThat(tasks).allMatch(t -> t.phase() == TaskPhase.MASTER);
+        Task.Translate first = (Task.Translate) tasks.get(0);
+        assertThat(first.az()).isEqualTo("predator-az");
+        assertThat(first.hint()).isEmpty();
+        assertThat(first.grade(new GivenAnswer.Text("Predators"), normalise).correct()).isTrue();
+        assertThat(first.grade(new GivenAnswer.DontKnow(), normalise).correct()).isFalse();
+        assertThat(first.grade(new GivenAnswer.DontKnow(), normalise).expected()).isEqualTo("predator");
+    }
+
+    @Test
+    void aRecallAcceptsTheLearnersOtherWordsWithTheSameAzerbaijani() {
+        SessionWord big = SessionWords.word("big", "large in size", 2);
+        Task.Translate task = (Task.Translate) builder.build(SessionKind.RECALL, List.of(big), 1,
+                java.util.Map.of(big.saved(), List.of("large", "larges"))).get(0);
+        assertThat(task.grade(new GivenAnswer.Text("large"), normalise).correct()).isTrue();
+        assertThat(task.grade(new GivenAnswer.Text("huge"), normalise).expected()).isEqualTo("big");
+    }
+
+    @Test
     void hintsKeepSpacesAndHyphens() {
         assertThat(TaskBuilder.hint("give up")).isEqualTo("g _ _ _   _ _");
         assertThat(TaskBuilder.hint("well-being")).isEqualTo("w _ _ _ - _ _ _ _ _");

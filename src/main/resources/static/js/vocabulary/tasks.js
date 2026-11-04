@@ -20,6 +20,7 @@ const LABEL = { meaning: "choose the meaning", match: "match", gap: "fill the ga
  * @param opts.header   an optional node above the card (mastery bar)
  * @param opts.answer   value → Promise of the server's feedback
  * @param opts.footer   feedback → an optional node under the explanation
+ * @param opts.recall   a recall task: the Azerbaijani big, no hint, "I don't remember" (requirement 11)
  */
 export function showTask(box, task, opts) {
     return new Promise((resolve, reject) => {
@@ -27,7 +28,7 @@ export function showTask(box, task, opts) {
         card.dataset.task = task.id;
         card.dataset.type = task.type;
         const kick = el("div", "v-q__kick");
-        kick.append(el("span", null, opts.kick), el("span", null, LABEL[task.type] || task.type));
+        kick.append(el("span", null, opts.kick), el("span", null, opts.recall ? "🇦🇿 → 🇬🇧" : LABEL[task.type] || task.type));
         card.append(kick);
         const feedback = el("div", "v-fb");
         feedback.hidden = true;
@@ -76,8 +77,13 @@ export function showTask(box, task, opts) {
                 break;
             }
             case "translate":
-                card.append(el("div", "v-q__prompt", "Type the English word for:"), el("div", "v-az", "🇦🇿 " + task.az),
-                    hint(task.hint), typed(send, card));
+                if (opts.recall) {
+                    card.append(el("div", "v-q__prompt", "Type it in English"), el("div", "v-az v-az--big", "🇦🇿 " + task.az),
+                        typed(send, card, true));
+                } else {
+                    card.append(el("div", "v-q__prompt", "Type the English word for:"), el("div", "v-az", "🇦🇿 " + task.az),
+                        hint(task.hint), typed(send, card));
+                }
                 break;
             case "match":
                 card.append(el("div", "v-q__prompt", "Tap a word, then its meaning."), match(task, send));
@@ -132,7 +138,9 @@ function options(list, send, card) {
     return wrap;
 }
 
-function typed(send, card) {
+/** @param dontKnow adds "I don't remember — show me", sent as null (counted as wrong) */
+function typed(send, card, dontKnow) {
+    const row = el("div");
     const wrap = el("div", "v-typed");
     const input = el("input", "v-answer");
     input.type = "text";
@@ -143,17 +151,30 @@ function typed(send, card) {
     input.setAttribute("aria-label", "Your answer");
     const check = el("button", "btn btn--primary", "Check");
     check.type = "button";
+    const skip = dontKnow ? el("button", "v-skip", "I don’t remember — show me") : null;
+    const lock = (result) => {
+        input.disabled = true;
+        check.hidden = true;
+        if (skip) skip.hidden = true;
+        input.classList.add(result.correct ? "is-right" : "is-wrong");
+    };
     const submit = () => {
         const value = input.value.trim();
         if (!value) return input.focus();
         send(value, (result) => {
-            input.disabled = true;
-            check.hidden = true;
-            input.classList.add(result.correct ? "is-right" : "is-wrong");
+            lock(result);
             const gap = card.querySelector("[data-gap]");
             if (gap && result.correct) gap.textContent = value;
         });
     };
+    if (skip) {
+        skip.type = "button";
+        skip.dataset.dontKnow = "";
+        skip.addEventListener("click", () => send(null, (result) => {
+            input.value = "";
+            lock(result);
+        }));
+    }
     check.addEventListener("click", submit);
     input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
@@ -162,7 +183,9 @@ function typed(send, card) {
         }
     });
     wrap.append(input, check);
-    return wrap;
+    row.append(wrap);
+    if (skip) row.append(skip);
+    return row;
 }
 
 /** Pair every word with a meaning (tap a word, then a meaning; tap again to undo), then Check. */

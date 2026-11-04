@@ -228,7 +228,7 @@ com.bandup
 └── ui/                       page shells: HomeController, ReadingPageController, AuthPageController
                               (/login, /register), GrammarPageController (/grammar, /grammar/lessons/{slug},
                               /grammar/review), VocabularyPageController (/vocabulary,
-                              /vocabulary/learn, /vocabulary/review), NavItem, NavigationAdvice; admin/: AdminPageController,
+                              /vocabulary/learn, /vocabulary/review, /vocabulary/recall), NavItem, NavigationAdvice; admin/: AdminPageController,
                               AdminNavItem, AdminNavigationAdvice — no data, no API imports
 ```
 
@@ -1080,7 +1080,7 @@ Tactical design (7–13):
     (JDK `HttpClient`) only for a word no card has, once, after commit and
     outside any transaction. The key is `BANDUP_OPENROUTER_API_KEY` (never
     committed; without it known words still work). The shared kernel gained
-    `ServiceUnavailableException` (503). Tables: V11.
+    `ServiceUnavailableException` (503). Tables: V11 (V12: recall sessions).
 
 ### Open — product decisions needed
 

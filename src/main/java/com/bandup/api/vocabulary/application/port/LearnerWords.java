@@ -35,4 +35,19 @@ public interface LearnerWords {
 
     /** Up to {@code limit} LEARNING words due by {@code today}, with READY cards, oldest due first. */
     List<UUID> due(LearnerId learner, LocalDate today, int limit);
+
+    /** Every learned word (LEARNING or MASTERED) with a READY card, for a recall session (requirement 11). */
+    List<Recallable> recallable(LearnerId learner);
+
+    /**
+     * @param saved     the saved word's id
+     * @param meaningAz the card's Azerbaijani meaning
+     * @param spellings the card's base form and its other forms
+     */
+    record Recallable(UUID saved, String meaningAz, List<String> spellings) {
+
+        public Recallable {
+            spellings = List.copyOf(spellings);
+        }
+    }
 }

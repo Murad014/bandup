@@ -1,9 +1,11 @@
 /* =========================================================================
    vocabulary/session.js — /vocabulary/learn and /vocabulary/review
-   (vocabulary requirements 5, 6). LEARN: Goal → Meet → Practise → Master
-   (a wrong task comes back until right) → Done. REVIEW: the due words, each
-   answer moving its word ("⏱ Next review: …"). Graded on the server; leaving
-   a running session asks first.
+   and /vocabulary/recall (vocabulary requirements 5, 6, 11). LEARN: Goal →
+   Meet → Practise → Master (a wrong task comes back until right) → Done.
+   REVIEW: the due words, each answer moving its word ("⏱ Next review: …").
+   RECALL: learned words in Azerbaijani, typed in English, no hints; practice
+   only, so leaving asks nothing. Graded on the server; leaving a running
+   learn or review asks first.
    ========================================================================= */
 
 import { ApiError, currentUser } from "../auth.js";
@@ -12,12 +14,15 @@ import { el, say } from "./api.js";
 import { showTask } from "./tasks.js";
 
 const root = document.getElementById("sessionRoot");
-const kind = root.dataset.kind === "review" ? "review" : "learn";
+const kind = ["review", "recall"].includes(root.dataset.kind) ? root.dataset.kind : "learn";
 const exercise = new URLSearchParams(location.search).get("exercise");
 const $ = (id) => document.getElementById(id);
 const body = $("sBody");
-const STAGES = kind === "learn" ? [["goal", "Goal"], ["meet", "Meet"], ["practise", "Practise"], ["master", "Master"]]
-    : [["review", "🔁 Daily review"]];
+const STAGES = {
+    learn: [["goal", "Goal"], ["meet", "Meet"], ["practise", "Practise"], ["master", "Master"]],
+    review: [["review", "🔁 Daily review"]],
+    recall: [["recall", "🔁 Recall · 🇦🇿 → 🇬🇧"]],
+}[kind];
 /** {@code days} is counted by the server from its today: the browser's clock may be on another day. */
 const NEXT = (days) => {
     if (days <= 1) return "tomorrow";
@@ -28,6 +33,7 @@ const NEXT = (days) => {
 let session = null;
 let inProgress = false;
 let retries = 0;
+const missed = new Set(); // recall: the words not typed right the first time
 
 function stage(key, fraction) {
     const at = STAGES.findIndex(([k]) => k === key);
@@ -210,15 +216,17 @@ async function master() {
     let mastered = 0;
     while (queue.length) {
         const task = queue[0];
-        stage(kind === "learn" ? "master" : "review", kind === "learn" ? 0.6 + 0.4 * (mastered / total) : mastered / total);
+        stage(kind === "learn" ? "master" : kind, kind === "learn" ? 0.6 + 0.4 * (mastered / total) : mastered / total);
         let result;
         try {
             result = await showTask(body, task, {
-                kick: kind === "learn" ? "🎯 Prove it · " + (mastered + 1) + " of " + total
-                    : "🏷 from: " + (task.from || "your words") + " · box " + task.box,
-                header: bar(kind === "learn" ? "Mastery" : "Reviewed", mastered, total),
+                kick: { learn: "🎯 Prove it · " + (mastered + 1) + " of " + total,
+                    review: "🏷 from: " + (task.from || "your words") + " · box " + task.box,
+                    recall: "🧠 Recall" }[kind],
+                header: bar({ learn: "Mastery", review: "Reviewed", recall: "Recalled" }[kind], mastered, total),
                 answer: (value) => api.answer(session.sessionId, task.id, value),
-                footer: footer,
+                footer: kind === "recall" ? recallFooter : footer,
+                recall: kind === "recall",
             });
         } catch (e) {
             failed(e);
@@ -227,6 +235,7 @@ async function master() {
         queue.shift();
         if (result.correct) mastered = result.feedback.mastered;
         else {
+            missed.add(result.feedback.expected);
             retries++;
             queue.push(task);
         }
@@ -254,10 +263,51 @@ function footer(feedback) {
     return box.childNodes.length ? box : null;
 }
 
+/** Recall feedback: 🔊 the word (spoken at once when right), and "comes back" when wrong. */
+function recallFooter(feedback) {
+    const box = el("div");
+    if (!feedback.correct) box.append(el("div", "v-fb__retry", "↻ This word comes back until you get it right."));
+    const speak = el("button", "v-say", "🔊");
+    speak.type = "button";
+    speak.setAttribute("aria-label", "Listen to “" + feedback.expected + "”");
+    speak.addEventListener("click", () => say(feedback.expected));
+    box.append(speak);
+    if (feedback.correct) say(feedback.expected);
+    return box;
+}
+
+function recallDone(total) {
+    const card = el("div", "v-card v-done");
+    card.id = "sessionDone";
+    const first = total - missed.size;
+    card.append(el("div", "v-done__icon", missed.size ? "💪" : "🏆"), el("h1", null, "Recall done"));
+    const score = el("div", "v-score", first + " / " + total);
+    score.id = "recallScore";
+    card.append(score, el("p", null, "right on the first try"));
+    if (missed.size) {
+        const chips = el("div", "v-chips v-chips--missed");
+        chips.id = "recallMissed";
+        chips.append(...[...missed].map((w) => el("span", null, w)));
+        card.append(chips, el("p", null, "You typed these right in the end. Try them again tomorrow."));
+    } else {
+        const chips = el("div", "v-chips v-chips--ok");
+        chips.append(el("span", null, "Every word, first try!"));
+        card.append(chips);
+    }
+    const recap = el("div", "v-recap");
+    recap.append(el("div", null, "Recall is practice — your daily review and boxes haven’t changed."));
+    card.append(recap);
+    const actions = el("div", "v-actions");
+    actions.append(link("🔁 Again with other words", "/vocabulary/recall", true), link("My words", "/vocabulary"));
+    card.append(actions);
+    body.replaceChildren(card);
+}
+
 function done(total) {
     guard(false);
     stage("done", 1);
     api.changed();
+    if (kind === "recall") return recallDone(total);
     const card = el("div", "v-card v-done");
     card.id = "sessionDone";
     if (kind === "learn") {
@@ -290,7 +340,7 @@ function done(total) {
 // ------------------------------------------------------------------ start
 
 async function start() {
-    document.title = (kind === "learn" ? "Learn words" : "Word review") + " · Orbiko";
+    document.title = { learn: "Learn words", review: "Word review", recall: "Recall words" }[kind] + " · Orbiko";
     const user = await currentUser();
     $("sStatus").hidden = true;
     if (!user) {
@@ -302,9 +352,12 @@ async function start() {
         session = await api.startSession(kind, exercise);
     } catch (e) {
         if (e instanceof ApiError && e.status === 422) {
-            message(kind === "learn" ? "📭" : "🌤", kind === "learn" ? "No new words to learn" : "Nothing to review",
-                kind === "learn" ? "Save words from a passage, or add some in My words." : "Learned words come back here when they are due.",
-                [link("My words", "/vocabulary", true)]);
+            const [icon, title, text] = {
+                learn: ["📭", "No new words to learn", "Save words from a passage, or add some in My words."],
+                review: ["🌤", "Nothing to review", "Learned words come back here when they are due."],
+                recall: ["🧠", "Nothing to recall yet", "Learn some words first — then test yourself here any time."],
+            }[kind];
+            message(icon, title, text, [link("My words", "/vocabulary", true)]);
         } else {
             failed(e);
         }
@@ -316,7 +369,10 @@ async function start() {
         return li;
     }));
     $("sTop").hidden = false;
-    if (kind === "review") {
+    if (kind === "recall") {
+        $("sBarBox").hidden = true;
+        master();
+    } else if (kind === "review") {
         $("sBarBox").hidden = true;
         guard(true);
         master();
