@@ -35,6 +35,8 @@ The UI follows the approved prototype `ai-docs/vocabulary/Orbiko — Vocabulary.
   (answered right in box 4).
 - **Learn session**: up to 5 NEW words taught and checked in one go.
 - **Review session**: up to 20 due words.
+- **Recall session**: up to 10 learned words, Azerbaijani → English, practice
+  only.
 - **Day**: a calendar day in the configured zone (default `Asia/Baku`). The
   server counts days ("tomorrow", "in 3 days", "added today"); pages never
   count with the browser's clock, which may be on another day.
@@ -167,6 +169,33 @@ know, so that I can learn them later.
    dark themes; phone width (≥ 320 px); keyboard use (Enter submits typed
    answers; options and tiles focusable).
 2. All card texts are plain text (no HTML), inserted with `textContent`.
+
+## Requirement 11 — Recall (Azerbaijani → English)
+
+**User story:** As a learner, I want to see a word in my own language and
+type it in English, so that I can check I really remember my words.
+
+#### Acceptance Criteria
+
+1. My words SHALL have a third card **"Recall · 🇦🇿 → 🇬🇧"** next to Learn and
+   Daily review: "N words, mixed" (N = learned words, at most 10) with **Start
+   recall**, or "Nothing to recall yet" with the button hidden.
+2. A recall session SHALL take up to **10** learned words (LEARNING or
+   MASTERED, READY cards) **at random**, a different mix each time, with at
+   most one word per Azerbaijani meaning.
+3. Each task SHALL show the Azerbaijani meaning, part of speech and level,
+   and **no hint** (no first letter, no length); the learner types the English
+   word. "I don't remember — show me" SHALL count as a wrong answer.
+4. Accepted answers: the word and its forms, case and spaces ignored; also
+   the learner's other learned words with the same Azerbaijani meaning.
+5. Right → ✓ with the word, its meaning and 🔊; wrong → the right word, and
+   the word comes back at the end until typed right; a "Recalled n / N" bar.
+6. **Done**: "n / N right on the first try", the missed words, a note that
+   review days haven't changed, **Again with other words** and My words.
+7. A recall session SHALL NOT change any word's state, box or due day; it can
+   be played any time, as often as the learner likes. Leaving it asks nothing.
+8. Answers SHALL be graded on the server as in requirement 7 (the English word
+   is never in the task payload).
 
 ## Requirement 10 — Security and cost
 

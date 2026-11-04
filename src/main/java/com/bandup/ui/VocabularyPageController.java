@@ -33,4 +33,12 @@ public class VocabularyPageController {
         model.addAttribute("kind", "review");
         return "vocabulary-session";
     }
+
+    /** /vocabulary/recall: learned words in Azerbaijani, typed in English (practice only). */
+    @GetMapping("/vocabulary/recall")
+    public String recall(Model model) {
+        model.addAttribute("activeKey", NavigationAdvice.VOCABULARY);
+        model.addAttribute("kind", "recall");
+        return "vocabulary-session";
+    }
 }

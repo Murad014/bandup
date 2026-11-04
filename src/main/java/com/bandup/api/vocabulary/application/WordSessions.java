@@ -4,9 +4,14 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
@@ -18,6 +23,7 @@ import com.bandup.api.shared.application.ConflictException;
 import com.bandup.api.shared.application.NotFoundException;
 import com.bandup.api.shared.domain.error.DomainException;
 import com.bandup.api.vocabulary.application.port.LearnerWords;
+import com.bandup.api.vocabulary.application.port.LearnerWords.Recallable;
 import com.bandup.api.vocabulary.application.port.PassageContext;
 import com.bandup.api.vocabulary.application.port.VocabularyDays;
 import com.bandup.api.vocabulary.application.view.SessionViews.AnswerView;
@@ -50,7 +56,8 @@ import com.bandup.api.vocabulary.domain.word.valueobject.WordForm;
  * Learn and review sessions (vocabulary requirements 5–7). Words are
  * snapshotted when the session starts; every answer is graded on the server.
  * A review answer moves its word (first answer of the day only); a finished
- * learn session puts its words in box 1.
+ * learn session puts its words in box 1. A recall session (Azerbaijani →
+ * English) is practice only: it never moves a word.
  */
 @Service
 @RequiredArgsConstructor
@@ -58,6 +65,7 @@ public class WordSessions {
 
     public static final int LEARN_WORDS = 5;
     public static final int REVIEW_WORDS = 20;
+    public static final int RECALL_WORDS = 10;
 
     private final Learner learner;
     private final LearnerWords words;
@@ -72,20 +80,27 @@ public class WordSessions {
     public SessionView start(String kind, String exercise) {
         LearnerId me = learner.required();
         SessionKind k = kind(kind);
-        List<UUID> ids = k == SessionKind.LEARN ? words.learnable(me, blank(exercise), LEARN_WORDS)
-                : words.due(me, days.today(), REVIEW_WORDS);
+        SessionId id = SessionId.random();
+        Map<SavedWordId, List<String>> alsoAccepted = new HashMap<>();
+        List<UUID> ids = switch (k) {
+            case LEARN -> words.learnable(me, blank(exercise), LEARN_WORDS);
+            case REVIEW -> words.due(me, days.today(), REVIEW_WORDS);
+            case RECALL -> recallWords(me, id.seed(), alsoAccepted);
+        };
         if (ids.isEmpty()) {
-            throw DomainException.of("kind", k == SessionKind.LEARN ? "There are no new words ready to learn."
-                    : "Nothing is due for review.");
+            throw DomainException.of("kind", switch (k) {
+                case LEARN -> "There are no new words ready to learn.";
+                case REVIEW -> "Nothing is due for review.";
+                case RECALL -> "Learn some words first, then test yourself here.";
+            });
         }
         List<SessionWord> snapshots = new ArrayList<>();
-        for (UUID id : ids) {
-            SavedWord word = saved.findById(new SavedWordId(id)).orElseThrow();
+        for (UUID savedId : ids) {
+            SavedWord word = saved.findById(new SavedWordId(savedId)).orElseThrow();
             cards.findById(word.word()).filter(WordCard::isReady).ifPresent(card -> snapshots.add(snapshot(word, card)));
         }
-        SessionId id = SessionId.random();
         WordSession session = WordSession.start(id, me, k, snapshots,
-                VocabularyRules.TASKS.build(k, snapshots, id.seed()), clock.instant());
+                VocabularyRules.TASKS.build(k, snapshots, id.seed(), alsoAccepted), clock.instant());
         sessions.save(session);
         return view(session);
     }
@@ -125,6 +140,35 @@ public class WordSessions {
         sessions.save(session);
         return new AnswerView(f.correct(), f.expected(), f.why(), f.explanation(), f.mastered(), f.total(),
                 f.finished(), schedule);
+    }
+
+    /**
+     * Up to 10 learned words at random (seeded by the session), one per Azerbaijani meaning; fills
+     * {@code alsoAccepted} with the spellings of the learner's other words that share a word's meaning
+     * (requirements 11.2, 11.4).
+     */
+    private List<UUID> recallWords(LearnerId me, long seed, Map<SavedWordId, List<String>> alsoAccepted) {
+        List<Recallable> all = new ArrayList<>(words.recallable(me));
+        Collections.shuffle(all, new Random(seed));
+        Map<String, List<Recallable>> byMeaning = new LinkedHashMap<>();
+        all.forEach(r -> byMeaning.computeIfAbsent(meaningKey(r.meaningAz()), m -> new ArrayList<>()).add(r));
+        List<UUID> chosen = new ArrayList<>();
+        for (List<Recallable> same : byMeaning.values()) {
+            if (chosen.size() == RECALL_WORDS) {
+                break;
+            }
+            Recallable first = same.get(0);
+            chosen.add(first.saved());
+            List<String> others = same.stream().skip(1).flatMap(r -> r.spellings().stream()).toList();
+            if (!others.isEmpty()) {
+                alsoAccepted.put(new SavedWordId(first.saved()), others);
+            }
+        }
+        return chosen;
+    }
+
+    private static String meaningKey(String az) {
+        return az == null ? "" : az.strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
     private ScheduleView move(SavedWord word, boolean correct, LocalDate today) {
@@ -181,13 +225,17 @@ public class WordSessions {
                     null, from, box);
             case Task.Pair t -> new TaskView(id, t.type(), phase, null, t.options(), t.sentence(), null, null, null,
                     null, null, null, from, box);
-            case Task.Translate t -> new TaskView(id, t.type(), phase, null, null, null, t.hint(), null, t.az(), null,
+            case Task.Translate t -> new TaskView(id, t.type(), phase, null, null, null,
+                    t.hint().isEmpty() ? null : t.hint(), null, t.az(), null,
                     null, null, from, box);
         };
     }
 
-    /** JSON → answer: a number (option), a string (typed) or a list of numbers (match). */
+    /** JSON → answer: a number (option), a string (typed), a list of numbers (match) or null ("I don't remember"). */
     private static GivenAnswer given(Object answer) {
+        if (answer == null) {
+            return new GivenAnswer.DontKnow();
+        }
         if (answer instanceof Integer index) {
             return new GivenAnswer.Choice(index);
         }
@@ -204,7 +252,7 @@ public class WordSessions {
         try {
             return SessionKind.valueOf(kind == null ? "" : kind.strip().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            throw DomainException.of("kind", "Use learn or review.");
+            throw DomainException.of("kind", "Use learn, review or recall.");
         }
     }
 

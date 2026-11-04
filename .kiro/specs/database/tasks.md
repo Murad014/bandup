@@ -129,3 +129,7 @@ when requested.
     `vocab_saved_word` (unique learner + card; restrict on the card),
     `vocab_session`, `vocab_ai_usage`. 40 tables.
   - _Verified_: `VocabularyPersistenceTest`, `SchemaConstraintsTest` (40 tables).
+
+- [x] 13. `V12__vocabulary_recall.sql`
+  - `vocab_session.kind` also allows `RECALL` (vocabulary requirement 11).
+  - _Verified_: `VocabularySessionApiTest` (recall sessions are stored).

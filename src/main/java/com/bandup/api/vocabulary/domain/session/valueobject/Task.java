@@ -205,6 +205,9 @@ public sealed interface Task {
     }
 
     private static Grade typed(GivenAnswer given, List<String> accept, UnaryOperator<String> normalise) {
+        if (given instanceof GivenAnswer.DontKnow) {
+            return new Grade(false, accept.get(0), null);
+        }
         String typed = normalise.apply(text(given));
         boolean correct = accept.stream().map(normalise).anyMatch(typed::equals);
         return new Grade(correct, accept.get(0), null);

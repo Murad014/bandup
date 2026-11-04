@@ -14,7 +14,7 @@
 | Days | `LocalDate` in `bandup.vocabulary.day-zone` (default `Asia/Baku`), from the injected `Clock` |
 | Guests | Can read cards in popovers; saving needs sign-in |
 | Cost | ≤ 30 AI cards per learner per day; cheap model by default (`bandup.vocabulary.ai.model`) |
-| UI | Thymeleaf shells + ES modules (`js/vocabulary/*`), `app.css` tokens, prototype screens 1–4 |
+| UI | Thymeleaf shells + ES modules (`js/vocabulary/*`), `app.css` tokens, prototype screens 1–4 and 6 (Recall) |
 
 ---
 
@@ -109,7 +109,7 @@ SavedWord   @AggregateRoot   equal by SavedWordId
 
 ```
 WordSession   @AggregateRoot   equal by SessionId
-  learner   kind: LEARN | REVIEW   words: List<SessionWord> (snapshots)   tasks: List<Task>
+  learner   kind: LEARN | REVIEW | RECALL   words: List<SessionWord> (snapshots)   tasks: List<Task>
   queue (task ids)   mastered: Set<TaskId>   retries   finished
   answer(taskId, GivenAnswer, normaliser) → TaskFeedback
      — practise tasks: graded, not repeated; master/review tasks: wrong → back of the queue
@@ -120,8 +120,17 @@ WordSession   @AggregateRoot   equal by SessionId
 LEARN → 1 ChooseMeaning (options = meaning + the card's 3 `wrongMeanings`),
 1 Match (3+ words), then one master task per word rotating Gap /
 TypeFromMeaning / Listen / Pair / Translate (Translate only when `az` is
-there). REVIEW → one task per word, rotating by box. Options are shuffled per
-session (seeded by the session id, as Grammar's tiles).
+there). REVIEW → one task per word, rotating by box. RECALL → one Translate
+per word with **no hint** (requirement 11.3); its accepted answers also hold
+the spellings of the learner's other learned words with the same Azerbaijani
+meaning. Options are shuffled per session (seeded by the session id, as
+Grammar's tiles).
+
+**Choosing recall words** (`WordSessions`): `LearnerWords.recallable` gives
+every learned word with a READY card (saved id, Azerbaijani meaning, the
+card's spellings); they are shuffled with the session's seed, one is kept per
+Azerbaijani meaning (case and spaces ignored), and the first 10 are used. A
+recall answer never touches `SavedWord` (requirement 11.7).
 
 ---
 
@@ -170,7 +179,7 @@ GET    /words?state=&q=&page=&size= → {counts {all,new,learning,mastered}, tod
 GET    /words?ids=a,b          → those words (polling while PREPARING)
 DELETE /words/{id}             → 204
 POST   /words/{id}/retry       → 202 (FAILED card → PREPARING; counts towards the quota)
-POST   /sessions {kind: LEARN | REVIEW, exercise?}
+POST   /sessions {kind: LEARN | REVIEW | RECALL, exercise?}   (RECALL: 422 when nothing is learned)
                                → 201 {sessionId, kind, words[] (LEARN only: full cards for Meet),
                                       tasks[] (no answers), queue}
 POST   /sessions/{id}/answers {taskId, answer}
@@ -207,6 +216,7 @@ DELETE /{id}                    → 204, or 409 "N learners have saved this word
 | `/vocabulary` | `vocabulary.html` (My words) | `js/vocabulary/words.js` |
 | `/vocabulary/learn` | `vocabulary-session.html` | `js/vocabulary/session.js` (LEARN) |
 | `/vocabulary/review` | `vocabulary-session.html` | `js/vocabulary/session.js` (REVIEW) |
+| `/vocabulary/recall` | `vocabulary-session.html` | `js/vocabulary/session.js` (RECALL: Recalled n / N, no hints, "I don't remember", done with first-try score and missed words; ✕ leaves without asking) |
 | `/reading/{slug}` | (existing) | `js/reading/app.js` + new `js/vocabulary/save.js` (popover button, selection bar, passage box) |
 | `/admin/vocabulary`, `/admin/vocabulary/{id}/edit` | `admin/vocabulary*.html` | `js/admin/vocabulary-*.js` |
 
@@ -258,7 +268,7 @@ their fields; Regenerate (503 without a key); unsaved-changes guard.
 | `vocab_word` | id; `lemma` (unique when not null); `status`; `content` jsonb; `source`; `revision`; `version`; `attempts`; `last_error`; `requested_by` (user, set null on delete); `created_at`, `updated_at` |
 | `vocab_word_form` | `form` **primary key** (one card per form, also for REJECTED texts); `word_id` (cascade) |
 | `vocab_saved_word` | uuid pk; `user_id` (cascade); `word_id` (restrict); `state`; `box`; `due_on`; `last_answered_on`; `source_exercise_id` (set null); `source_sentence`; `added_on`; unique `(user_id, word_id)`; index `(user_id, due_on)` |
-| `vocab_session` | uuid pk; `user_id` (cascade); `kind`; `content` jsonb (snapshots, tasks, queue); `version`; `created_at`; `finished_at`; cleanup after 7 days |
+| `vocab_session` | uuid pk; `user_id` (cascade); `kind` (LEARN, REVIEW, RECALL — V12); `content` jsonb (snapshots, tasks, queue); `version`; `created_at`; `finished_at`; cleanup after 7 days |
 | `vocab_ai_usage` | pk `(user_id, day)`; `count` |
 
 ---
@@ -317,3 +327,6 @@ their fields; Regenerate (503 without a key); unsaved-changes guard.
     12): review feedback uses `schedule.nextInDays`, and My words counts
     "added today / yesterday" from the page's `today` (the server's day),
     never from the browser's clock.
+14. **Recall is practice only** (user request; prototype screen 6): it never
+    moves boxes, so it can be played any time without breaking the spaced
+    review. No hint, by the user's choice. Synonyms are accepted (11.4).

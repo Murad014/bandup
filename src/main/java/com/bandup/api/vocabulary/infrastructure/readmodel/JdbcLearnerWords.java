@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -127,6 +128,27 @@ class JdbcLearnerWords implements LearnerWords {
                 where u.public_id = ? and s.state = 'LEARNING' and s.due_on <= ? and w.status = 'READY'
                 order by s.due_on, s.created_at, s.id limit ?""")
                 .params(learner.value(), today, limit).query(UUID.class).list();
+    }
+
+    @Override
+    public List<Recallable> recallable(LearnerId learner) {
+        return jdbc.sql("""
+                select s.id, w.content -> 'meaning' ->> 'az' as az, w.lemma,
+                       (select string_agg(f.form, '|' order by f.form) from vocab_word_form f where f.word_id = w.id) as forms
+                from vocab_saved_word s join app_user u on u.id = s.user_id
+                join vocab_word w on w.id = s.word_id
+                where u.public_id = ? and s.state in ('LEARNING', 'MASTERED') and w.status = 'READY'
+                order by s.created_at, s.id""")
+                .param(learner.value())
+                .query((rs, n) -> {
+                    LinkedHashSet<String> spellings = new LinkedHashSet<>();
+                    spellings.add(rs.getString("lemma"));
+                    String forms = rs.getString("forms");
+                    if (forms != null) {
+                        spellings.addAll(List.of(forms.split("\\|")));
+                    }
+                    return new Recallable(rs.getObject("id", UUID.class), rs.getString("az"), List.copyOf(spellings));
+                }).list();
     }
 
     private static Map<String, Object> filter(UUID learner, String state, String query, String exercise) {

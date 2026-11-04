@@ -40,6 +40,8 @@ import com.bandup.api.vocabulary.domain.word.Cards;
 import com.bandup.api.vocabulary.domain.word.aggregate.WordCard;
 import com.bandup.api.vocabulary.domain.word.repository.WordCardRepository;
 import com.bandup.api.vocabulary.domain.word.valueobject.Lemma;
+import com.bandup.api.vocabulary.domain.word.valueobject.CardContent;
+import com.bandup.api.vocabulary.domain.word.valueobject.Meaning;
 import com.bandup.api.vocabulary.domain.word.valueobject.WordForm;
 
 import tools.jackson.databind.JsonNode;
@@ -228,6 +230,116 @@ class VocabularySessionApiTest {
                 .andExpect(jsonPath("$.schedule.changed").value(false))
                 .andExpect(jsonPath("$.schedule.box").value(1));
         mvc.perform(as(leyla, get(API + "/words"))).andExpect(jsonPath("$.due").value(0));
+    }
+
+    // -------------------------------------------------------------- recall
+
+    private static final List<String> MORE = List.of("harvest", "glacier", "canopy", "drought", "fertile", "migrate",
+            "nectar", "pollen");
+
+    @Test
+    void aRecallAsksTenLearnedWordsInAzerbaijaniAndNeverMovesThem() throws Exception {
+        MORE.forEach(this::readyCard);
+        for (String w : concat(WORDS, MORE)) {
+            save(leyla, w);
+        }
+        jdbc.update("update vocab_saved_word set state = 'LEARNING', box = 2, due_on = ?", today.plusDays(2));
+        jdbc.update("""
+                update vocab_saved_word set state = 'MASTERED', box = 4, due_on = null
+                where word_id = (select word_id from vocab_word_form where form = 'pollen')""");
+        jdbc.update("""
+                update vocab_saved_word set state = 'NEW', box = null, due_on = null
+                where word_id = (select word_id from vocab_word_form where form = 'nectar')""");
+        JsonNode session = body(start(leyla, "recall", null).andExpect(status().isCreated()));
+        String text = session.toString();
+        KEYS.forEach(key -> assertThat(text).as(key).doesNotContain(key));
+        assertThat(session.path("kind").asString()).isEqualTo("RECALL");
+        assertThat(session.path("words")).isEmpty();
+        assertThat(types(session)).containsOnly("translate").hasSize(10);
+        List<String> asked = new ArrayList<>();
+        for (JsonNode task : session.path("tasks")) {
+            assertThat(task.path("hint").isNull()).as("no hint").isTrue();
+            assertThat(task.path("from").isNull()).isTrue();
+            assertThat(task.path("box").isNull()).isTrue();
+            asked.add(task.path("az").asString());
+        }
+        assertThat(asked).doesNotHaveDuplicates().doesNotContain("az nectar");
+
+        String id = session.path("sessionId").asString();
+        JsonNode first = session.path("tasks").path(0);
+        dontKnow(leyla, id, first.path("id").asString())
+                .andExpect(jsonPath("$.correct").value(false))
+                .andExpect(jsonPath("$.expected").value(first.path("az").asString().substring(3)))
+                .andExpect(jsonPath("$.schedule").doesNotExist());
+        for (JsonNode task : session.path("tasks")) {
+            answer(leyla, id, task.path("id").asString(), task.path("az").asString().substring(3).toUpperCase() + "s")
+                    .andExpect(jsonPath("$.correct").value(true))
+                    .andExpect(jsonPath("$.schedule").doesNotExist());
+        }
+        mvc.perform(as(leyla, get(API + "/sessions/" + id))).andExpect(jsonPath("$.finished").value(true));
+        assertThat(jdbc.queryForObject("""
+                select count(*) from vocab_saved_word
+                where (state = 'LEARNING' and box = 2 and due_on = ? and last_answered_on is null)
+                   or (state = 'MASTERED' and box = 4) or state = 'NEW'""", Integer.class, today.plusDays(2)))
+                .as("no word moved").isEqualTo(14);
+
+        List<String> again = new ArrayList<>();
+        body(start(leyla, "recall", null)).path("tasks").forEach(t -> again.add(t.path("az").asString()));
+        assertThat(again).as("a new mix").hasSize(10).isNotEqualTo(asked);
+    }
+
+    @Test
+    void aRecallAsksOneWordPerAzerbaijaniMeaningAndAcceptsTheOther() throws Exception {
+        for (String w : List.of("abundant", "thrive", "predator")) {
+            save(leyla, w);
+        }
+        jdbc.update("update vocab_saved_word set state = 'LEARNING', box = 1, due_on = ?", today.plusDays(1));
+        azOf("abundant", " Bol ");
+        azOf("thrive", "bol");
+        for (String typed : List.of("abundant", "thrive")) {
+            JsonNode session = body(start(leyla, "recall", null).andExpect(status().isCreated()));
+            assertThat(types(session)).hasSize(2);
+            JsonNode bol = null;
+            for (JsonNode task : session.path("tasks")) {
+                if (task.path("az").asString().strip().equalsIgnoreCase("bol")) {
+                    bol = task;
+                }
+            }
+            assertThat(bol).as(session.path("tasks").toString()).isNotNull();
+            answer(leyla, session.path("sessionId").asString(), bol.path("id").asString(), typed)
+                    .andExpect(jsonPath("$.correct").value(true));
+        }
+    }
+
+    @Test
+    void aRecallNeedsLearnedWords() throws Exception {
+        save(leyla, "predator");
+        start(leyla, "recall", null).andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.errors[0].message").value("Learn some words first, then test yourself here."));
+    }
+
+    /** An admin gives the card another Azerbaijani meaning. */
+    private void azOf(String lemma, String az) {
+        WordCard card = cards.lock(cards.findByForm(new WordForm(lemma)).orElseThrow().id()).orElseThrow();
+        CardContent c = card.content().orElseThrow();
+        card.edit(card.lemma().orElseThrow(), card.forms(), new CardContent(c.pos(), c.level(), c.ipa(),
+                new Meaning(c.meaning().en(), az), c.examples(), c.collocations(), c.family(), c.gap(), c.pair(),
+                c.wrongMeanings()), Cards.POLICY);
+        cards.save(card);
+    }
+
+    private ResultActions dontKnow(String learner, String session, String task) throws Exception {
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("taskId", task);
+        body.put("answer", null);
+        return mvc.perform(as(learner, post(API + "/sessions/" + session + "/answers")).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(body)));
+    }
+
+    private static List<String> concat(List<String> a, List<String> b) {
+        List<String> all = new ArrayList<>(a);
+        all.addAll(b);
+        return all;
     }
 
     @Test
