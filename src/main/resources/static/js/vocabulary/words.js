@@ -10,7 +10,7 @@ import { el } from "./api.js";
 
 const $ = (id) => document.getElementById(id);
 const SIZE = 50;
-const state = { tab: "all", q: "", page: 0, words: [], total: 0, polling: null, pollUntil: 0 };
+const state = { tab: "all", q: "", page: 0, words: [], total: 0, today: null, polling: null, pollUntil: 0 };
 const NEXT = { 1: "tomorrow", 2: "in 3 days", 3: "in 1 week", 4: "in 2 weeks" };
 
 function plural(n, word) {
@@ -21,6 +21,7 @@ async function load(append = false) {
     const page = await api.words({ state: state.tab, q: state.q, page: state.page, size: SIZE });
     state.words = append ? state.words.concat(page.words) : page.words;
     state.total = page.total;
+    state.today = page.today;
     summary(page);
     list();
     poll();
@@ -123,13 +124,17 @@ function status(w) {
     return box;
 }
 
+const utc = (iso) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+};
+
+/** "today", "yesterday" or the date, counted from the server's today (the browser's clock may be on another day). */
 function day(iso) {
     if (!iso) return "";
     const [y, m, d] = iso.split("-").map(Number);
     const date = new Date(y, m - 1, d);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diff = Math.round((today - date) / 86400000);
+    const diff = state.today ? Math.round((utc(state.today) - utc(iso)) / 86400000) : null;
     if (diff === 0) return "today";
     if (diff === 1) return "yesterday";
     return date.toLocaleDateString(undefined, { day: "numeric", month: "short" });

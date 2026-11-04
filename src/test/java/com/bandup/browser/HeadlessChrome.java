@@ -9,6 +9,8 @@ import java.net.http.WebSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -59,12 +61,25 @@ final class HeadlessChrome implements AutoCloseable {
         return LOCATIONS.stream().filter(p -> Files.isExecutable(Path.of(p))).findFirst().orElse(null);
     }
 
+    /**
+     * A time zone whose date is not Baku's right now (Honolulu is 14 hours
+     * behind Baku, Kiritimati 10 hours ahead), so the browser's "today" is
+     * never the server's: the pages must not count days with the browser's
+     * clock (the server's day zone is {@code Asia/Baku}).
+     */
+    static String awayFromBaku() {
+        LocalDate baku = LocalDate.now(ZoneId.of("Asia/Baku"));
+        return LocalDate.now(ZoneId.of("Pacific/Honolulu")).equals(baku) ? "Pacific/Kiritimati" : "Pacific/Honolulu";
+    }
+
     static HeadlessChrome start() throws Exception {
         Path profile = Files.createTempDirectory("bandup-chrome");
-        Process process = new ProcessBuilder(find(), "--headless=new", "--disable-gpu", "--no-first-run",
+        ProcessBuilder builder = new ProcessBuilder(find(), "--headless=new", "--disable-gpu", "--no-first-run",
                 "--no-default-browser-check", "--remote-debugging-port=0", "--user-data-dir=" + profile,
                 "--window-size=1280,900", "about:blank")
-                .redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD).start();
+                .redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD);
+        builder.environment().put("TZ", awayFromBaku());
+        Process process = builder.start();
         Path portFile = profile.resolve("DevToolsActivePort");
         long deadline = System.currentTimeMillis() + 60_000; // a fresh profile right after another Chrome quit can be slow
         while (!Files.exists(portFile) || Files.readAllLines(portFile).isEmpty()) {

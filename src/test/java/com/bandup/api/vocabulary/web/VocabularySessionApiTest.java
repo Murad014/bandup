@@ -86,6 +86,7 @@ class VocabularySessionApiTest {
         }
         mvc.perform(as(leyla, get(API + "/words"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.counts.all").value(3))
+                .andExpect(jsonPath("$.today").value(today.toString()))
                 .andExpect(jsonPath("$.counts.fresh").value(3))
                 .andExpect(jsonPath("$.newReady").value(3))
                 .andExpect(jsonPath("$.due").value(0))
@@ -215,11 +216,13 @@ class VocabularySessionApiTest {
                 .andExpect(jsonPath("$.schedule.from").value(2))
                 .andExpect(jsonPath("$.schedule.box").value(1))
                 .andExpect(jsonPath("$.schedule.nextDueOn").value(today.plusDays(1).toString()))
+                .andExpect(jsonPath("$.schedule.nextInDays").value(1))
                 .andExpect(jsonPath("$.schedule.changed").value(true));
         JsonNode second = session.path("tasks").path(1);
         answer(leyla, id, second.path("id").asString(), right(second))
                 .andExpect(jsonPath("$.schedule.box").value(3))
-                .andExpect(jsonPath("$.schedule.nextDueOn").value(today.plusDays(7).toString()));
+                .andExpect(jsonPath("$.schedule.nextDueOn").value(today.plusDays(7).toString()))
+                .andExpect(jsonPath("$.schedule.nextInDays").value(7));
         answer(leyla, id, first.path("id").asString(), right(first))
                 .andExpect(jsonPath("$.finished").value(true))
                 .andExpect(jsonPath("$.schedule.changed").value(false))

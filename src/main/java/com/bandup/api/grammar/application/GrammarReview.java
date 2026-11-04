@@ -1,5 +1,7 @@
 package com.bandup.api.grammar.application;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -72,10 +74,12 @@ public class GrammarReview {
         GrammarLesson lesson = lessons.findById(card.lesson()).filter(GrammarLesson::isPublished)
                 .orElseThrow(GrammarReview::noSuchCard);
         ItemFeedback feedback = lesson.grade(card.item(), LearnerItems.given(answer), LearnerItems.NORMALISER, chain);
-        ReviewSchedule schedule = card.answer(feedback.correct(), days.today());
+        LocalDate today = days.today();
+        ReviewSchedule schedule = card.answer(feedback.correct(), today);
         cards.save(card);
         return new ReviewAnswerView(feedback.correct(), feedback.expected(), feedback.why(), feedback.explanation(),
-                schedule.box().value(), schedule.dueOn(), schedule.changed());
+                schedule.box().value(), schedule.dueOn(), (int) ChronoUnit.DAYS.between(today, schedule.dueOn()),
+                schedule.changed());
     }
 
     private LearnerId signedIn() {

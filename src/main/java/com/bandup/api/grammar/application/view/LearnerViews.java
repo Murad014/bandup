@@ -24,8 +24,13 @@ public final class LearnerViews {
     public record NextLesson(String slug, String title) {
     }
 
-    /** Null for guests. @param nextDueOn when nothing is due now: the next day something is */
-    public record ReviewInfo(int due, LocalDate nextDueOn) {
+    /**
+     * Null for guests.
+     *
+     * @param nextDueOn  when nothing is due now: the next day something is
+     * @param nextInDays days from the server's today to {@code nextDueOn} (the page never counts with its own clock)
+     */
+    public record ReviewInfo(int due, LocalDate nextDueOn, Integer nextInDays) {
     }
 
     public record TopicView(String key, String label) {
@@ -79,8 +84,11 @@ public final class LearnerViews {
     public record ReviewCardView(UUID cardId, TopicView topic, String lessonTitle, ItemView item) {
     }
 
-    /** @param changed false when the card was already answered today (its schedule stays) */
+    /**
+     * @param nextInDays days from the server's today to {@code nextDueOn}
+     * @param changed    false when the card was already answered today (its schedule stays)
+     */
     public record ReviewAnswerView(boolean correct, String expected, String why, String explanation, int box,
-            LocalDate nextDueOn, boolean changed) {
+            LocalDate nextDueOn, int nextInDays, boolean changed) {
     }
 }

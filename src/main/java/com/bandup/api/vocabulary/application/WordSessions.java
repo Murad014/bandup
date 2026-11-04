@@ -2,6 +2,7 @@ package com.bandup.api.vocabulary.application;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -129,7 +130,8 @@ public class WordSessions {
     private ScheduleView move(SavedWord word, boolean correct, LocalDate today) {
         ReviewSchedule s = word.answer(correct, today);
         saved.save(word);
-        return new ScheduleView(s.from().value(), s.box().value(), s.dueOn(), s.changed(),
+        return new ScheduleView(s.from().value(), s.box().value(), s.dueOn(),
+                s.dueOn() == null ? null : (int) ChronoUnit.DAYS.between(today, s.dueOn()), s.changed(),
                 s.state() == WordState.MASTERED);
     }
 

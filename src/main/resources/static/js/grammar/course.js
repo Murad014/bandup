@@ -147,18 +147,15 @@ function renderReview(review) {
     const due = review.due;
     $("reviewGo").hidden = due === 0;
     $("reviewSub").textContent = due > 0 ? due + (due === 1 ? " item" : " items") + " due from earlier lessons · ~" + Math.max(1, Math.ceil(due / 2)) + " min"
-        : review.nextDueOn ? "Nothing due today · next review " + dayText(review.nextDueOn)
+        : review.nextDueOn ? "Nothing due today · next review " + dayText(review.nextDueOn, review.nextInDays)
             : "Finish a lesson and its rules come back here to review.";
 }
 
-function dayText(iso) {
-    const [y, m, d] = iso.split("-").map(Number);
-    const day = new Date(y, m - 1, d);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const days = Math.round((day - today) / 86400000);
+/** @param days counted by the server from its today (the browser's clock may be on another day) */
+function dayText(iso, days) {
     if (days === 1) return "tomorrow";
-    return "on " + day.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" });
+    const [y, m, d] = iso.split("-").map(Number);
+    return "on " + new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" });
 }
 
 function renderToday(data) {

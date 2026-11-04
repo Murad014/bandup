@@ -166,7 +166,7 @@ polls `GET /words?ids=…` every 3 s while a word is PREPARING (max 2 min).
 GET    /lookup?text=           (public)  → card view (READY only) or 404 — never calls AI
 POST   /words {text, source?: {exercise, sentence}}
                                → 201 SavedWordView | 200 (already saved) | 422 | 429 | 503
-GET    /words?state=&q=&page=&size= → {counts {all,new,learning,mastered}, due, newReady, words[], total}
+GET    /words?state=&q=&page=&size= → {counts {all,new,learning,mastered}, today, due, newReady, words[], total}
 GET    /words?ids=a,b          → those words (polling while PREPARING)
 DELETE /words/{id}             → 204
 POST   /words/{id}/retry       → 202 (FAILED card → PREPARING; counts towards the quota)
@@ -175,7 +175,7 @@ POST   /sessions {kind: LEARN | REVIEW, exercise?}
                                       tasks[] (no answers), queue}
 POST   /sessions/{id}/answers {taskId, answer}
                                → {correct, expected, why?, explanation, mastered, total, finished,
-                                  schedule? {box, from, nextDueOn, changed} (review)}
+                                  schedule? {box, from, nextDueOn, nextInDays, changed, mastered} (review)}
 ```
 
 `SavedWordView`: id, word, lemma, pos, level, meaning {en, az}, source,
@@ -313,3 +313,7 @@ their fields; Regenerate (503 without a key); unsaved-changes guard.
 12. **Tests never call the real OpenRouter**: `build.gradle` sets an empty
     key for `test` and `uiTest`; tests that need the AI use `StubOpenRouter`
     (the JDK's HTTP server) and set their own key.
+13. **The server counts the days, not the browser** (as grammar decision
+    12): review feedback uses `schedule.nextInDays`, and My words counts
+    "added today / yesterday" from the page's `today` (the server's day),
+    never from the browser's clock.

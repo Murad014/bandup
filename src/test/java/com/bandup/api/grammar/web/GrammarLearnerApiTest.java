@@ -234,7 +234,8 @@ class GrammarLearnerApiTest {
                 .andExpect(jsonPath("$.lessons[1].lockedReason").value("TOMORROW"))
                 .andExpect(jsonPath("$.lessons[2].lockedReason").value("FINISH_PREVIOUS"))
                 .andExpect(jsonPath("$.review.due").value(0))
-                .andExpect(jsonPath("$.review.nextDueOn").value(today().plusDays(1).toString()));
+                .andExpect(jsonPath("$.review.nextDueOn").value(today().plusDays(1).toString()))
+                .andExpect(jsonPath("$.review.nextInDays").value(1));
         mvc.perform(as(anna, get(API + "/lessons/" + TWO))).andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("TOMORROW"));
         mvc.perform(as(anna, get(API + "/lessons/" + THREE))).andExpect(status().isForbidden())
@@ -284,12 +285,14 @@ class GrammarLearnerApiTest {
         reviewAnswer(anna, c2, "wins").andExpect(jsonPath("$.correct").value(false))
                 .andExpect(jsonPath("$.expected").value("won")).andExpect(jsonPath("$.box").value(1))
                 .andExpect(jsonPath("$.nextDueOn").value(today().plusDays(1).toString()))
+                .andExpect(jsonPath("$.nextInDays").value(1))
                 .andExpect(jsonPath("$.changed").value(true));
         reviewAnswer(anna, c2, "won").andExpect(jsonPath("$.correct").value(true)).andExpect(jsonPath("$.box").value(1))
                 .andExpect(jsonPath("$.changed").value(false));
         String c1 = cardFor(due, "c1");
         reviewAnswer(anna, c1, 1).andExpect(jsonPath("$.box").value(2))
-                .andExpect(jsonPath("$.nextDueOn").value(today().plusDays(3).toString()));
+                .andExpect(jsonPath("$.nextDueOn").value(today().plusDays(3).toString()))
+                .andExpect(jsonPath("$.nextInDays").value(3));
         mvc.perform(as(anna, get(API + "/course").param("level", "B2"))).andExpect(jsonPath("$.review.due").value(3));
     }
 
