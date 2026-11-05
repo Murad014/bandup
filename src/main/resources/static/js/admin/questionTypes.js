@@ -29,6 +29,16 @@ export const QUESTION_TYPES = {
 export function typeDef(key) {
     return QUESTION_TYPES[key] || QUESTION_TYPES.TFNG;
 }
+/**
+ * Whether a question is written as a gap (pre ___ post) or as a text. The
+ * question's own stem decides (a SHORT question may be either); the type only
+ * picks the form of a new, empty question.
+ */
+export function isGapStem(type, q) {
+    if (q && q.pre != null) return true;
+    if (q && q.text != null) return false;
+    return typeDef(type).stem === "gap";
+}
 export function familyOf(key) {
     return typeDef(key).family;
 }

@@ -110,7 +110,8 @@ tasks are done.** Each task was done when requested and ended green.
   HTML, lemma, az / en meanings, "machine-written, not reviewed" note).
   Groups: all types (DIAGRAM_LABEL listed but disabled until media),
   instruction + translations, "Choose N", word limit + numbers, reusable
-  options, banks; questions: stem per type, options, answer editor per
+  options, banks; questions: stem as the question is written (gap or
+  text; the type picks it only for a new question), options, answer editor per
   family, evidence (datalist), explanations; move up/down keeps ids.
 - Save / publish / unpublish; a new exercise moves to its `/edit` URL after
   the first save; 422 → each error at its `data-field` (= the API path) and
@@ -139,3 +140,16 @@ tasks are done.** Each task was done when requested and ended green.
   archived row with the note; signed out in another tab → stays, save → sign
   in → "Restore them" brings the work back. Screenshots in
   `build/screenshots/`.
+
+## Bugs
+
+- [x] A SHORT question written as a gap (`pre` / `post`, as the generator
+  writes "Complete the sentences") opened with an empty "Question" box, and
+  saving or publishing said "Q11 has no text". The editor chose the stem form
+  by type (SHORT = text). Now `isGapStem(type, q)` in `questionTypes.js`
+  follows the question's own stem; the type only picks the form of a new
+  question. Learners were never affected. Failing test first:
+  `AdminBrowserTest.aShortAnswerQuestionWrittenAsAGapKeepsItsTextInTheEditor`
+  (a gap SHORT and a text SHORT keep their text on load and in the saved
+  payload; a published save makes revision 2 without errors); mutation
+  (payload still by type) caught.

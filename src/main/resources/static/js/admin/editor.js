@@ -15,7 +15,7 @@
 import { createPassageEditor } from "./passage.js";
 import { publishHints, questionLabels } from "./validate.js";
 import { HELP_LANGUAGES, QUESTION_TYPES, familyOf, optionKeyAt, orderedTypeKeys, typeDef,
-    usesGroupOptions, usesPerQuestionOptions } from "./questionTypes.js";
+    usesGroupOptions, usesPerQuestionOptions, isGapStem } from "./questionTypes.js";
 
 const LEVELS = ["", "A1", "A2", "B1", "B2", "C1", "C2"];
 const STASH = "bandup.unsaved.";
@@ -144,7 +144,7 @@ export function createEditor(options = {}) {
                     mediaId: g.mediaId || null,
                     options: usesGroupOptions(g.type) ? g.options.map((o) => ({ key: o.key, label: o.label || "" })) : [],
                     questions: g.questions.map((q) => {
-                        const gap = typeDef(g.type).stem === "gap";
+                        const gap = isGapStem(g.type, q);
                         return {
                             id: q.id || null,
                             text: gap ? null : (q.text || ""),
@@ -513,7 +513,7 @@ export function createEditor(options = {}) {
         head.appendChild(button("Remove", () => { g.questions.splice(qi, 1); changed(); renderGroups(); }, "btn btn--text"));
         box.appendChild(head);
 
-        if (typeDef(g.type).stem === "gap") {
+        if (isGapStem(g.type, q)) {
             box.appendChild(field("Text before the gap", textInput(q.pre, (v) => { q.pre = v; changed(); }), path + ".stem"));
             box.appendChild(field("Text after the gap", textInput(q.post, (v) => { q.post = v; changed(); })));
         } else {
