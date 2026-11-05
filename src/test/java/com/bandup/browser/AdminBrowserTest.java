@@ -158,6 +158,39 @@ class AdminBrowserTest extends BrowserTestBase {
         assertThat(tab.text("window.__confirmed[0]")).contains("Saving creates revision 2");
     }
 
+    /** Bug: a short-answer question written as a gap opened with an empty "Question" box and could not be saved. */
+    @Test
+    void aShortAnswerQuestionWrittenAsAGapKeepsItsTextInTheEditor() throws Exception {
+        String slug = "short-gap-" + UUID.randomUUID().toString().substring(0, 8);
+        HeadlessChrome.Tab tab = adminTab();
+        String body = "{id: '" + slug + "', title: 'Short gap', format: 'MINI',"
+                + " passageHtml: '<p><span class=\"ev\" id=\"e1\">The ship sailed to Barbados.</span></p>',"
+                + " questionGroups: ["
+                + "{type: 'SHORT', instruction: 'Complete the sentences.', maxWords: 2, numbersAllowed: true,"
+                + "  questions: [{pre: 'On its second voyage, H4 was taken to', post: '.', answer: ['Barbados']}]},"
+                + "{type: 'SHORT', instruction: 'Answer the questions.', maxWords: 2,"
+                + "  questions: [{text: 'Where did the ship sail?', answer: ['Barbados']}]}]}";
+        tab.eval(AUTH + ".then(m => m.apiFetch('/api/v1/admin/passages', {method: 'POST', json: " + body + "}))"
+                + ".then(() => import('/js/auth.js')).then(m => m.apiFetch('/api/v1/admin/passages/" + slug + "/publish', {method: 'POST'}))");
+        tab.navigate(url("/admin/sessions/" + slug + "/edit"));
+        tab.waitFor("document.getElementById('statusBadge').textContent === 'published'");
+
+        String gap = field("questionGroups[0].questions[0].stem");
+        assertThat(tab.text(gap + ".querySelector('label').textContent")).contains("Text before the gap");
+        assertThat(tab.text(gap + ".querySelector('input').value")).isEqualTo("On its second voyage, H4 was taken to");
+        assertThat(tab.text(field("questionGroups[1].questions[0].stem") + ".querySelector('input').value"))
+                .isEqualTo("Where did the ship sail?");
+        assertThat(tab.text("document.getElementById('publishHints').textContent")).doesNotContain("has no text");
+        assertThat(tab.text("JSON.stringify(window.__adminEditor._toInput().questionGroups.map(g => g.questions.map(q => [q.text, q.pre, q.post])))"))
+                .isEqualTo("[[[null,\"On its second voyage, H4 was taken to\",\".\"]],[[\"Where did the ship sail?\",null,null]]]");
+
+        tab.eval("window.confirm = () => true");
+        tab.eval(type("#title", "Short gap, saved"));
+        tab.eval("document.getElementById('saveBtn').click()");
+        tab.waitFor("document.getElementById('revisionInfo').textContent.startsWith('Revision 2')");
+        assertThat(tab.eval("document.getElementById('editorErrors').hidden").asBoolean()).isTrue();
+    }
+
     @Test
     void deletingAnExerciseWithAttemptsArchivesIt() throws Exception {
         String slug = create("archive-me", "['TRUE']", true);
