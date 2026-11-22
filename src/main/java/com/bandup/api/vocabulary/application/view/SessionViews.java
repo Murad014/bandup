@@ -1,21 +1,27 @@
 package com.bandup.api.vocabulary.application.view;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * Response records of the session API (design §5.1). Tasks never carry their
- * answers; review tasks never name their word.
+ * answers; round tasks never name their word.
  */
 public final class SessionViews {
 
     private SessionViews() {
     }
 
-    /** @param words LEARN only: the words to meet; empty for REVIEW */
+    /**
+     * @param words LEARN only: the words to meet; empty for ROUND
+     * @param set   ROUND only: which set and round this is
+     */
     public record SessionView(UUID sessionId, String kind, List<MeetWord> words, List<TaskView> tasks,
-            List<String> queue, int mastered, int total, boolean finished) {
+            List<String> queue, int mastered, int total, boolean finished, RoundView set) {
+    }
+
+    /** @param number the set's number, @param count how many sets there are, @param round this round's number */
+    public record RoundView(int number, int count, int round) {
     }
 
     /** One word's Meet card. {@code sentence}/{@code from}: where the learner saved it; may be null. */
@@ -28,26 +34,22 @@ public final class SessionViews {
      *
      * @param term     meaning: the word whose meaning is asked
      * @param speak    listen: the word the browser speaks (learn sessions only)
-     * @param from     review: where the word came from (never the word itself)
      */
     public record TaskView(String id, String type, String phase, String term, List<String> options, String sentence,
-            String hint, String meaning, String az, String speak, List<String> terms, List<String> meanings,
-            String from, Integer box) {
+            String hint, String meaning, String az, String speak, List<String> terms, List<String> meanings) {
     }
 
-    /** The server's answer to one task. {@code schedule}: review only. */
+    /** The server's answer to one task. {@code step}: ROUND only, on a word's first try in the round. */
     public record AnswerView(boolean correct, String expected, String why, String explanation, int mastered,
-            int total, boolean finished, ScheduleView schedule) {
+            int total, boolean finished, StepView step) {
     }
 
     /**
-     * A reviewed word's new schedule.
+     * A word's progress after its first try in a round (requirement 6.6).
      *
-     * @param nextInDays days from the server's today to {@code nextDueOn} (the page never counts with its own clock);
-     *                   null once mastered
-     * @param changed    false when it was already answered today
+     * @param streak  rounds in a row with a right first try (0, 1, 2)
+     * @param changed false when it was mastered already (in another tab)
      */
-    public record ScheduleView(int from, int box, LocalDate nextDueOn, Integer nextInDays, boolean changed,
-            boolean mastered) {
+    public record StepView(int streak, boolean mastered, boolean changed) {
     }
 }

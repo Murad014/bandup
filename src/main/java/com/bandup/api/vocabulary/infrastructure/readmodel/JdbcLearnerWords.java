@@ -2,7 +2,6 @@ package com.bandup.api.vocabulary.infrastructure.readmodel;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -19,6 +18,7 @@ import com.bandup.api.vocabulary.application.view.VocabularyViews.Counts;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.MeaningView;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.SavedWordView;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.SourceView;
+import com.bandup.api.vocabulary.domain.saved.service.SetPlan;
 import com.bandup.api.vocabulary.domain.saved.valueobject.LearnerId;
 import com.bandup.api.vocabulary.domain.word.valueobject.CardContent;
 import com.bandup.api.vocabulary.infrastructure.persistence.CardJson;
@@ -29,7 +29,11 @@ import com.bandup.api.vocabulary.infrastructure.persistence.CardJson;
 class JdbcLearnerWords implements LearnerWords {
 
     private static final String SELECT = """
-            select s.id, s.state, s.box, s.due_on, s.added_on, s.source_sentence, e.slug, e.title, w.status, w.content,
+            select s.id, s.state, s.streak, s.added_on, s.source_sentence, e.slug, e.title, w.status, w.content,
+                   case when s.state <> 'NEW' then 1 + (select count(*) from vocab_saved_word o
+                        where o.user_id = s.user_id and o.state <> 'NEW'
+                          and (o.learned_at, o.created_at, o.id) < (s.learned_at, s.created_at, s.id)) / """ + SetPlan.SET_SIZE + """
+                   end as set_number,
                    coalesce(w.lemma, (select min(f.form) from vocab_word_form f where f.word_id = w.id)) as word,
                    array(select f.form from vocab_word_form f where f.word_id = w.id order by f.form) as forms
             from vocab_saved_word s
@@ -90,15 +94,6 @@ class JdbcLearnerWords implements LearnerWords {
     }
 
     @Override
-    public int due(LearnerId learner, LocalDate today) {
-        return jdbc.sql("""
-                select count(*) from vocab_saved_word s join app_user u on u.id = s.user_id
-                join vocab_word w on w.id = s.word_id
-                where u.public_id = ? and s.state = 'LEARNING' and s.due_on <= ? and w.status = 'READY'""")
-                .params(learner.value(), today).query(Integer.class).single();
-    }
-
-    @Override
     public int newReady(LearnerId learner) {
         return jdbc.sql("""
                 select count(*) from vocab_saved_word s join app_user u on u.id = s.user_id
@@ -121,33 +116,27 @@ class JdbcLearnerWords implements LearnerWords {
     }
 
     @Override
-    public List<UUID> due(LearnerId learner, LocalDate today, int limit) {
+    public List<Learned> learned(LearnerId learner) {
         return jdbc.sql("""
-                select s.id from vocab_saved_word s join app_user u on u.id = s.user_id
-                join vocab_word w on w.id = s.word_id
-                where u.public_id = ? and s.state = 'LEARNING' and s.due_on <= ? and w.status = 'READY'
-                order by s.due_on, s.created_at, s.id limit ?""")
-                .params(learner.value(), today, limit).query(UUID.class).list();
-    }
-
-    @Override
-    public List<Recallable> recallable(LearnerId learner) {
-        return jdbc.sql("""
-                select s.id, w.content -> 'meaning' ->> 'az' as az, w.lemma,
+                select s.id, s.state, s.streak, s.rounds, w.status, w.content -> 'meaning' ->> 'az' as az, w.lemma,
                        (select string_agg(f.form, '|' order by f.form) from vocab_word_form f where f.word_id = w.id) as forms
                 from vocab_saved_word s join app_user u on u.id = s.user_id
                 join vocab_word w on w.id = s.word_id
-                where u.public_id = ? and s.state in ('LEARNING', 'MASTERED') and w.status = 'READY'
-                order by s.created_at, s.id""")
+                where u.public_id = ? and s.state <> 'NEW'
+                order by s.learned_at, s.created_at, s.id""")
                 .param(learner.value())
                 .query((rs, n) -> {
                     LinkedHashSet<String> spellings = new LinkedHashSet<>();
-                    spellings.add(rs.getString("lemma"));
+                    if (rs.getString("lemma") != null) {
+                        spellings.add(rs.getString("lemma"));
+                    }
                     String forms = rs.getString("forms");
                     if (forms != null) {
                         spellings.addAll(List.of(forms.split("\\|")));
                     }
-                    return new Recallable(rs.getObject("id", UUID.class), rs.getString("az"), List.copyOf(spellings));
+                    return new Learned(rs.getObject("id", UUID.class), rs.getInt("streak"),
+                            "MASTERED".equals(rs.getString("state")), rs.getInt("rounds"),
+                            "READY".equals(rs.getString("status")), rs.getString("az"), List.copyOf(spellings));
                 }).list();
     }
 
@@ -165,16 +154,15 @@ class JdbcLearnerWords implements LearnerWords {
     private static SavedWordView row(ResultSet rs, int n) throws SQLException {
         String json = rs.getString("content");
         CardContent c = json == null ? null : CardJson.read(json);
-        int box = rs.getInt("box");
-        boolean noBox = rs.wasNull();
-        java.sql.Date due = rs.getDate("due_on");
+        int set = rs.getInt("set_number");
+        boolean noSet = rs.wasNull();
         java.sql.Array forms = rs.getArray("forms");
         List<String> formList = forms == null ? List.of() : List.of((String[]) forms.getArray());
         return new SavedWordView(rs.getObject("id", UUID.class), rs.getString("word"), formList, c == null ? null : c.pos(),
                 c == null ? null : c.level(), c == null ? null : c.ipa(),
                 c == null ? null : new MeaningView(c.meaning().en(), c.meaning().az()),
                 new SourceView(rs.getString("slug"), rs.getString("title"), rs.getString("source_sentence")),
-                rs.getDate("added_on").toLocalDate(), rs.getString("state"), noBox ? null : box,
-                due == null ? null : due.toLocalDate(), rs.getString("status"));
+                rs.getDate("added_on").toLocalDate(), rs.getString("state"), rs.getInt("streak"), noSet ? null : set,
+                rs.getString("status"));
     }
 }

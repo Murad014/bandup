@@ -8,8 +8,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Nunito:wght@400;600;700;800&display=swap">
 <!--
   UI PROTOTYPE ONLY — fake data, grading in the browser. Nothing here is wired to Orbiko.
-  Screens: 1 Reading (add words) · 2 My words · 3 Learn session · 4 Review · 5 Word packs.
-  Open a screen directly with #reading, #words, #learn, #review, #packs.
+  Screens: 1 Reading (add words) · 2 My words · 3 Learn session · 4 Review (old) · 5 Word packs ·
+  6 Recall (old) · 7 Sets (replaces 4 and 6).
+  Open a screen directly with #reading, #words, #learn, #review, #packs, #recall, #sets.
 -->
 <style>
 :root{
@@ -228,6 +229,33 @@ h1{font-size:1.7rem;line-height:1.2;margin:0 0 6px}
 .missed span{background:var(--bad-soft);color:var(--bad);font-weight:800;border-radius:var(--pill);padding:4px 12px}
 .rc-note{font-size:.85rem;color:var(--muted);margin-top:10px}
 
+/* ---- 7. sets ---- */
+.todo .st{border-left:4px solid var(--grape)}
+.dots{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.dots i{width:13px;height:13px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}
+.dots i.g1{border-color:var(--grape);background:linear-gradient(90deg,var(--grape) 50%,transparent 50%)}
+.dots i.g2{border-color:var(--ok);background:var(--ok)}
+.sets{display:flex;flex-direction:column;gap:12px}
+.set{padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.set .sh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.set h3{margin:0;font-size:1.1rem}
+.set .sp{flex:1}
+.set p{margin:0;color:var(--muted);font-size:.92rem}
+.set.done{border-left:4px solid var(--ok)}
+.set.now{border-left:4px solid var(--grape);box-shadow:0 0 0 2px var(--grape-soft)}
+.set.lock{opacity:.7;border-left:4px solid var(--line)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin:14px 0 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .dots{margin:0}
+.step{font:800 .82rem var(--ui);margin-top:6px}
+.step.up{color:var(--grape)}.step.win{color:var(--ok)}.step.zero{color:var(--bad)}
+.chips2{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0 2px}
+.chips2 span{font-weight:800;border-radius:var(--pill);padding:4px 12px}
+.chips2.win span{background:var(--ok-soft);color:var(--ok)}
+.chips2.up span{background:var(--grape-soft);color:var(--grape)}
+.chips2.no span{background:var(--bad-soft);color:var(--bad)}
+.fin h4{margin:14px 0 2px;font-size:.9rem;color:var(--muted)}
+
 /* ---- 5. packs ---- */
 .packs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .pack{padding:18px;display:flex;flex-direction:column;gap:6px}
@@ -263,9 +291,10 @@ h1{font-size:1.7rem;line-height:1.2;margin:0 0 6px}
   <button data-go="reading">1 · Reading: add words</button>
   <button data-go="words">2 · My words</button>
   <button data-go="learn">3 · Learn session</button>
-  <button data-go="review">4 · Review</button>
+  <button data-go="review">4 · Review (old)</button>
   <button data-go="packs">5 · Word packs</button>
-  <button data-go="recall">6 · Recall (AZ → EN)</button>
+  <button data-go="recall">6 · Recall (old)</button>
+  <button data-go="sets">7 · Sets (new)</button>
   <span class="sp"></span>
   <button id="reset">Reset demo</button>
 </div>
@@ -341,7 +370,7 @@ function go(name){
   document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
   (name==='reading'?document.querySelector('.nav a[data-go="reading"]'):document.getElementById('navVocab')).classList.add('on');
   closePops();
-  ({reading:Reading,words:Words,learn:LearnStart,review:ReviewStart,packs:Packs,recall:RecallStart})[name]();
+  ({reading:Reading,words:Words,learn:LearnStart,review:ReviewStart,packs:Packs,recall:RecallStart,sets:Sets,round:Round})[name]();
   window.scrollTo(0,0);
 }
 
@@ -425,7 +454,7 @@ function Words(){
   const c=counts();const due=S.words.filter(x=>x.st==='learning'&&!x.today).length;
   app.innerHTML='';
   const root=h(`<div class="wrap wide">
-    <div class="head"><div><h1>My words</h1><p class="sub">Words you saved from passages and packs. Learn 5 at a time, then review them until they stick.</p></div>
+    <div class="head"><div><h1>My words</h1><p class="sub">Words you saved from passages and packs. Learn 5 at a time, then master them set by set.</p></div>
       <span class="sp"></span><button class="btn" data-packs>📦 Word packs</button></div>
     <div class="stats">
       <div class="card stat"><b>${c.all}</b><small>words</small></div>
@@ -433,18 +462,13 @@ function Words(){
       <div class="card stat lrn"><b>${c.learning}</b><small>learning</small></div>
       <div class="card stat mst"><b>${c.mastered}</b><small>mastered</small></div>
     </div>
-    <div class="todo three">
+    <div class="todo">
       <div class="card learn"><span class="kick" style="align-self:flex-start">Learn</span><h3>${c.new?`${Math.min(5,c.new)} new word${Math.min(5,c.new)>1?'s':''} ready`:'No new words'}</h3>
-        <p>${c.new?'Meet each word, practise it, then prove it — a word you miss comes back until you get it.':'Add words from a passage or a pack to learn them.'}</p>
+        <p>${c.new?'Meet each word, practise it, then prove it — a learned word joins your sets.':'Add words from a passage or a pack to learn them.'}</p>
         <button class="btn primary" data-learn ${c.new?'':'disabled'}>Start learning →</button></div>
-      <div class="card rev"><span class="kick" style="align-self:flex-start;background:var(--sun-soft);color:#b07208">Daily review</span><h3>${due} words due</h3>
-        <p>Words come back on day 1, 3, 7 and 14. ~${Math.max(1,Math.ceil(due/3))} min.</p>
-        <button class="btn" data-review ${due?'':'disabled'}>Review now</button></div>
-      <div class="card rc"><span class="kick grape" style="align-self:flex-start">Recall · 🇦🇿 → 🇬🇧</span><h3>${recallPool().length?`${Math.min(10,recallPool().length)} words, mixed`:'Nothing to recall yet'}</h3>
-        <p>${recallPool().length?'See the Azerbaijani, type the English. Practice only — your review days don’t change.':'Learn some words first — then test yourself here any time.'}</p>
-        <button class="btn" data-recall ${recallPool().length?'':'disabled'}>Start recall</button></div>
+      ${setsCard()}
     </div>
-    <div class="add"><input class="search" id="newWord" placeholder="Add a word yourself, e.g. “sustainable”" aria-label="Add a word"><button class="btn" id="addBtn">＋ Add</button></div>
+    <div class="add"><input class="search" id="newWord" placeholder="Add a word or phrase, e.g. “vicious circle”" aria-label="Add a word or phrase"><button class="btn" id="addBtn">＋ Add</button></div>
     <div class="tools">
       <div class="tabs" id="tabs">${['all','new','learning','mastered'].map(t=>`<button data-t="${t}" class="${t===tab?'on':''}">${t[0].toUpperCase()+t.slice(1)} · ${c[t]}</button>`).join('')}</div>
       <input class="search" id="q" placeholder="Search my words…" value="${esc(query)}" aria-label="Search">
@@ -454,8 +478,7 @@ function Words(){
   app.append(root);
   root.querySelector('[data-packs]').onclick=()=>go('packs');
   root.querySelector('[data-learn]').onclick=()=>go('learn');
-  root.querySelector('[data-review]').onclick=()=>go('review');
-  root.querySelector('[data-recall]').onclick=()=>go('recall');
+  root.querySelector('[data-sets]').onclick=()=>go('sets');
   root.querySelector('#tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;tab=b.dataset.t;Words();};
   root.querySelector('#q').oninput=e=>{query=e.target.value;list();};
   const addIt=()=>{const v=root.querySelector('#newWord').value.trim().toLowerCase();if(!v)return;
@@ -471,7 +494,7 @@ function list(){
   box.innerHTML=rows.map(x=>{const d=DICT[x.w]||{};return `<div class="card word">
     <div class="ww">${esc(x.w)} <small>${esc(d.pos||'')} ${d.lvl?'· '+d.lvl:''}</small></div>
     <div class="wm">${esc(d.mean||'')}<small>from: ${esc(x.src)} · added ${esc(x.added)}</small></div>
-    <div class="str b${x.box}" title="Memory strength">${x.st==='new'?'<span class="state new">new</span>':x.st==='mastered'?'<span class="state mastered">✓ mastered</span>':'<i></i><i></i><i></i><i></i><em>'+label[x.box]+'</em>'}</div>
+    <div class="str b${x.box}" title="Memory strength">${x.st==='new'?'<span class="state new">new</span>':x.st==='mastered'?'<span class="state mastered">✓ mastered</span>':`<span class="dots"><i class="g${x.box>2?1:0}"></i></span><em>Set 2 · ${x.box>2?'right once':'not yet'}</em>`}</div>
     <button class="x" data-rm="${esc(x.w)}" title="Remove" aria-label="Remove ${esc(x.w)}">✕</button></div>`;}).join('')||'<p class="sub">No words here.</p>';
   box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{S.words=S.words.filter(x=>x.w!==b.dataset.rm);navCount();Words();});
 }
@@ -623,7 +646,7 @@ function learnDone(total){
   const c=h(`<div class="card fin"><div class="ic">🎉</div><h1>${L.words.length} new word${L.words.length>1?'s':''} learned</h1><p class="sub">You got every word right at least once.</p>
     <div class="learned">${L.words.map(w=>`<span>✓ ${esc(w)}</span>`).join('')}</div>
     <div class="recap"><b>Mastered:</b> ${total}/${total} tasks · <b>Retries:</b> ${L.retries}<br>
-    <b>Next:</b> these words come back in your <b>daily review tomorrow</b>, then in 3 days, 1 week and 2 weeks.<br>
+    <b>Next:</b> these words join your <b>sets</b> — type them from Azerbaijani until they’re mastered.<br>
     <b>New words left:</b> ${counts().new} ${counts().new?'— you can learn another 5 now':''}</div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">${counts().new?`<button class="btn primary" data-more>Learn ${Math.min(5,counts().new)} more</button>`:''}<button class="btn" data-back>Back to my words</button></div></div>`);
   const m=c.querySelector('[data-more]');if(m)m.onclick=()=>go('learn');c.querySelector('[data-back]').onclick=()=>go('words');
@@ -727,6 +750,141 @@ function recallDone(words,missed){
   body().innerHTML='';body().append(c);
 }
 
+/* ===================== 7. Sets: all learned words, 25 at a time ===================== */
+/* Replaces Daily review (4) and Recall (6). Learned words, in the order they
+   were learned, are split into sets of 25. Only the current set is asked:
+   Azerbaijani shown, English typed, no hint. A word is mastered after 2 rounds
+   in a row right on the first try; a miss starts it again at 0. When every
+   word of the set is mastered, the next set opens. Mastered words are not
+   asked again. The last set fills up as more words are learned. */
+const SET_SIZE=25;
+const LEARNED=[ // [english, azerbaijani, pos, level, other accepted forms]
+ ['predator','yırtıcı heyvan','noun','B2'],['thrive','inkişaf etmək','verb','B2'],['abundant','bol, çoxlu','adjective','B2'],
+ ['decline','azalma, enmə','noun · verb','B2'],['erosion','eroziya, aşınma','noun','C1'],['riverbank','çay sahili','noun','B1'],
+ ['reintroduce','yenidən gətirmək (təbiətə)','verb','C1'],['ecosystem','ekosistem','noun','B2'],['vegetation','bitki örtüyü','noun','B2'],
+ ['graze','otlamaq','verb','B2'],['species','növ','noun','B1'],['consequence','nəticə','noun','B2'],
+ ['cascade','ardıcıl təsirlər zənciri','noun','C1'],['voyage','dəniz səyahəti','noun','B2'],['equator','ekvator','noun','B2'],
+ ['proof','sübut','noun','B2'],['navigation','naviqasiya, gəmiçilik','noun','B2'],['practical','praktik, işlək','adjective','B1'],
+ ['complicated','mürəkkəb','adjective','B1'],['craftsman','usta, sənətkar','noun','B2'],['officially','rəsmi olaraq','adverb','B2'],
+ ['decade','onillik','noun','B1'],['equipment','avadanlıq','noun','B1'],['symbol','simvol, rəmz','noun','B1'],
+ ['habitat','yaşayış mühiti','noun','B2'],
+ // set 2
+ ['vicious circle','qapalı dairə (pis vəziyyətlər zənciri)','phrase','C1',['vicious circles','vicious cycle']],
+ ['sustainable','davamlı, dayanıqlı','adjective','B2'],['emission','tullantı (havaya)','noun','B2'],['drought','quraqlıq','noun','B2'],
+ ['famine','aclıq, qıtlıq','noun','C1'],['pollution','çirklənmə','noun','B1'],['renewable','bərpa olunan','adjective','B2'],
+ ['scarce','qıt, az tapılan','adjective','B2'],['urban','şəhər (sifət)','adjective','B2'],['commute','işə gedib-gəlmək','verb','B2'],
+ ['congestion','tıxac','noun','C1'],['suburb','şəhərətrafı qəsəbə','noun','B1'],['infrastructure','infrastruktur','noun','B2'],
+ ['curriculum','tədris proqramı','noun','B2'],['literacy','savadlılıq','noun','B2'],['tuition','təhsil haqqı','noun','B2'],
+ ['assessment','qiymətləndirmə','noun','B2'],['innovation','yenilik, innovasiya','noun','B2'],['take for granted','adi hal kimi qəbul etmək','phrase','B2',['took for granted','taken for granted','takes for granted','taking for granted']],
+ ['privacy','məxfilik, şəxsi həyat','noun','B2'],['obesity','piylənmə','noun','B2'],['diagnosis','diaqnoz','noun','B2'],
+ ['nutrition','qidalanma','noun','B2'],['sedentary','oturaq (hərəkətsiz)','adjective','C1'],['hypothesis','fərziyyə','noun','C1'],
+ // set 3 (filling up)
+ ['phenomenon','hadisə, fenomen','noun','B2'],['fluctuate','tərəddüd etmək, dəyişib durmaq','verb','C1'],['gradual','tədrici','adjective','B2'],
+ ['nevertheless','buna baxmayaraq','adverb','B2'],
+];
+let SS;
+function setsReset(){
+  // set 1 mastered; set 2: 18 mastered, 3 right once, 4 not yet (the 7 left come last); set 3 not open
+  const words=LEARNED.map(([w,az,pos,lvl,forms])=>({w,az,pos,lvl,forms:[w,...(forms||[w+'s'])]}));
+  const set2=words.slice(25,50);const left=[0,1,2,3,4,5,6].map(i=>set2[i]);const rest=set2.slice(7);
+  const set2Ordered=rest.concat(left);
+  SS={words:words.slice(0,25).concat(set2Ordered).concat(words.slice(50)),round:{1:4,2:3,3:0}};
+  SS.words.forEach((x,i)=>x.got=i<25?2:i<43?2:i<46?1:0);
+}
+const setsOf=()=>{const out=[];for(let i=0;i<SS.words.length;i+=SET_SIZE)out.push(SS.words.slice(i,i+SET_SIZE));return out;};
+const mastered=(set)=>set.filter(x=>x.got>=2).length;
+const currentSet=()=>{const sets=setsOf();const i=sets.findIndex(set=>mastered(set)<set.length);return i<0?sets.length-1:i;};
+const dots=(set)=>`<div class="dots" aria-hidden="true">${set.map(x=>`<i class="g${Math.min(2,x.got)}"></i>`).join('')}${'<i style="opacity:.35;border-style:dashed"></i>'.repeat(Math.max(0,SET_SIZE-set.length))}</div>`;
+
+function setsCard(){
+  const sets=setsOf();if(!sets.length)return `<div class="card st"><span class="kick grape" style="align-self:flex-start">Sets · 🇦🇿 → 🇬🇧</span><h3>No sets yet</h3><p>Learn some words first — they join Set 1.</p><button class="btn" data-sets disabled>Open sets</button></div>`;
+  const i=currentSet(),set=sets[i],m=mastered(set),left=set.length-m;
+  return `<div class="card st"><span class="kick grape" style="align-self:flex-start">Sets · 🇦🇿 → 🇬🇧</span>
+    <h3>Set ${i+1} of ${sets.length} · ${m} / ${set.length} mastered</h3>${dots(set)}
+    <p>${left?`See the Azerbaijani, type the English. ${left} word${left>1?'s':''} left in this set.`:'Every set is mastered. New learned words start the next set.'}</p>
+    <button class="btn primary" data-sets>${left?`Continue Set ${i+1} →`:'Open sets'}</button></div>`;
+}
+
+function Sets(){
+  const sets=setsOf(),cur=currentSet();
+  app.innerHTML='';
+  const root=h(`<div class="wrap"><div class="head"><div><h1>Sets</h1><p class="sub">All your learned words, 25 at a time. Master one set — the next one opens.</p></div><span class="sp"></span><button class="btn" data-back>← My words</button></div>
+    <div class="sets">${sets.map((set,i)=>{const m=mastered(set),done=m===set.length,now=i===cur&&!done,lock=i>cur;
+      return `<div class="card set ${done?'done':now?'now':'lock'}">
+        <div class="sh"><h3>Set ${i+1}</h3><span class="chip">${set.length}${set.length<SET_SIZE?' / '+SET_SIZE:''} words</span><span class="sp"></span>
+          <b style="color:${done?'var(--ok)':now?'var(--grape)':'var(--muted)'}">${done?'✓ Mastered':lock?'🔒 Locked':m+' / '+set.length+' mastered'}</b></div>
+        ${dots(set)}
+        <p>${done?`Mastered in ${SS.round[i+1]} rounds. These words aren’t asked again.`
+          :now?`${set.length-m} words left · round ${SS.round[i+1]+1} asks only these.`
+          :`Opens when Set ${i} is mastered.${set.length<SET_SIZE?` Fills up as you learn words (${set.length} / ${SET_SIZE}).`:''}`}</p>
+        ${now?`<button class="btn primary" data-round style="align-self:flex-start">Start round ${SS.round[i+1]+1} →</button>`:''}</div>`;}).join('')}</div>
+    <div class="legend"><span><span class="dots"><i class="g0"></i></span> not yet</span><span><span class="dots"><i class="g1"></i></span> right once — one more round</span><span><span class="dots"><i class="g2"></i></span> mastered</span></div>
+    <p class="rc-note">A word is <b>mastered</b> when you type it right on the first try in <b>2 rounds in a row</b>. A miss starts it again from 0.</p></div>`);
+  app.append(root);
+  root.querySelector('[data-back]').onclick=()=>go('words');
+  const r=root.querySelector('[data-round]');if(r)r.onclick=()=>go('round');
+}
+
+function Round(){
+  const si=currentSet(),set=setsOf()[si];
+  const words=set.filter(x=>x.got<2).sort(()=>Math.random()-.5);
+  if(!words.length)return go('sets');
+  const roundNo=SS.round[si+1]+1;
+  const total=words.length,queue=words.slice(),firstTry=new Set(),result={win:[],up:[],no:[]};let done=0;
+  shell(['round'],[`🧩 Set ${si+1} · Round ${roundNo} · 🇦🇿 → 🇬🇧`]);document.querySelector('.bar').hidden=true;
+  document.getElementById('xb').onclick=()=>go('sets');   // answers already given are kept
+  const next=()=>{
+    if(!queue.length)return roundDone(si,roundNo,result);
+    stage('round',done/total);
+    const x=queue[0],first=!firstTry.has(x.w);firstTry.add(x.w);
+    const c=h(`<div><div class="mastery"><span>Answered</span><div class="t"><i style="width:${Math.round(done/total*100)}%"></i></div><b>${done} / ${total}</b></div>
+      <div class="card q"><div class="qk"><span>Type it in English</span><span>${esc(x.pos)}${x.lvl?' · '+esc(x.lvl):''}</span></div>
+      <div class="rc-az">🇦🇿 ${esc(x.az)}</div>
+      <div class="typed"><input class="inp" placeholder="Type the English word or phrase…" autocomplete="off" spellcheck="false" autocapitalize="off" aria-label="English word"><button class="btn primary">Check</button></div>
+      <button class="rc-skip">I don’t remember — show me</button><div id="fb"></div></div></div>`);
+    const inp=c.querySelector('.inp'),btn=c.querySelector('.typed .btn'),skip=c.querySelector('.rc-skip');
+    const end=(ok)=>{queue.shift();if(ok)done++;else queue.push(x);next();};
+    const answer=(v)=>{
+      const ok=v!==null&&x.forms.includes(norm(v).replace(/\s+/g,' '));
+      let step='';
+      if(first){
+        if(ok){x.got++;if(x.got>=2){result.win.push(x.w);step='<div class="step win">● Mastered! It won’t be asked again.</div>';}
+          else{result.up.push(x.w);step='<div class="step up">◐ Right once — get it right in the next round to master it.</div>';}}
+        else{const had=x.got;x.got=0;result.no.push(x.w);step=`<div class="step zero">○ ${had?'Back to 0 — ':''}it needs 2 rounds in a row again.</div>`;}
+      }else if(ok){step='<div class="nx">Only first tries count — this one is saved for the next round.</div>';}
+      inp.disabled=true;btn.hidden=true;skip.hidden=true;inp.classList.add(ok?'right':'wrong');if(v===null)inp.value='';
+      feedback(c,ok,ok?`<b>${esc(x.w)}</b>`:(v===null?'':`You typed “${esc(v)}”.`),x.w,
+        `<button class="rc-say" title="Listen" aria-label="Listen">🔊</button>`,true,()=>end(ok),step);
+      c.querySelector('.rc-say').onclick=()=>say(x.w);if(ok)say(x.w);
+    };
+    const check=()=>{if(!inp.value.trim())return inp.focus();answer(inp.value);};
+    btn.onclick=check;inp.onkeydown=e=>{if(e.key==='Enter')check();};skip.onclick=()=>answer(null);
+    body().innerHTML='';body().append(c);setTimeout(()=>inp.focus(),50);
+  };
+  next();
+}
+function roundDone(si,roundNo,r){
+  SS.round[si+1]=roundNo;
+  stage('done',1);
+  const sets=setsOf(),set=sets[si],m=mastered(set),complete=m===set.length,hasNext=si+1<sets.length;
+  const chips=(list,cls)=>list.length?`<div class="chips2 ${cls}">${list.map(w=>`<span>${esc(w)}</span>`).join('')}</div>`:'';
+  const c=h(`<div class="card fin"><div class="ic">${complete?'🎉':r.no.length?'💪':'⭐'}</div>
+    <h1>${complete?`Set ${si+1} mastered!`:`Round ${roundNo} done`}</h1>
+    <div class="rc-score">${r.win.length+r.up.length} / ${r.win.length+r.up.length+r.no.length}</div><p class="sub">right on the first try</p>
+    ${r.win.length?`<h4>● Mastered now</h4>${chips(r.win,'win')}`:''}
+    ${r.up.length?`<h4>◐ Right once — one more round</h4>${chips(r.up,'up')}`:''}
+    ${r.no.length?`<h4>○ Missed — back to 0</h4>${chips(r.no,'no')}`:''}
+    <div class="recap"><b>Set ${si+1}:</b> ${m} / ${set.length} mastered ${dots(set)}
+    ${complete?(hasNext?`<b>Set ${si+2} is open</b> — ${sets[si+1].length} words.`:'You mastered every learned word. Learn new words to start the next set.')
+      :`<b>Next round</b> asks the ${set.length-m} words left.`}</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      ${complete?(hasNext?`<button class="btn primary" data-next>Start Set ${si+2} →</button>`:''):`<button class="btn primary" data-next>Next round →</button>`}
+      <button class="btn" data-sets>All sets</button><button class="btn" data-back>My words</button></div></div>`);
+  const n=c.querySelector('[data-next]');if(n)n.onclick=()=>go('round');
+  c.querySelector('[data-sets]').onclick=()=>go('sets');c.querySelector('[data-back]').onclick=()=>go('words');
+  body().innerHTML='';body().append(c);
+}
+
 /* =============================== 5. Word packs =============================== */
 function Packs(){
   const packs=[
@@ -752,11 +910,12 @@ function Packs(){
 
 /* ================================== start ================================== */
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
-document.getElementById('reset').onclick=()=>{reset();navCount();go(screen);};
+document.getElementById('reset').onclick=()=>{reset();setsReset();navCount();go(screen);};
+setsReset();
 const themeBtn=document.getElementById('theme');
 themeBtn.onclick=()=>{const d=document.documentElement;const dark=d.dataset.theme!=='dark';d.dataset.theme=dark?'dark':'light';themeBtn.textContent=dark?'☀':'☾';};
 navCount();
-go(['reading','words','learn','review','packs','recall'].includes(location.hash.slice(1))?location.hash.slice(1):'reading');
+go(['reading','words','learn','review','packs','recall','sets'].includes(location.hash.slice(1))?location.hash.slice(1):'reading');
 </script>
 </body>
 </html>

@@ -26,19 +26,24 @@ public class VocabularyPageController {
         return "vocabulary-session";
     }
 
-    /** /vocabulary/review: the daily review. */
-    @GetMapping("/vocabulary/review")
-    public String review(Model model) {
+    /** /vocabulary/sets: the learner's sets of learned words (requirement 6.3). */
+    @GetMapping("/vocabulary/sets")
+    public String sets(Model model) {
         model.addAttribute("activeKey", NavigationAdvice.VOCABULARY);
-        model.addAttribute("kind", "review");
+        return "vocabulary-sets";
+    }
+
+    /** /vocabulary/round: one round of the current set, Azerbaijani → English (requirement 6.4). */
+    @GetMapping("/vocabulary/round")
+    public String round(Model model) {
+        model.addAttribute("activeKey", NavigationAdvice.VOCABULARY);
+        model.addAttribute("kind", "round");
         return "vocabulary-session";
     }
 
-    /** /vocabulary/recall: learned words in Azerbaijani, typed in English (practice only). */
-    @GetMapping("/vocabulary/recall")
-    public String recall(Model model) {
-        model.addAttribute("activeKey", NavigationAdvice.VOCABULARY);
-        model.addAttribute("kind", "recall");
-        return "vocabulary-session";
+    /** The daily review and Recall were replaced by sets (decision 15); old links land there. */
+    @GetMapping({"/vocabulary/review", "/vocabulary/recall"})
+    public String replacedBySets() {
+        return "redirect:/vocabulary/sets";
     }
 }

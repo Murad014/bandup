@@ -2,6 +2,7 @@ package com.bandup.ui;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -40,8 +41,8 @@ class UiPagesTest {
                 new String[] {"/grammar/review", "grammar-review"},
                 new String[] {"/vocabulary", "vocabulary"},
                 new String[] {"/vocabulary/learn", "vocabulary-session"},
-                new String[] {"/vocabulary/review", "vocabulary-session"},
-                new String[] {"/vocabulary/recall", "vocabulary-session"},
+                new String[] {"/vocabulary/sets", "vocabulary-sets"},
+                new String[] {"/vocabulary/round", "vocabulary-session"},
                 new String[] {"/admin", "admin/index"},
                 new String[] {"/admin/sessions", "admin/sessions"},
                 new String[] {"/admin/sessions/new", "admin/session-edit"},
@@ -93,9 +94,13 @@ class UiPagesTest {
         assertThat(words).contains("id=\"vocabRoot\"", "/js/vocabulary/words.js", "/css/vocabulary.css",
                 "href=\"/vocabulary\"", ">Vocabulary<", "data-nav-new-words", "aria-current=\"page\"");
         assertThat(html("/vocabulary/learn")).contains("data-kind=\"learn\"", "/js/vocabulary/session.js");
-        assertThat(html("/vocabulary/review")).contains("data-kind=\"review\"").doesNotContain("\"answer\"");
-        assertThat(html("/vocabulary/recall")).contains("data-kind=\"recall\"").doesNotContain("\"answer\"");
-        assertThat(html("/vocabulary")).contains("id=\"vRecallGo\"", "href=\"/vocabulary/recall\"");
+        assertThat(html("/vocabulary/round")).contains("data-kind=\"round\"").doesNotContain("\"answer\"");
+        assertThat(html("/vocabulary/sets")).contains("id=\"setsRoot\"", "/js/vocabulary/sets.js");
+        assertThat(html("/vocabulary")).contains("id=\"vSetsGo\"", "href=\"/vocabulary/sets\"", "Add a word or phrase")
+                .doesNotContain("vReviewGo", "vRecallGo");
+        for (String old : List.of("/vocabulary/review", "/vocabulary/recall")) {
+            mvc.perform(get(old)).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/vocabulary/sets"));
+        }
         assertThat(html("/reading/yellowstone-wolves")).contains("id=\"saveWordBtn\"", "id=\"passageWords\"");
     }
 

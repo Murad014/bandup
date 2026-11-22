@@ -136,7 +136,7 @@ user approves each task before the next starts.
   - Done: backend design §4, §9 and decision 23; navbar note; the full suite
     and `uiTest` green.
 
-- [x] 13. Recall (Azerbaijani → English)
+- [x] 13. Recall (Azerbaijani → English) — replaced by task 14 (Sets)
   - Prototype screen 6 approved by the user (no hint, "Recall" name).
   - `SessionKind.RECALL`, `V12__vocabulary_recall.sql` (session kind check),
     `LearnerWords.recallable`, `TaskBuilder` recall tasks, `WordSessions`;
@@ -153,6 +153,50 @@ user approves each task before the next starts.
     `VocabularyBrowserTest` (card → recall → missed word comes back → "2 / 3"
     with the missed word; boxes unchanged), `UiPagesTest`. 8 mutations caught.
   - _Requirements: 11_
+
+- [x] 14. Sets (replace the daily review and Recall)
+  - Prototype screen 7 approved by the user (sets of 25, mastered after 2
+    rounds in a row right on the first try, a miss resets, learned words only,
+    no refresher).
+  - `V13__vocabulary_sets.sql` (`learned_at`, `streak`, `rounds`; kinds LEARN,
+    ROUND; old review/recall sessions deleted); `SavedWord` streak instead of
+    boxes; `SetPlan`; `WordSession` first tries (`missed`); `TaskBuilder`
+    ROUND; `WordSessions` ROUND; `GET /sets`; `/vocabulary/sets`,
+    `/vocabulary/round`; My words Sets card and row progress; review and
+    recall removed (old links redirect).
+  - _Verify_: unit tests (streak, reset on a miss, MASTERED unchanged;
+    SetPlan 25 per set, current set, rounds; first try only); API test (only
+    the current set, not-mastered words, no hint or answer in the payload,
+    first try counts, retry doesn't, mastered after 2 rounds, next set opens,
+    422s, sets view); browser test (card → sets page → round with a miss →
+    round done); mutation checks.
+  - Done: `SavedWordTest` (6), `SetPlanTest` (3), `WordSessionTest` (first
+    tries), `TaskBuilderTest` (round tasks), `VocabularyPersistenceTest`;
+    `VocabularySessionApiTest` (27 words in 2 sets: only the open set's words,
+    no hint, no answer in the payload, a retry doesn't count, mastered after 2
+    rounds in a row, round numbers, Set 2 opens, synonyms accepted, both 422s,
+    `GET /sets`, old columns untouched); `VocabularyBrowserTest` (Sets card →
+    sets page → round 1 with a miss coming back → "2 / 3", right once and
+    missed → rounds 2 and 3 → "Set 1 mastered!"; old links land on the sets;
+    empty sets); `UiPagesTest` (routes, redirects). Review and recall code,
+    `Box` and `ReviewSchedule` removed. 8 mutations caught.
+  - _Requirements: 4, 5.6, 5.7, 6, 7_
+
+- [x] 15. Phrases ("vicious cycle" couldn't be added)
+  - Failing test first: a phrase card from the stub AI whose gap and word-pair
+    blank one word of the phrase → FAILED today.
+  - `CardPolicy` phrase blanks (decision 17), prompt phrase rule,
+    "Add a word or phrase" in My words.
+  - _Verify_: `CardPolicyTest` (phrase blank allowed only when the completed
+    sentence has the phrase; one-word cards unchanged), `VocabularyAiTest`
+    (phrase → READY); mutation check.
+  - Done: the server log wasn't available, so the cause is the likely one,
+    reproduced: `CardPolicyTest.aPhraseMayBlankOneOfItsWords…` and
+    `VocabularyAiTest.aPhraseGetsACard…` failed first ("The answer must be one
+    of the forms"). The rule: one word of a multi-word form, only when the
+    blank completes that form. 2 mutations caught (a third was equivalent:
+    for one-word cards the rule is unchanged, so the phrase flag was dropped).
+  - _Requirements: 2, 3.11_
 
 ## Later (not v1)
 

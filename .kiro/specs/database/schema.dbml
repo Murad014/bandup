@@ -485,24 +485,28 @@ Table vocab_saved_word {
   user_id bigint [not null, ref: > app_user.id, note: "ON DELETE CASCADE"]
   word_id bigint [not null, ref: > vocab_word.id, note: "ON DELETE RESTRICT"]
   state varchar(10) [not null, note: "NEW | LEARNING | MASTERED"]
-  box smallint [note: "1-4; required unless NEW"]
-  due_on date
-  last_answered_on date
+  learned_at timestamptz [note: "V13; required unless NEW; orders the sets of 25"]
+  streak smallint [not null, default: 0, note: "V13; 0-2 rounds in a row right on the first try"]
+  rounds int [not null, default: 0, note: "V13; rounds the word was asked in"]
+  box smallint [note: "old review, unused since V13"]
+  due_on date [note: "old review, unused since V13"]
+  last_answered_on date [note: "old review, unused since V13"]
   source_exercise_id bigint [ref: > exercise.id, note: "ON DELETE SET NULL"]
   source_sentence varchar(400)
   added_on date [not null]
   created_at timestamptz [not null, default: `now()`]
   indexes {
     (user_id, word_id) [unique]
-    (user_id, due_on) [name: 'vocab_saved_word_due_idx', note: "WHERE state = 'LEARNING'"]
+    (user_id, due_on) [name: 'vocab_saved_word_due_idx', note: "WHERE state = 'LEARNING' (old review)"]
+    (user_id, learned_at, created_at, id) [name: 'vocab_saved_word_sets_idx', note: "WHERE state <> 'NEW' (V13)"]
   }
 }
 
 Table vocab_session {
   id uuid [pk]
   user_id bigint [not null, ref: > app_user.id, note: "ON DELETE CASCADE"]
-  kind varchar(8) [not null, note: "LEARN | REVIEW | RECALL (V12)"]
-  content jsonb [not null, note: "word snapshots, tasks with keys, queue, mastered"]
+  kind varchar(8) [not null, note: "LEARN | ROUND (V13)"]
+  content jsonb [not null, note: "word snapshots, tasks with keys, queue, mastered, missed"]
   retries int [not null, default: 0]
   started_at timestamptz [not null]
   finished_at timestamptz

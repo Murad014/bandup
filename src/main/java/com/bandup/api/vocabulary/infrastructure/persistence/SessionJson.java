@@ -15,14 +15,16 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
-/** A session's words, tasks, queue and mastered tasks as stored in {@code vocab_session.content}. */
+/** A session's words, tasks, queue, mastered and missed tasks as stored in {@code vocab_session.content}. */
 @UtilityClass
 final class SessionJson {
 
-    record Content(List<SessionWord> words, List<Task> tasks, List<TaskId> queue, List<TaskId> mastered) {
+    record Content(List<SessionWord> words, List<Task> tasks, List<TaskId> queue, List<TaskId> mastered,
+            List<TaskId> missed) {
     }
 
-    static String write(List<SessionWord> words, List<Task> tasks, List<TaskId> queue, Iterable<TaskId> mastered) {
+    static String write(List<SessionWord> words, List<Task> tasks, List<TaskId> queue, Iterable<TaskId> mastered,
+            Iterable<TaskId> missed) {
         ObjectNode root = CardJson.JSON.createObjectNode();
         ArrayNode w = root.putArray("words");
         words.forEach(word -> w.add(word(word)));
@@ -32,6 +34,8 @@ final class SessionJson {
         queue.forEach(id -> q.add(id.value()));
         ArrayNode m = root.putArray("mastered");
         mastered.forEach(id -> m.add(id.value()));
+        ArrayNode x = root.putArray("missed");
+        missed.forEach(id -> x.add(id.value()));
         return CardJson.JSON.writeValueAsString(root);
     }
 
@@ -41,7 +45,7 @@ final class SessionJson {
         root.path("words").forEach(n -> words.add(word(n)));
         List<Task> tasks = new ArrayList<>();
         root.path("tasks").forEach(n -> tasks.add(task(n)));
-        return new Content(words, tasks, ids(root.path("queue")), ids(root.path("mastered")));
+        return new Content(words, tasks, ids(root.path("queue")), ids(root.path("mastered")), ids(root.path("missed")));
     }
 
     private static ObjectNode word(SessionWord w) {
@@ -65,7 +69,6 @@ final class SessionJson {
         strings(n.putArray("pairOptions"), w.pairOptions());
         n.put("pairAnswer", w.pairAnswer());
         strings(n.putArray("wrongMeanings"), w.wrongMeanings());
-        n.put("box", w.box());
         return n;
     }
 
@@ -75,7 +78,7 @@ final class SessionJson {
                 s(n, "meaningAz"), CardJson.strings(n.path("examples")), CardJson.strings(n.path("collocations")),
                 CardJson.strings(n.path("family")), nullable(n, "sentence"), nullable(n, "from"), s(n, "gapSentence"),
                 s(n, "gapAnswer"), s(n, "pairSentence"), CardJson.strings(n.path("pairOptions")),
-                n.path("pairAnswer").asInt(), CardJson.strings(n.path("wrongMeanings")), n.path("box").asInt());
+                n.path("pairAnswer").asInt(), CardJson.strings(n.path("wrongMeanings")));
     }
 
     private static ObjectNode task(Task task) {

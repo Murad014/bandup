@@ -1,17 +1,16 @@
 /* =========================================================================
    vocabulary/words.js — /vocabulary, My words (vocabulary requirement 4):
-   totals, the Learn and Daily review cards, adding a word, tabs, search and
+   totals, the Learn and Sets cards, adding a word or phrase, tabs, search and
    the list. Words the AI is still preparing are polled every 3 s (2 min).
    ========================================================================= */
 
 import { ApiError, currentUser } from "../auth.js";
 import * as api from "./api.js";
-import { el } from "./api.js";
+import { dots, el } from "./api.js";
 
 const $ = (id) => document.getElementById(id);
 const SIZE = 50;
 const state = { tab: "all", q: "", page: 0, words: [], total: 0, today: null, polling: null, pollUntil: 0 };
-const NEXT = { 1: "tomorrow", 2: "in 3 days", 3: "in 1 week", 4: "in 2 weeks" };
 
 function plural(n, word) {
     return n + " " + word + (n === 1 ? "" : "s");
@@ -38,22 +37,35 @@ function summary(page) {
         ? "Meet each word, practise it, then prove it — a word you miss comes back until you get it."
         : page.counts.fresh ? "Your new words are being prepared…" : "Save words from a passage, or add one below.";
     $("vLearnGo").hidden = !ready;
-    $("vReviewTitle").textContent = page.due ? plural(page.due, "word") + " due" : "Nothing due";
-    $("vReviewText").textContent = page.due
-        ? "Words come back after 1, 3, 7 and 14 days. ~" + Math.max(1, Math.ceil(page.due / 3)) + " min."
-        : "Learned words come back here when they are due.";
-    $("vReviewGo").hidden = !page.due;
-    const learned = page.counts.learning + page.counts.mastered;
-    $("vRecallTitle").textContent = learned ? plural(Math.min(10, learned), "word") + ", mixed" : "Nothing to recall yet";
-    $("vRecallText").textContent = learned
-        ? "See the Azerbaijani, type the English. Practice only — your review days don’t change."
-        : "Learn some words first — then test yourself here any time.";
-    $("vRecallGo").hidden = !learned;
+    setsCard(page.sets);
     document.querySelectorAll("#vTabs button").forEach((b) => {
         const key = b.dataset.state;
         const n = { all: page.counts.all, new: page.counts.fresh, learning: page.counts.learning, mastered: page.counts.mastered }[key];
         b.textContent = b.textContent.split(" · ")[0] + " · " + n;
     });
+}
+
+/** "Set 2 of 3 · 18 / 25 mastered", the set's dots, and Continue (requirement 4.1). */
+function setsCard(sets) {
+    const all = sets.sets;
+    const open = all.find((s) => s.number === sets.current);
+    const go = $("vSetsGo");
+    if (!all.length) {
+        $("vSetsTitle").textContent = "No sets yet";
+        $("vSetsDots").replaceChildren();
+        $("vSetsText").textContent = "Learn some words first — they join Set 1.";
+        go.hidden = true;
+        return;
+    }
+    const set = open || all[all.length - 1];
+    $("vSetsTitle").textContent = "Set " + set.number + " of " + all.length + " · " + set.mastered + " / " + set.size + " mastered";
+    $("vSetsDots").replaceChildren(dots(set.streaks));
+    const left = set.size - set.mastered;
+    $("vSetsText").textContent = open
+        ? "See the Azerbaijani, type the English. " + plural(left, "word") + " left in this set."
+        : "Every set is mastered. New learned words start the next set.";
+    go.textContent = open ? "Continue Set " + set.number + " →" : "Open sets";
+    go.hidden = false;
 }
 
 function list() {
@@ -123,9 +135,10 @@ function status(w) {
     } else if (w.state === "MASTERED") {
         box.append(el("span", "v-state v-state--mastered", "✓ Mastered"));
     } else {
-        box.title = "Memory strength: box " + w.box + " of 4";
-        for (let i = 1; i <= 4; i++) box.append(el("i", i <= (w.box || 0) ? "is-on" : null));
-        box.append(el("em", null, NEXT[w.box] || ""));
+        const once = w.streak === 1;
+        const dot = dots([w.streak]);
+        dot.classList.add("v-dots--inline");
+        box.append(dot, el("em", null, (w.set ? "Set " + w.set + " · " : "") + (once ? "right once" : "not yet")));
     }
     return box;
 }

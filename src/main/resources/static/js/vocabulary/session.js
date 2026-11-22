@@ -1,39 +1,29 @@
 /* =========================================================================
-   vocabulary/session.js — /vocabulary/learn and /vocabulary/review
-   and /vocabulary/recall (vocabulary requirements 5, 6, 11). LEARN: Goal →
-   Meet → Practise → Master (a wrong task comes back until right) → Done.
-   REVIEW: the due words, each answer moving its word ("⏱ Next review: …").
-   RECALL: learned words in Azerbaijani, typed in English, no hints; practice
-   only, so leaving asks nothing. Graded on the server; leaving a running
-   learn or review asks first.
+   vocabulary/session.js — /vocabulary/learn and /vocabulary/round
+   (vocabulary requirements 5, 6). LEARN: Goal → Meet → Practise → Master (a
+   wrong task comes back until right) → Done. ROUND: the current set's words
+   not mastered yet, in Azerbaijani, typed in English with no hints; the first
+   try of each word moves it (◐ right once, ● mastered, ○ back to 0), a miss
+   comes back at the end. Every answer is saved at once, so leaving a round
+   asks nothing. Graded on the server; leaving a learn session asks first.
    ========================================================================= */
 
 import { ApiError, currentUser } from "../auth.js";
 import * as api from "./api.js";
-import { el, say } from "./api.js";
+import { dots, el, say } from "./api.js";
 import { showTask } from "./tasks.js";
 
 const root = document.getElementById("sessionRoot");
-const kind = ["review", "recall"].includes(root.dataset.kind) ? root.dataset.kind : "learn";
+const kind = root.dataset.kind === "round" ? "round" : "learn";
 const exercise = new URLSearchParams(location.search).get("exercise");
 const $ = (id) => document.getElementById(id);
 const body = $("sBody");
-const STAGES = {
-    learn: [["goal", "Goal"], ["meet", "Meet"], ["practise", "Practise"], ["master", "Master"]],
-    review: [["review", "🔁 Daily review"]],
-    recall: [["recall", "🔁 Recall · 🇦🇿 → 🇬🇧"]],
-}[kind];
-/** {@code days} is counted by the server from its today: the browser's clock may be on another day. */
-const NEXT = (days) => {
-    if (days <= 1) return "tomorrow";
-    if (days % 7 === 0) return "in " + (days === 7 ? "1 week" : days / 7 + " weeks");
-    return "in " + days + " days";
-};
+let STAGES = [["goal", "Goal"], ["meet", "Meet"], ["practise", "Practise"], ["master", "Master"]];
 
 let session = null;
 let inProgress = false;
 let retries = 0;
-const missed = new Set(); // recall: the words not typed right the first time
+const result = { mastered: [], once: [], missed: [] }; // round: the first try of each word
 
 function stage(key, fraction) {
     const at = STAGES.findIndex(([k]) => k === key);
@@ -216,89 +206,106 @@ async function master() {
     let mastered = 0;
     while (queue.length) {
         const task = queue[0];
-        stage(kind === "learn" ? "master" : kind, kind === "learn" ? 0.6 + 0.4 * (mastered / total) : mastered / total);
-        let result;
+        stage(kind === "learn" ? "master" : "round", kind === "learn" ? 0.6 + 0.4 * (mastered / total) : mastered / total);
+        let answer;
         try {
-            result = await showTask(body, task, {
-                kick: { learn: "🎯 Prove it · " + (mastered + 1) + " of " + total,
-                    review: "🏷 from: " + (task.from || "your words") + " · box " + task.box,
-                    recall: "🧠 Recall" }[kind],
-                header: bar({ learn: "Mastery", review: "Reviewed", recall: "Recalled" }[kind], mastered, total),
+            answer = await showTask(body, task, {
+                kick: kind === "learn" ? "🎯 Prove it · " + (mastered + 1) + " of " + total : "Type it in English",
+                header: bar(kind === "learn" ? "Mastery" : "Answered", mastered, total),
                 answer: (value) => api.answer(session.sessionId, task.id, value),
-                footer: kind === "recall" ? recallFooter : footer,
-                recall: kind === "recall",
+                footer: kind === "round" ? roundFooter : footer,
+                round: kind === "round",
             });
         } catch (e) {
             failed(e);
             return;
         }
         queue.shift();
-        if (result.correct) mastered = result.feedback.mastered;
+        const f = answer.feedback;
+        if (f.step) (f.step.mastered ? result.mastered : f.step.streak === 1 ? result.once : result.missed).push(f.expected);
+        if (answer.correct) mastered = f.mastered;
         else {
-            missed.add(result.feedback.expected);
             retries++;
             queue.push(task);
         }
-        if (result.feedback.finished) break;
+        if (f.finished) break;
     }
     done(total);
 }
 
 function footer(feedback) {
-    const box = el("div");
-    if (!feedback.correct) box.append(el("div", "v-fb__retry", "↻ This word comes back until you get it right."));
-    const s = feedback.schedule;
-    if (s) {
-        const line = el("div", "v-fb__next");
-        if (s.mastered) line.append("🏆 Mastered — this word won't come back.");
-        else if (!s.changed) {
-            line.append("⏱ Next review: " + NEXT(s.nextInDays));
-            line.append(el("span", "v-boxmove", "stays in box " + s.box));
-        } else {
-            line.append("⏱ Next review: " + NEXT(s.nextInDays));
-            line.append(el("span", "v-boxmove", "box " + s.from + " → " + s.box));
-        }
-        box.append(line);
-    }
-    return box.childNodes.length ? box : null;
+    return feedback.correct ? null : el("div", "v-fb__retry", "↻ This word comes back until you get it right.");
 }
 
-/** Recall feedback: 🔊 the word (spoken at once when right), and "comes back" when wrong. */
-function recallFooter(feedback) {
+/** Round feedback: "comes back" when wrong, 🔊 the word (spoken at once when right), and the word's step. */
+function roundFooter(feedback) {
     const box = el("div");
-    if (!feedback.correct) box.append(el("div", "v-fb__retry", "↻ This word comes back until you get it right."));
+    if (!feedback.correct) box.append(el("div", "v-fb__retry", "↻ This word comes back at the end of the round."));
     const speak = el("button", "v-say", "🔊");
     speak.type = "button";
     speak.setAttribute("aria-label", "Listen to “" + feedback.expected + "”");
     speak.addEventListener("click", () => say(feedback.expected));
     box.append(speak);
     if (feedback.correct) say(feedback.expected);
+    const s = feedback.step;
+    if (s && s.changed) {
+        const [cls, text] = s.mastered ? ["mastered", "● Mastered! It won’t be asked again."]
+            : s.streak === 1 ? ["once", "◐ Right once — get it right in the next round to master it."]
+                : ["zero", "○ Missed — it needs 2 rounds in a row again."];
+        const line = el("div", "v-step v-step--" + cls, text);
+        line.dataset.step = cls;
+        box.append(line);
+    } else if (!s && feedback.correct) {
+        box.append(el("div", "v-fb__next", "Only first tries count — this word is saved for the next round."));
+    }
     return box;
 }
 
-function recallDone(total) {
+/** Round done (requirement 6.8): first-try score, what moved, the set's dots, and what comes next. */
+async function roundDone(total) {
+    const first = result.mastered.length + result.once.length;
+    let sets = null;
+    try {
+        sets = await api.sets();
+    } catch (e) {
+        /* the summary still works without the dots */
+    }
+    const number = session.set.number;
+    const set = sets && sets.sets.find((s) => s.number === number);
+    const complete = set && set.status === "MASTERED";
+    const next = sets && sets.sets.find((s) => s.number === number + 1);
     const card = el("div", "v-card v-done");
     card.id = "sessionDone";
-    const first = total - missed.size;
-    card.append(el("div", "v-done__icon", missed.size ? "💪" : "🏆"), el("h1", null, "Recall done"));
+    card.append(el("div", "v-done__icon", complete ? "🎉" : result.missed.length ? "💪" : "⭐"),
+        el("h1", null, complete ? "Set " + number + " mastered!" : "Round " + session.set.round + " done"));
     const score = el("div", "v-score", first + " / " + total);
-    score.id = "recallScore";
+    score.id = "roundScore";
     card.append(score, el("p", null, "right on the first try"));
-    if (missed.size) {
-        const chips = el("div", "v-chips v-chips--missed");
-        chips.id = "recallMissed";
-        chips.append(...[...missed].map((w) => el("span", null, w)));
-        card.append(chips, el("p", null, "You typed these right in the end. Try them again tomorrow."));
-    } else {
-        const chips = el("div", "v-chips v-chips--ok");
-        chips.append(el("span", null, "Every word, first try!"));
-        card.append(chips);
-    }
+    const chips = (title, words, cls, id) => {
+        if (!words.length) return;
+        const box = el("div", "v-chips v-chips--" + cls);
+        box.id = id;
+        box.append(...words.map((w) => el("span", null, w)));
+        card.append(el("h3", null, title), box);
+    };
+    chips("● Mastered now", result.mastered, "ok", "roundMastered");
+    chips("◐ Right once — one more round", result.once, "once", "roundOnce");
+    chips("○ Missed — back to 0", result.missed, "missed", "roundMissed");
     const recap = el("div", "v-recap");
-    recap.append(el("div", null, "Recall is practice — your daily review and boxes haven’t changed."));
+    if (set) {
+        const line = el("div");
+        line.id = "roundSet";
+        line.append(el("b", null, "Set " + number + ": "), document.createTextNode(set.mastered + " / " + set.size + " mastered"));
+        recap.append(line, dots(set.streaks));
+    }
+    recap.append(el("div", null, complete
+        ? next ? "Set " + next.number + " is open — " + next.size + " words." : "You mastered every learned word. Learn new words to start the next set."
+        : "The next round asks the " + (set ? set.size - set.mastered : "") + " words left."));
     card.append(recap);
     const actions = el("div", "v-actions");
-    actions.append(link("🔁 Again with other words", "/vocabulary/recall", true), link("My words", "/vocabulary"));
+    if (!complete) actions.append(link("Next round →", "/vocabulary/round", true));
+    else if (next) actions.append(link("Start Set " + next.number + " →", "/vocabulary/round", true));
+    actions.append(link("All sets", "/vocabulary/sets"), link("My words", "/vocabulary"));
     card.append(actions);
     body.replaceChildren(card);
 }
@@ -307,32 +314,26 @@ function done(total) {
     guard(false);
     stage("done", 1);
     api.changed();
-    if (kind === "recall") return recallDone(total);
+    if (kind === "round") return roundDone(total);
     const card = el("div", "v-card v-done");
     card.id = "sessionDone";
-    if (kind === "learn") {
-        const n = session.words.length;
-        card.append(el("div", "v-done__icon", "🎉"), el("h1", null, n + " new word" + (n === 1 ? "" : "s") + " learned"),
-            el("p", null, "You got every word right at least once."));
-        const chips = el("div", "v-chips v-chips--ok");
-        chips.append(...session.words.map((w) => el("span", null, "✓ " + w.word)));
-        card.append(chips);
-    } else {
-        card.append(el("div", "v-done__icon", "✅"), el("h1", null, "Review done"),
-            el("p", null, "Every due word is reviewed. See you at the next review!"));
-    }
+    const n = session.words.length;
+    card.append(el("div", "v-done__icon", "🎉"), el("h1", null, n + " new word" + (n === 1 ? "" : "s") + " learned"),
+        el("p", null, "You got every word right at least once."));
+    const chips = el("div", "v-chips v-chips--ok");
+    chips.append(...session.words.map((w) => el("span", null, "✓ " + w.word)));
+    card.append(chips);
     const recap = el("div", "v-recap");
     const line = (label, value) => {
         const row = el("div");
         row.append(el("b", null, label + ": "), document.createTextNode(value));
         return row;
     };
-    recap.append(line(kind === "learn" ? "Mastered" : "Reviewed", total + "/" + total + (kind === "learn" ? " tasks" : " words")),
-        line("Retries", String(retries)));
-    if (kind === "learn") recap.append(line("Next", "these words come back in your daily review tomorrow, then in 3 days, 1 week and 2 weeks"));
+    recap.append(line("Mastered", total + "/" + total + " tasks"), line("Retries", String(retries)),
+        line("Next", "these words join your sets — type them from Azerbaijani until they're mastered"));
     card.append(recap);
     const actions = el("div", "v-actions");
-    actions.append(link("My words", "/vocabulary", true));
+    actions.append(link("My words", "/vocabulary", true), link("Sets", "/vocabulary/sets"));
     card.append(actions);
     body.replaceChildren(card);
 }
@@ -340,11 +341,11 @@ function done(total) {
 // ------------------------------------------------------------------ start
 
 async function start() {
-    document.title = { learn: "Learn words", review: "Word review", recall: "Recall words" }[kind] + " · Orbiko";
+    document.title = (kind === "learn" ? "Learn words" : "Sets round") + " · Orbiko";
     const user = await currentUser();
     $("sStatus").hidden = true;
     if (!user) {
-        message("📚", "Sign in to learn your words", "Your words and reviews are kept in your account.",
+        message("📚", "Sign in to learn your words", "Your words and sets are kept in your account.",
             [link("Sign in", "/login?next=" + encodeURIComponent(location.pathname + location.search), true)]);
         return;
     }
@@ -352,29 +353,27 @@ async function start() {
         session = await api.startSession(kind, exercise);
     } catch (e) {
         if (e instanceof ApiError && e.status === 422) {
-            const [icon, title, text] = {
-                learn: ["📭", "No new words to learn", "Save words from a passage, or add some in My words."],
-                review: ["🌤", "Nothing to review", "Learned words come back here when they are due."],
-                recall: ["🧠", "Nothing to recall yet", "Learn some words first — then test yourself here any time."],
-            }[kind];
-            message(icon, title, text, [link("My words", "/vocabulary", true)]);
+            if (kind === "learn") {
+                message("📭", "No new words to learn", "Save words from a passage, or add some in My words.",
+                    [link("My words", "/vocabulary", true)]);
+            } else {
+                message("🧩", "Nothing to ask right now", e.errors && e.errors[0] ? e.errors[0].message : e.message,
+                    [link("My words", "/vocabulary", true), link("All sets", "/vocabulary/sets")]);
+            }
         } else {
             failed(e);
         }
         return;
     }
+    if (kind === "round") STAGES = [["round", "🧩 Set " + session.set.number + " · Round " + session.set.round + " · 🇦🇿 → 🇬🇧"]];
     $("sPills").replaceChildren(...STAGES.map(([key, label]) => {
         const li = el("li", "v-pill", label);
         li.dataset.stage = key;
         return li;
     }));
     $("sTop").hidden = false;
-    if (kind === "recall") {
+    if (kind === "round") {
         $("sBarBox").hidden = true;
-        master();
-    } else if (kind === "review") {
-        $("sBarBox").hidden = true;
-        guard(true);
         master();
     } else {
         goal();

@@ -61,8 +61,8 @@ sentences.
 | `examples` | 2 sentences, each 20–160 chars, each contains a form of the word |
 | `collocations` | 1–4 values, each ≤ 40 chars, each contains a form of the word |
 | `family` | 0–4 values, each ≤ 40 chars |
-| `gap.sentence` | 20–160 chars, exactly one `___`; `gap.answer` is one of `forms` |
-| `pair.sentence` | 20–160 chars, exactly one `___`; `options` 4 distinct single words or short phrases; `answer` index 0–3; `options[answer]` is one of `forms` |
+| `gap.sentence` | 20–160 chars, exactly one `___`; `gap.answer` is one of `forms` — for a phrase it may instead be one word of a multi-word form when the blank completes that form (the sentence contains the form only once the answer is filled in) (`"Debt can become a ___ cycle."` → `vicious`) |
+| `pair.sentence` | 20–160 chars, exactly one `___`; `options` 4 distinct single words or short phrases; `answer` index 0–3; `options[answer]` is one of `forms` — for a phrase, as `gap.answer` |
 | `wrongMeanings` | 3 distinct values, 3–160 chars, none equal to `meaning.en` |
 
 Answers are compared normalised: lower case, trimmed, single spaces,
@@ -81,4 +81,7 @@ trailing `. ! ? , ;` dropped, `’` → `'`.
 - `gap` and `pair`: only one option can be right; the other `pair` options are
   real words of the same part of speech that don't fit.
 - `wrongMeanings`: believable but clearly wrong for this word.
+- A short phrase ("vicious circle", "take for granted") is one unit: `lemma`
+  and `forms` are whole phrases, examples and word pairs use the whole phrase,
+  and the `gap` blank holds the whole phrase or one of its words.
 - Return ONLY the JSON object.

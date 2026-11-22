@@ -3,88 +3,77 @@ package com.bandup.api.vocabulary.domain.saved;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
 import com.bandup.api.vocabulary.domain.saved.aggregate.SavedWord;
-import com.bandup.api.vocabulary.domain.saved.valueobject.Box;
 import com.bandup.api.vocabulary.domain.saved.valueobject.LearnerId;
-import com.bandup.api.vocabulary.domain.saved.valueobject.ReviewSchedule;
+import com.bandup.api.vocabulary.domain.saved.valueobject.SetStep;
 import com.bandup.api.vocabulary.domain.saved.valueobject.WordSource;
 import com.bandup.api.vocabulary.domain.saved.valueobject.WordState;
 import com.bandup.api.vocabulary.domain.word.valueobject.WordId;
 
+/** A saved word: NEW → LEARNING (in the sets) → MASTERED after 2 rounds in a row (requirement 6.6). */
 class SavedWordTest {
 
     private static final LocalDate DAY = LocalDate.of(2026, 11, 3);
+    private static final Instant NOW = Instant.parse("2026-11-03T10:00:00Z");
     private final LearnerId leyla = new LearnerId(UUID.randomUUID());
     private final SavedWord word = SavedWord.save(leyla, new WordId(7), new WordSource("yellowstone-wolves", "  The wolves. "), DAY);
 
     @Test
     void aSavedWordIsNewUntilLearned() {
         assertThat(word.state()).isEqualTo(WordState.NEW);
-        assertThat(word.box()).isEmpty();
-        assertThat(word.isDue(DAY.plusDays(30))).isFalse();
+        assertThat(word.learnedAt()).isEmpty();
+        assertThat(word.streak()).isZero();
         assertThat(word.source().sentence()).isEqualTo("The wolves.");
         assertThat(word.belongsTo(leyla)).isTrue();
         assertThat(word.belongsTo(new LearnerId(UUID.randomUUID()))).isFalse();
+        assertThatThrownBy(() -> word.roundAnswer(true)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    void learningPutsItInBoxOneDueTomorrow() {
-        word.learned(DAY);
+    void learningPutsItInTheSets() {
+        word.learned(NOW);
         assertThat(word.state()).isEqualTo(WordState.LEARNING);
-        assertThat(word.box()).contains(Box.first());
-        assertThat(word.dueOn()).contains(DAY.plusDays(1));
-        assertThat(word.isDue(DAY)).isFalse();
-        assertThat(word.isDue(DAY.plusDays(1))).isTrue();
-        word.learned(DAY.plusDays(5));
-        assertThat(word.dueOn()).as("learning again changes nothing").contains(DAY.plusDays(1));
+        assertThat(word.learnedAt()).contains(NOW);
+        word.learned(NOW.plusSeconds(60));
+        assertThat(word.learnedAt()).as("learning again changes nothing").contains(NOW);
     }
 
     @Test
-    void rightAnswersClimbTheBoxesUntilMastered() {
-        word.learned(DAY);
-        LocalDate day = DAY.plusDays(1);
-        ReviewSchedule s = word.answer(true, day);
-        assertThat(s.from().value()).isEqualTo(1);
-        assertThat(s.box().value()).isEqualTo(2);
-        assertThat(s.dueOn()).isEqualTo(day.plusDays(3));
-        s = word.answer(true, day = day.plusDays(3));
-        assertThat(s.dueOn()).isEqualTo(day.plusDays(7));
-        s = word.answer(true, day = day.plusDays(7));
-        assertThat(s.box().value()).isEqualTo(4);
-        assertThat(s.dueOn()).isEqualTo(day.plusDays(14));
-        s = word.answer(true, day.plusDays(14));
-        assertThat(s.state()).isEqualTo(WordState.MASTERED);
-        assertThat(s.dueOn()).isNull();
-        assertThat(word.isDue(day.plusDays(100))).isFalse();
-        assertThatThrownBy(() -> word.answer(true, DAY.plusDays(200))).isInstanceOf(IllegalStateException.class);
+    void twoRoundsInARowRightOnTheFirstTryMasterIt() {
+        word.learned(NOW);
+        SetStep once = word.roundAnswer(true);
+        assertThat(once).isEqualTo(new SetStep(1, WordState.LEARNING, true));
+        SetStep twice = word.roundAnswer(true);
+        assertThat(twice).isEqualTo(new SetStep(2, WordState.MASTERED, true));
+        assertThat(twice.mastered()).isTrue();
+        assertThat(word.rounds()).isEqualTo(2);
     }
 
     @Test
-    void aWrongAnswerGoesBackToBoxOne() {
-        word.learned(DAY);
-        word.answer(true, DAY.plusDays(1));
-        ReviewSchedule s = word.answer(false, DAY.plusDays(4));
-        assertThat(s.from().value()).isEqualTo(2);
-        assertThat(s.box().value()).isEqualTo(1);
-        assertThat(s.dueOn()).isEqualTo(DAY.plusDays(5));
+    void aMissStartsItAgainFromZero() {
+        word.learned(NOW);
+        word.roundAnswer(true);
+        SetStep miss = word.roundAnswer(false);
+        assertThat(miss).isEqualTo(new SetStep(0, WordState.LEARNING, true));
+        assertThat(word.roundAnswer(true).streak()).as("right, wrong, right isn't 2 in a row").isEqualTo(1);
+        assertThat(word.state()).isEqualTo(WordState.LEARNING);
+        assertThat(word.rounds()).isEqualTo(3);
     }
 
     @Test
-    void onlyTheFirstAnswerOfADayCounts() {
-        word.learned(DAY);
-        ReviewSchedule wrong = word.answer(false, DAY.plusDays(1));
-        assertThat(wrong.changed()).isTrue();
-        ReviewSchedule again = word.answer(true, DAY.plusDays(1));
-        assertThat(again.changed()).isFalse();
-        assertThat(again.box().value()).isEqualTo(1);
-        SavedWord fresh = SavedWord.save(leyla, new WordId(8), WordSource.typed(), DAY);
-        fresh.learned(DAY);
-        assertThat(fresh.answer(true, DAY).changed()).as("learned today counts as today's answer").isFalse();
+    void aMasteredWordDoesNotChange() {
+        word.learned(NOW);
+        word.roundAnswer(true);
+        word.roundAnswer(true);
+        SetStep late = word.roundAnswer(false);
+        assertThat(late).isEqualTo(new SetStep(2, WordState.MASTERED, false));
+        assertThat(word.rounds()).isEqualTo(2);
     }
 
     @Test

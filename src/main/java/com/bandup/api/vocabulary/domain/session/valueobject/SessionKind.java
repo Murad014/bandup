@@ -3,13 +3,12 @@ package com.bandup.api.vocabulary.domain.session.valueobject;
 import com.bandup.api.shared.domain.ddd.ValueObject;
 
 /**
- * LEARN (up to 5 new words: meet, practise, master), REVIEW (up to 20 due
- * words) or RECALL (up to 10 learned words, Azerbaijani → English, practice
- * only: boxes never move).
+ * LEARN (up to 5 new words: meet, practise, master) or ROUND (the current
+ * set's words not mastered yet, Azerbaijani → English; vocabulary
+ * requirement 6).
  */
 @ValueObject
 public enum SessionKind {
     LEARN,
-    REVIEW,
-    RECALL
+    ROUND
 }

@@ -15,13 +15,12 @@ import com.bandup.api.vocabulary.domain.saved.valueobject.SavedWordId;
  * @param forms    every accepted spelling (normalised)
  * @param sentence the sentence the learner saved it from; may be null
  * @param from     where it came from (a passage title, or null when typed)
- * @param box      the review box; 0 for a new word
  */
 @ValueObject
 public record SessionWord(SavedWordId saved, String word, List<String> forms, String pos, String level, String ipa,
         String meaningEn, String meaningAz, List<String> examples, List<String> collocations, List<String> family,
         String sentence, String from, String gapSentence, String gapAnswer, String pairSentence,
-        List<String> pairOptions, int pairAnswer, List<String> wrongMeanings, int box) {
+        List<String> pairOptions, int pairAnswer, List<String> wrongMeanings) {
 
     public SessionWord {
         Objects.requireNonNull(saved, "saved");

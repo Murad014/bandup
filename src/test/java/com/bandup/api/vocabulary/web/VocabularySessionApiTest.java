@@ -48,8 +48,9 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * My words and sessions end to end (vocabulary requirements 4–7): the page,
- * learn sessions graded on the server, review boxes, ownership and errors.
+ * My words, sets and sessions end to end (vocabulary requirements 4–7): the
+ * page, learn sessions graded on the server, rounds of the sets, ownership and
+ * errors.
  * The words are in the bank already (no AI). Rolled back.
  */
 @SpringBootTest
@@ -91,7 +92,8 @@ class VocabularySessionApiTest {
                 .andExpect(jsonPath("$.today").value(today.toString()))
                 .andExpect(jsonPath("$.counts.fresh").value(3))
                 .andExpect(jsonPath("$.newReady").value(3))
-                .andExpect(jsonPath("$.due").value(0))
+                .andExpect(jsonPath("$.sets.current").value(0))
+                .andExpect(jsonPath("$.sets.sets.length()").value(0))
                 .andExpect(jsonPath("$.words[*].word").value(contains("abundant", "erosion", "predator")))
                 .andExpect(jsonPath("$.words[0].meaning.az").value("az abundant"))
                 .andExpect(jsonPath("$.words[0].state").value("NEW"));
@@ -158,8 +160,14 @@ class VocabularySessionApiTest {
 
         mvc.perform(as(leyla, get(API + "/words"))).andExpect(jsonPath("$.counts.learning").value(5))
                 .andExpect(jsonPath("$.counts.fresh").value(1));
-        assertThat(jdbc.queryForObject("select count(*) from vocab_saved_word where state = 'LEARNING' and box = 1 and due_on = ?",
-                Integer.class, today.plusDays(1))).isEqualTo(5);
+        assertThat(jdbc.queryForObject("select count(*) from vocab_saved_word where state = 'LEARNING' and streak = 0"
+                + " and learned_at is not null and box is null", Integer.class)).isEqualTo(5);
+        mvc.perform(as(leyla, get(API + "/words").param("state", "learning")))
+                .andExpect(jsonPath("$.sets.current").value(1))
+                .andExpect(jsonPath("$.sets.sets[0].size").value(5))
+                .andExpect(jsonPath("$.sets.sets[0].streaks").value(contains(0, 0, 0, 0, 0)))
+                .andExpect(jsonPath("$.words[0].set").value(1))
+                .andExpect(jsonPath("$.words[0].streak").value(0));
         answer(leyla, id, "t3", "predator").andExpect(status().isConflict());
     }
 
@@ -182,140 +190,175 @@ class VocabularySessionApiTest {
     }
 
     @Test
-    void nothingToLearnOrReview() throws Exception {
+    void nothingToLearnAndOldKindsAreGone() throws Exception {
         start(leyla, "learn", null).andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.errors[0].message").value("There are no new words ready to learn."));
-        start(leyla, "review", null).andExpect(status().isUnprocessableContent());
+        start(leyla, "review", null).andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.errors[0].message").value("Use learn or round."));
+        start(leyla, "recall", null).andExpect(status().isUnprocessableContent());
         start(leyla, "later", null).andExpect(status().isUnprocessableContent());
         mvc.perform(post(API + "/sessions").contentType(MediaType.APPLICATION_JSON).content("{\"kind\": \"learn\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
-    // -------------------------------------------------------------- review
+    // -------------------------------------------------------------- sets
 
+    /** 27 learned words after 2 rounds: Set 1 has 25 (23 of them mastered, one right once), Set 2 has 2. */
     @Test
-    void aReviewMovesEachWordOnceADayAndNeverNamesIt() throws Exception {
-        for (String w : List.of("predator", "erosion")) {
+    void aRoundAsksTheOpenSetWithNoHintAndOnlyFirstTriesMoveWords() throws Exception {
+        List<String> words = lemmas(27);
+        words.forEach(this::readyCard);
+        for (String w : words) {
             save(leyla, w);
         }
-        jdbc.update("update vocab_saved_word set state = 'LEARNING', box = 2, due_on = ?, last_answered_on = ?",
-                today, today.minusDays(3));
-        JsonNode session = body(start(leyla, "review", null).andExpect(status().isCreated()));
-        String text = session.toString();
-        KEYS.forEach(key -> assertThat(text).as(key).doesNotContain(key));
-        assertThat(session.path("words")).isEmpty();
-        assertThat(types(session)).doesNotContain("listen", "meaning", "match").hasSize(2);
-        for (JsonNode task : session.path("tasks")) {
-            assertThat(task.path("term").isNull()).isTrue();
-            assertThat(task.path("speak").isNull()).isTrue();
-            assertThat(task.path("from").asString()).isEqualTo("your words");
-            assertThat(task.path("box").asInt()).isEqualTo(2);
+        learn(words);
+        for (String w : words.subList(0, 23)) {
+            progress(w, "MASTERED", 2, 2);
         }
-        String id = session.path("sessionId").asString();
-        JsonNode first = session.path("tasks").path(0);
-        answer(leyla, id, first.path("id").asString(), wrong(first))
+        progress(words.get(23), "LEARNING", 1, 2);
+        progress(words.get(24), "LEARNING", 0, 2);
+        String once = words.get(23);
+        String zero = words.get(24);
+
+        mvc.perform(as(leyla, get(API + "/sets"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.current").value(1))
+                .andExpect(jsonPath("$.sets[0].size").value(25))
+                .andExpect(jsonPath("$.sets[0].mastered").value(23))
+                .andExpect(jsonPath("$.sets[0].rounds").value(2))
+                .andExpect(jsonPath("$.sets[0].status").value("OPEN"))
+                .andExpect(jsonPath("$.sets[0].streaks[23]").value(1))
+                .andExpect(jsonPath("$.sets[0].streaks[24]").value(0))
+                .andExpect(jsonPath("$.sets[1].size").value(2))
+                .andExpect(jsonPath("$.sets[1].status").value("LOCKED"));
+
+        // round 3 of Set 1: only its 2 words not mastered, no hint, no answer in the payload
+        JsonNode round = body(start(leyla, "round", null).andExpect(status().isCreated()));
+        String text = round.toString();
+        KEYS.forEach(key -> assertThat(text).as(key).doesNotContain(key));
+        assertThat(round.path("kind").asString()).isEqualTo("ROUND");
+        assertThat(round.path("set").path("number").asInt()).isEqualTo(1);
+        assertThat(round.path("set").path("count").asInt()).isEqualTo(2);
+        assertThat(round.path("set").path("round").asInt()).isEqualTo(3);
+        assertThat(round.path("words")).isEmpty();
+        assertThat(types(round)).containsOnly("translate").hasSize(2);
+        round.path("tasks").forEach(t -> assertThat(t.path("hint").isNull()).as("no hint").isTrue());
+        assertThat(azs(round)).containsExactlyInAnyOrder("az " + once, "az " + zero);
+        String id = round.path("sessionId").asString();
+        answer(leyla, id, taskFor(round, once), once.toUpperCase() + "s")
+                .andExpect(jsonPath("$.correct").value(true))
+                .andExpect(jsonPath("$.step.streak").value(2))
+                .andExpect(jsonPath("$.step.mastered").value(true));
+        dontKnow(leyla, id, taskFor(round, zero))
                 .andExpect(jsonPath("$.correct").value(false))
-                .andExpect(jsonPath("$.schedule.from").value(2))
-                .andExpect(jsonPath("$.schedule.box").value(1))
-                .andExpect(jsonPath("$.schedule.nextDueOn").value(today.plusDays(1).toString()))
-                .andExpect(jsonPath("$.schedule.nextInDays").value(1))
-                .andExpect(jsonPath("$.schedule.changed").value(true));
-        JsonNode second = session.path("tasks").path(1);
-        answer(leyla, id, second.path("id").asString(), right(second))
-                .andExpect(jsonPath("$.schedule.box").value(3))
-                .andExpect(jsonPath("$.schedule.nextDueOn").value(today.plusDays(7).toString()))
-                .andExpect(jsonPath("$.schedule.nextInDays").value(7));
-        answer(leyla, id, first.path("id").asString(), right(first))
+                .andExpect(jsonPath("$.expected").value(zero))
+                .andExpect(jsonPath("$.step.streak").value(0))
+                .andExpect(jsonPath("$.step.changed").value(true));
+        answer(leyla, id, taskFor(round, zero), zero)
+                .andExpect(jsonPath("$.correct").value(true))
                 .andExpect(jsonPath("$.finished").value(true))
-                .andExpect(jsonPath("$.schedule.changed").value(false))
-                .andExpect(jsonPath("$.schedule.box").value(1));
-        mvc.perform(as(leyla, get(API + "/words"))).andExpect(jsonPath("$.due").value(0));
-    }
+                .andExpect(jsonPath("$.step").doesNotExist());
+        assertThat(streak(zero)).as("a retry in the round doesn't count").isZero();
 
-    // -------------------------------------------------------------- recall
-
-    private static final List<String> MORE = List.of("harvest", "glacier", "canopy", "drought", "fertile", "migrate",
-            "nectar", "pollen");
-
-    @Test
-    void aRecallAsksTenLearnedWordsInAzerbaijaniAndNeverMovesThem() throws Exception {
-        MORE.forEach(this::readyCard);
-        for (String w : concat(WORDS, MORE)) {
-            save(leyla, w);
+        // rounds 4 and 5: the last word, right twice in a row → Set 1 mastered, Set 2 opens
+        for (int r = 4; r <= 5; r++) {
+            JsonNode next = body(start(leyla, "round", null));
+            assertThat(next.path("set").path("round").asInt()).isEqualTo(r);
+            assertThat(azs(next)).containsExactly("az " + zero);
+            answer(leyla, next.path("sessionId").asString(), taskFor(next, zero), zero)
+                    .andExpect(jsonPath("$.step.streak").value(r - 3))
+                    .andExpect(jsonPath("$.step.mastered").value(r == 5));
         }
-        jdbc.update("update vocab_saved_word set state = 'LEARNING', box = 2, due_on = ?", today.plusDays(2));
-        jdbc.update("""
-                update vocab_saved_word set state = 'MASTERED', box = 4, due_on = null
-                where word_id = (select word_id from vocab_word_form where form = 'pollen')""");
-        jdbc.update("""
-                update vocab_saved_word set state = 'NEW', box = null, due_on = null
-                where word_id = (select word_id from vocab_word_form where form = 'nectar')""");
-        JsonNode session = body(start(leyla, "recall", null).andExpect(status().isCreated()));
-        String text = session.toString();
-        KEYS.forEach(key -> assertThat(text).as(key).doesNotContain(key));
-        assertThat(session.path("kind").asString()).isEqualTo("RECALL");
-        assertThat(session.path("words")).isEmpty();
-        assertThat(types(session)).containsOnly("translate").hasSize(10);
-        List<String> asked = new ArrayList<>();
-        for (JsonNode task : session.path("tasks")) {
-            assertThat(task.path("hint").isNull()).as("no hint").isTrue();
-            assertThat(task.path("from").isNull()).isTrue();
-            assertThat(task.path("box").isNull()).isTrue();
-            asked.add(task.path("az").asString());
-        }
-        assertThat(asked).doesNotHaveDuplicates().doesNotContain("az nectar");
-
-        String id = session.path("sessionId").asString();
-        JsonNode first = session.path("tasks").path(0);
-        dontKnow(leyla, id, first.path("id").asString())
-                .andExpect(jsonPath("$.correct").value(false))
-                .andExpect(jsonPath("$.expected").value(first.path("az").asString().substring(3)))
-                .andExpect(jsonPath("$.schedule").doesNotExist());
-        for (JsonNode task : session.path("tasks")) {
-            answer(leyla, id, task.path("id").asString(), task.path("az").asString().substring(3).toUpperCase() + "s")
-                    .andExpect(jsonPath("$.correct").value(true))
-                    .andExpect(jsonPath("$.schedule").doesNotExist());
-        }
-        mvc.perform(as(leyla, get(API + "/sessions/" + id))).andExpect(jsonPath("$.finished").value(true));
-        assertThat(jdbc.queryForObject("""
-                select count(*) from vocab_saved_word
-                where (state = 'LEARNING' and box = 2 and due_on = ? and last_answered_on is null)
-                   or (state = 'MASTERED' and box = 4) or state = 'NEW'""", Integer.class, today.plusDays(2)))
-                .as("no word moved").isEqualTo(14);
-
-        List<String> again = new ArrayList<>();
-        body(start(leyla, "recall", null)).path("tasks").forEach(t -> again.add(t.path("az").asString()));
-        assertThat(again).as("a new mix").hasSize(10).isNotEqualTo(asked);
+        mvc.perform(as(leyla, get(API + "/sets")))
+                .andExpect(jsonPath("$.current").value(2))
+                .andExpect(jsonPath("$.sets[0].status").value("MASTERED"))
+                .andExpect(jsonPath("$.sets[0].rounds").value(5))
+                .andExpect(jsonPath("$.sets[1].status").value("OPEN"));
+        JsonNode set2 = body(start(leyla, "round", null));
+        assertThat(set2.path("set").path("number").asInt()).isEqualTo(2);
+        assertThat(azs(set2)).containsExactlyInAnyOrder("az " + words.get(25), "az " + words.get(26));
+        mvc.perform(as(leyla, get(API + "/words").param("q", words.get(26))))
+                .andExpect(jsonPath("$.words[0].set").value(2));
+        assertThat(jdbc.queryForObject("select count(*) from vocab_saved_word where box is not null or due_on is not null",
+                Integer.class)).as("the old review columns aren't used").isZero();
     }
 
     @Test
-    void aRecallAsksOneWordPerAzerbaijaniMeaningAndAcceptsTheOther() throws Exception {
-        for (String w : List.of("abundant", "thrive", "predator")) {
+    void aRoundAcceptsTheLearnersOtherWordWithTheSameAzerbaijani() throws Exception {
+        List<String> words = List.of("abundant", "thrive", "predator");
+        for (String w : words) {
             save(leyla, w);
         }
-        jdbc.update("update vocab_saved_word set state = 'LEARNING', box = 1, due_on = ?", today.plusDays(1));
+        learn(words);
         azOf("abundant", " Bol ");
         azOf("thrive", "bol");
-        for (String typed : List.of("abundant", "thrive")) {
-            JsonNode session = body(start(leyla, "recall", null).andExpect(status().isCreated()));
-            assertThat(types(session)).hasSize(2);
-            JsonNode bol = null;
-            for (JsonNode task : session.path("tasks")) {
-                if (task.path("az").asString().strip().equalsIgnoreCase("bol")) {
-                    bol = task;
-                }
+        JsonNode round = body(start(leyla, "round", null).andExpect(status().isCreated()));
+        assertThat(types(round)).hasSize(3);
+        String id = round.path("sessionId").asString();
+        int bol = 0;
+        for (JsonNode task : round.path("tasks")) {
+            if (task.path("az").asString().strip().equalsIgnoreCase("bol")) {
+                answer(leyla, id, task.path("id").asString(), "thrive").andExpect(jsonPath("$.correct").value(true));
+                bol++;
             }
-            assertThat(bol).as(session.path("tasks").toString()).isNotNull();
-            answer(leyla, session.path("sessionId").asString(), bol.path("id").asString(), typed)
-                    .andExpect(jsonPath("$.correct").value(true));
         }
+        assertThat(bol).isEqualTo(2);
     }
 
     @Test
-    void aRecallNeedsLearnedWords() throws Exception {
+    void aRoundNeedsLearnedWordsAndEndsWhenEverySetIsMastered() throws Exception {
         save(leyla, "predator");
-        start(leyla, "recall", null).andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.errors[0].message").value("Learn some words first, then test yourself here."));
+        start(leyla, "round", null).andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.errors[0].message").value("Learn some words first — they join Set 1."));
+        learn(List.of("predator"));
+        progress("predator", "MASTERED", 2, 2);
+        start(leyla, "round", null).andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.errors[0].message").value("Every set is mastered. Learn new words to start the next set."));
+        mvc.perform(as(leyla, get(API + "/sets"))).andExpect(jsonPath("$.current").value(0))
+                .andExpect(jsonPath("$.sets[0].status").value("MASTERED"));
+        mvc.perform(get(API + "/sets")).andExpect(status().isUnauthorized());
+    }
+
+    /** Test words: "lexaa", "lexab", … (letters only, so they pass the word rules). */
+    private static List<String> lemmas(int n) {
+        List<String> words = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            words.add("lex" + (char) ('a' + i / 26) + (char) ('a' + i % 26));
+        }
+        return words;
+    }
+
+    /** Marks Leyla's words learned, one second apart, in this order. */
+    private void learn(List<String> words) {
+        for (int i = 0; i < words.size(); i++) {
+            jdbc.update("update vocab_saved_word set state = 'LEARNING', learned_at = ?"
+                    + " where word_id = (select word_id from vocab_word_form where form = ?)",
+                    java.sql.Timestamp.from(Instant.parse("2026-11-01T08:00:00Z").plusSeconds(i)), words.get(i));
+        }
+    }
+
+    private void progress(String word, String state, int streak, int rounds) {
+        jdbc.update("update vocab_saved_word set state = ?, streak = ?, rounds = ?"
+                + " where word_id = (select word_id from vocab_word_form where form = ?)", state, streak, rounds, word);
+    }
+
+    private int streak(String word) {
+        return jdbc.queryForObject("select streak from vocab_saved_word"
+                + " where word_id = (select word_id from vocab_word_form where form = ?)", Integer.class, word);
+    }
+
+    private static List<String> azs(JsonNode session) {
+        List<String> azs = new ArrayList<>();
+        session.path("tasks").forEach(t -> azs.add(t.path("az").asString()));
+        return azs;
+    }
+
+    private static String taskFor(JsonNode session, String word) {
+        for (JsonNode t : session.path("tasks")) {
+            if (t.path("az").asString().equals("az " + word)) {
+                return t.path("id").asString();
+            }
+        }
+        throw new AssertionError(word + " not asked");
     }
 
     /** An admin gives the card another Azerbaijani meaning. */
@@ -334,12 +377,6 @@ class VocabularySessionApiTest {
         body.put("answer", null);
         return mvc.perform(as(learner, post(API + "/sessions/" + session + "/answers")).contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(body)));
-    }
-
-    private static List<String> concat(List<String> a, List<String> b) {
-        List<String> all = new ArrayList<>(a);
-        all.addAll(b);
-        return all;
     }
 
     @Test
@@ -372,29 +409,6 @@ class VocabularySessionApiTest {
             }
         }
         throw new AssertionError(value + " not in " + options);
-    }
-
-    /** The right answer of a review task, worked out from the test cards (their forms and fixed sentences). */
-    private Object right(JsonNode task) {
-        return switch (task.path("type").asString()) {
-            case "pair" -> {
-                for (int i = 0; i < 4; i++) {
-                    if (WORDS.contains(task.path("options").path(i).asString())) {
-                        yield i;
-                    }
-                }
-                throw new AssertionError(task.toString());
-            }
-            case "translate" -> task.path("az").asString().substring(3);
-            case "gap", "type" -> WORDS.stream().filter(w -> task.path("hint").asString()
-                    .equals(com.bandup.api.vocabulary.domain.session.service.TaskBuilder.hint(w))).findFirst().orElseThrow();
-            default -> throw new AssertionError(task.toString());
-        };
-    }
-
-    private static Object wrong(JsonNode task) {
-        return task.path("type").asString().equals("pair") ? (task.path("options").path(0).asString().equals("table") ? 1 : 0)
-                : "nonsense";
     }
 
     private ResultActions save(String learner, String word) throws Exception {

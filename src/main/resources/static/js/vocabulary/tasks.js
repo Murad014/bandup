@@ -20,7 +20,7 @@ const LABEL = { meaning: "choose the meaning", match: "match", gap: "fill the ga
  * @param opts.header   an optional node above the card (mastery bar)
  * @param opts.answer   value → Promise of the server's feedback
  * @param opts.footer   feedback → an optional node under the explanation
- * @param opts.recall   a recall task: the Azerbaijani big, no hint, "I don't remember" (requirement 11)
+ * @param opts.round    a round task: the Azerbaijani big, no hint, "I don't remember" (requirement 6.4)
  */
 export function showTask(box, task, opts) {
     return new Promise((resolve, reject) => {
@@ -28,7 +28,7 @@ export function showTask(box, task, opts) {
         card.dataset.task = task.id;
         card.dataset.type = task.type;
         const kick = el("div", "v-q__kick");
-        kick.append(el("span", null, opts.kick), el("span", null, opts.recall ? "🇦🇿 → 🇬🇧" : LABEL[task.type] || task.type));
+        kick.append(el("span", null, opts.kick), el("span", null, opts.round ? "🇦🇿 → 🇬🇧" : LABEL[task.type] || task.type));
         card.append(kick);
         const feedback = el("div", "v-fb");
         feedback.hidden = true;
@@ -77,7 +77,7 @@ export function showTask(box, task, opts) {
                 break;
             }
             case "translate":
-                if (opts.recall) {
+                if (opts.round) {
                     card.append(el("div", "v-q__prompt", "Type it in English"), el("div", "v-az v-az--big", "🇦🇿 " + task.az),
                         typed(send, card, true));
                 } else {
@@ -147,7 +147,7 @@ function typed(send, card, dontKnow) {
     input.autocomplete = "off";
     input.spellcheck = false;
     input.setAttribute("autocapitalize", "none");
-    input.placeholder = "Type the word…";
+    input.placeholder = dontKnow ? "Type the English word or phrase…" : "Type the word…";
     input.setAttribute("aria-label", "Your answer");
     const check = el("button", "btn btn--primary", "Check");
     check.type = "button";

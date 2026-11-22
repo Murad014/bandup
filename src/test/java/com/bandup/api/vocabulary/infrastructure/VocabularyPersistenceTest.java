@@ -117,11 +117,17 @@ class VocabularyPersistenceTest {
         assertThat(loaded.source().exerciseSlug()).contains("yellowstone-wolves");
         assertThat(loaded.source().sentenceText()).contains("Willows grew back.");
         assertThat(loaded.state()).isEqualTo(WordState.NEW);
-        loaded.learned(LocalDate.of(2026, 11, 3));
+        java.time.Instant learnedAt = java.time.Instant.parse("2026-11-03T10:15:30Z");
+        loaded.learned(learnedAt);
         saved.save(loaded);
-        SavedWord learning = saved.find(leyla, card.id()).orElseThrow();
-        assertThat(learning.box()).hasValueSatisfying(b -> assertThat(b.value()).isEqualTo(1));
-        assertThat(learning.dueOn()).contains(LocalDate.of(2026, 11, 4));
+        SavedWord learning = saved.findById(word.id()).orElseThrow();
+        assertThat(learning.learnedAt()).contains(learnedAt);
+        learning.roundAnswer(true);
+        saved.save(learning);
+        SavedWord once = saved.find(leyla, card.id()).orElseThrow();
+        assertThat(once.streak()).isEqualTo(1);
+        assertThat(once.rounds()).isEqualTo(1);
+        assertThat(once.state()).isEqualTo(WordState.LEARNING);
         assertThat(saved.findByWord(card.id())).hasSize(1);
 
         SavedWord twice = SavedWord.save(leyla, card.id(), WordSource.typed(), LocalDate.of(2026, 11, 3));
@@ -172,6 +178,6 @@ class VocabularyPersistenceTest {
         return new SessionWord(saved.id(), word, List.of(word), "noun", "B1", "/x/", "meaning of " + word, "az " + word,
                 List.of("One " + word + ".", "Two " + word + "."), List.of("a " + word), List.of(), "From the passage.",
                 "The wolves", "A ___ here.", word, "The ___ there.", List.of(word, "b", "c", "d"), 0,
-                List.of("w1 " + word, "w2 " + word, "w3 " + word), 0);
+                List.of("w1 " + word, "w2 " + word, "w3 " + word));
     }
 }

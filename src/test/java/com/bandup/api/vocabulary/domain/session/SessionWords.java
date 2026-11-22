@@ -12,17 +12,17 @@ final class SessionWords {
     private SessionWords() {
     }
 
-    static SessionWord word(String word, String meaning, int box) {
+    static SessionWord word(String word, String meaning) {
         return new SessionWord(new SavedWordId(UUID.randomUUID()), word, List.of(word, word + "s"), "noun", "B2",
                 "/x/", meaning, word + "-az", List.of("Example one with " + word + ".", "Example two with " + word + "."),
                 List.of("a " + word), List.of(), null, null, "We saw the ___ near the lake.", word,
                 "A natural ___ in the park.", List.of(word, "other", "third", "fourth"), 0,
-                List.of("wrong " + word + " one", "wrong " + word + " two", "wrong " + word + " three"), box);
+                List.of("wrong " + word + " one", "wrong " + word + " two", "wrong " + word + " three"));
     }
 
     static List<SessionWord> five() {
-        return List.of(word("predator", "an animal that hunts others", 0), word("erosion", "slow damage of land", 0),
-                word("abundant", "more than enough", 0), word("decline", "a gradual fall", 0),
-                word("thrive", "to grow well", 0));
+        return List.of(word("predator", "an animal that hunts others"), word("erosion", "slow damage of land"),
+                word("abundant", "more than enough"), word("decline", "a gradual fall"),
+                word("thrive", "to grow well"));
     }
 }

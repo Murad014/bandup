@@ -133,3 +133,12 @@ when requested.
 - [x] 13. `V12__vocabulary_recall.sql`
   - `vocab_session.kind` also allows `RECALL` (vocabulary requirement 11).
   - _Verified_: `VocabularySessionApiTest` (recall sessions are stored).
+
+- [x] 14. `V13__vocabulary_sets.sql`
+  - Sets replace the daily review and Recall (vocabulary requirement 6):
+    `vocab_saved_word.learned_at` (filled from `created_at` for learned words;
+    required unless NEW), `streak` (MASTERED words get 2), `rounds`, index for
+    the sets; the box check replaced; REVIEW / RECALL sessions deleted and
+    `kind` LEARN or ROUND. `box`, `due_on`, `last_answered_on` kept, unused.
+  - _Verified_: `VocabularyPersistenceTest` (learned_at, streak, rounds round
+    trip), `VocabularySessionApiTest` (rounds stored, old columns untouched).

@@ -609,7 +609,7 @@ read by learner queries). Partial unique index: one PUBLISHED lesson per
 (`user_id` null = guest; `mastered` = jsonb array of item ids) and
 `grammar_review_card` (box 1–4, `due_on`, unique per user, lesson, item).
 
-## 6c. Vocabulary (V11)
+## 6c. Vocabulary (V11; V12, V13)
 
 Specified in `../vocabulary/design.md` §7. `vocab_word` is a shared word card
 (`lemma` unique when set, `status` PREPARING/READY/FAILED/REJECTED, `content`
@@ -617,11 +617,14 @@ jsonb in the card format, `version`); a READY card must have a lemma and
 content (check). `vocab_word_form.form` is the **primary key**, so each
 spelling belongs to one card — the rule that makes "one AI call per word" hold
 when two learners save the same new word at once. `vocab_saved_word`: one per
-learner and card (unique), state NEW/LEARNING/MASTERED, box 1–4, `due_on`, the
-source passage (`set null` if it is deleted) and sentence; a card someone saved
-can't be deleted (`restrict`). `vocab_session` keeps word snapshots and tasks
-with their keys as jsonb (never read by learner queries); its `kind` is LEARN,
-REVIEW or RECALL (V12). `vocab_ai_usage`
+learner and card (unique), state NEW/LEARNING/MASTERED, the source passage
+(`set null` if it is deleted) and sentence; a card someone saved can't be
+deleted (`restrict`). V13 (sets replace the daily review): `learned_at`
+(required unless NEW; orders the sets of 25, which are computed, not stored),
+`streak` 0–2 and `rounds`; `box`, `due_on`, `last_answered_on` stay but are no
+longer used. `vocab_session` keeps word snapshots and tasks with their keys as
+jsonb (never read by learner queries); its `kind` is LEARN or ROUND (V13;
+REVIEW and RECALL sessions were deleted). `vocab_ai_usage`
 counts each learner's AI cards per day. 40 tables.
 
 ## 7. Seed data (V2 migration)

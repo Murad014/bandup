@@ -23,16 +23,19 @@ import com.bandup.api.vocabulary.application.port.VocabularyDays;
 import com.bandup.api.vocabulary.application.port.VocabularySettings;
 import com.bandup.api.vocabulary.application.port.WordCardAi;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.SavedWordView;
+import com.bandup.api.vocabulary.application.view.VocabularyViews.SetView;
+import com.bandup.api.vocabulary.application.view.VocabularyViews.SetsView;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.WordsPage;
 import com.bandup.api.vocabulary.domain.saved.aggregate.SavedWord;
 import com.bandup.api.vocabulary.domain.saved.repository.SavedWordRepository;
 import com.bandup.api.vocabulary.domain.saved.valueobject.LearnerId;
 import com.bandup.api.vocabulary.domain.saved.valueobject.SavedWordId;
+import com.bandup.api.vocabulary.domain.saved.valueobject.WordSet;
 import com.bandup.api.vocabulary.domain.word.aggregate.WordCard;
 import com.bandup.api.vocabulary.domain.word.repository.WordCardRepository;
 import com.bandup.api.vocabulary.domain.word.valueobject.CardStatus;
 
-/** The learner's own words (vocabulary requirement 4): the page, polling, remove, try again. */
+/** The learner's own words (vocabulary requirements 4, 6): the page, the sets, polling, remove, try again. */
 @Service
 @RequiredArgsConstructor
 public class MyWords {
@@ -55,9 +58,23 @@ public class MyWords {
         String s = state(state);
         int p = Math.max(0, page);
         int n = Math.min(Math.max(1, size), MAX_PAGE);
-        LocalDate today = days.today();
-        return new WordsPage(words.counts(me), today, words.due(me, today), words.newReady(me),
+        return new WordsPage(words.counts(me), days.today(), words.newReady(me), sets(me),
                 words.page(me, s, query, exercise, p, n), p, n, words.total(me, s, query, exercise));
+    }
+
+    /** The learner's sets (requirement 6.3). */
+    @Transactional(readOnly = true)
+    public SetsView sets() {
+        return sets(learner.required());
+    }
+
+    private SetsView sets(LearnerId me) {
+        List<WordSet> sets = VocabularyRules.SETS.split(words.learned(me).stream().map(WordSessions::member).toList());
+        int current = VocabularyRules.SETS.current(sets).map(WordSet::number).orElse(0);
+        return new SetsView(current, sets.stream().map(set -> new SetView(set.number(), set.members().size(),
+                set.mastered(), set.rounds(), set.isMastered() ? "MASTERED" : set.number() == current ? "OPEN" : "LOCKED",
+                set.members().stream().map(m -> m.mastered() ? SavedWord.ROUNDS_TO_MASTER : m.streak()).toList()))
+                .toList());
     }
 
     /** The words with these ids (the page polls PREPARING words). */

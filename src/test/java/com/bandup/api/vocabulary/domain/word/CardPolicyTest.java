@@ -30,6 +30,38 @@ class CardPolicyTest {
         assertThat(fields(POLICY.check(LEMMA, List.of(), Cards.riverbank()))).contains("forms");
     }
 
+    /** Bug: "vicious cycle" couldn't be added — the AI blanked one word of the phrase and the card failed. */
+    @Test
+    void aPhraseMayBlankOneOfItsWordsWhenTheSentenceMakesThePhrase() {
+        Lemma lemma = new Lemma("vicious circle");
+        List<WordForm> forms = List.of(new WordForm("vicious circle"), new WordForm("vicious circles"),
+                new WordForm("vicious cycle"));
+        assertThat(POLICY.check(lemma, forms, phrase("Debt can become a ___ circle for poor families.", "vicious",
+                "They were stuck in a vicious ___ of debt.", 0))).isEmpty();
+        assertThat(POLICY.check(lemma, forms, phrase("Many families are caught in a ___ every year.", "vicious circle",
+                "They were stuck in a vicious ___ of debt.", 0))).isEmpty();
+
+        assertThat(fields(POLICY.check(lemma, forms, phrase("A vicious circle of ___ hurt the family.", "debt",
+                "They were stuck in a vicious ___ of debt.", 0)))).containsExactly("gap.answer");
+        assertThat(fields(POLICY.check(lemma, forms, phrase("They felt ___ about the news today.", "vicious",
+                "They were stuck in a vicious ___ of debt.", 0)))).containsExactly("gap.answer");
+        assertThat(fields(POLICY.check(lemma, forms, phrase("Debt can become a ___ circle for poor families.", "vicious",
+                "They were stuck in a vicious circle of ___.", 0)))).containsExactly("pair.answer");
+    }
+
+    private static com.bandup.api.vocabulary.domain.word.valueobject.CardContent phrase(String gap, String gapAnswer,
+            String pair, int pairAnswer) {
+        return new com.bandup.api.vocabulary.domain.word.valueobject.CardContent("phrase", "C1", "/ˌvɪʃəs ˈsɜːkl/",
+                new com.bandup.api.vocabulary.domain.word.valueobject.Meaning(
+                        "a bad situation that keeps making itself worse", "qapalı dairə"),
+                List.of("Poverty and poor health form a vicious circle.", "We must break this vicious circle soon."),
+                List.of("break the vicious circle", "a vicious circle of debt"), List.of(),
+                new com.bandup.api.vocabulary.domain.word.valueobject.GapTask(gap, gapAnswer),
+                new com.bandup.api.vocabulary.domain.word.valueobject.PairTask(pair,
+                        List.of("circle", "debt", "window", "garden"), pairAnswer),
+                List.of("a round shape drawn on paper", "a friendly group of people", "a fast way to travel"));
+    }
+
     @Test
     void eachFieldIsChecked() {
         assertProblem(c -> c.pos("thing"), "pos");

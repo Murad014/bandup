@@ -77,11 +77,26 @@ class WordSessionTest {
         assertThat(session.queue()).hasSize(5);
     }
 
+    /** Only a word's first try in a round counts (requirement 6.6): a missed task's next answer isn't one. */
+    @Test
+    void aMissedTaskIsNoLongerAFirstTry() {
+        List<SessionWord> two = SessionWords.five().subList(0, 2);
+        WordSession round = WordSession.start(SessionId.random(), leyla, SessionKind.ROUND, two,
+                new TaskBuilder().build(SessionKind.ROUND, two, 1), NOW);
+        Task a = round.tasks().get(0);
+        Task b = round.tasks().get(1);
+        assertThat(round.answer(a.id(), new GivenAnswer.DontKnow(), normalise, NOW).firstTry()).isTrue();
+        assertThat(round.missed()).containsExactly(a.id());
+        assertThat(round.answer(b.id(), right(b), normalise, NOW).firstTry()).isTrue();
+        assertThat(round.answer(a.id(), right(a), normalise, NOW).firstTry()).isFalse();
+        assertThat(round.isFinished()).isTrue();
+    }
+
     @Test
     void aFinishedSessionTakesNoMoreAnswers() {
         List<SessionWord> one = SessionWords.five().subList(0, 1);
-        WordSession review = WordSession.start(SessionId.random(), leyla, SessionKind.REVIEW, one,
-                new TaskBuilder().build(SessionKind.REVIEW, one, 1), NOW);
+        WordSession review = WordSession.start(SessionId.random(), leyla, SessionKind.ROUND, one,
+                new TaskBuilder().build(SessionKind.ROUND, one, 1), NOW);
         Task only = review.tasks().get(0);
         review.answer(only.id(), right(only), normalise, NOW);
         assertThat(review.isFinished()).isTrue();

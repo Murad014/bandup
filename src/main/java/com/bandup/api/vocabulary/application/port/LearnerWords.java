@@ -1,6 +1,5 @@
 package com.bandup.api.vocabulary.application.port;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -25,28 +24,29 @@ public interface LearnerWords {
 
     Counts counts(LearnerId learner);
 
-    int due(LearnerId learner, LocalDate today);
-
     /** NEW words whose card is READY (they can be learned now). */
     int newReady(LearnerId learner);
 
     /** Up to {@code limit} NEW words with READY cards, oldest saved first; only one passage's when given. */
     List<UUID> learnable(LearnerId learner, String exercise, int limit);
 
-    /** Up to {@code limit} LEARNING words due by {@code today}, with READY cards, oldest due first. */
-    List<UUID> due(LearnerId learner, LocalDate today, int limit);
-
-    /** Every learned word (LEARNING or MASTERED) with a READY card, for a recall session (requirement 11). */
-    List<Recallable> recallable(LearnerId learner);
+    /**
+     * Every learned word (LEARNING or MASTERED) in learned order — {@code learned_at}, then saved order, then id —
+     * for the sets (requirement 6.1).
+     */
+    List<Learned> learned(LearnerId learner);
 
     /**
      * @param saved     the saved word's id
-     * @param meaningAz the card's Azerbaijani meaning
+     * @param mastered  MASTERED
+     * @param ready     its card is READY
+     * @param meaningAz the card's Azerbaijani meaning (null while not READY)
      * @param spellings the card's base form and its other forms
      */
-    record Recallable(UUID saved, String meaningAz, List<String> spellings) {
+    record Learned(UUID saved, int streak, boolean mastered, int rounds, boolean ready, String meaningAz,
+            List<String> spellings) {
 
-        public Recallable {
+        public Learned {
             spellings = List.copyOf(spellings);
         }
     }

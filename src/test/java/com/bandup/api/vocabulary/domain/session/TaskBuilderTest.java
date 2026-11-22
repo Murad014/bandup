@@ -37,31 +37,9 @@ class TaskBuilderTest {
 
     @Test
     void wordsWithTheSameMeaningAreNotMatched() {
-        List<SessionWord> synonyms = List.of(SessionWords.word("big", "large in size", 0),
-                SessionWords.word("large", "large in size", 0), SessionWords.word("huge", "very big", 0));
+        List<SessionWord> synonyms = List.of(SessionWords.word("big", "large in size"),
+                SessionWords.word("large", "large in size"), SessionWords.word("huge", "very big"));
         assertThat(builder.build(SessionKind.LEARN, synonyms, 1)).extracting(Task::type).doesNotContain("match");
-    }
-
-    @Test
-    void aReviewNeverListensAndRotatesByBox() {
-        List<SessionWord> words = List.of(SessionWords.word("graze", "eat grass", 1), SessionWords.word("species", "a kind", 2),
-                SessionWords.word("cascade", "a series", 3), SessionWords.word("ecosystem", "plants and animals", 1));
-        List<Task> tasks = builder.build(SessionKind.REVIEW, words, 7);
-        assertThat(tasks).extracting(Task::type).doesNotContain("listen", "meaning", "match");
-        assertThat(tasks).extracting(Task::type).containsExactly("gap", "translate", "gap", "pair");
-        assertThat(tasks).allMatch(t -> t.phase() == TaskPhase.MASTER);
-    }
-
-    @Test
-    void noReviewTaskEverListensWhateverTheBoxes() {
-        for (int box = 1; box <= 4; box++) {
-            List<SessionWord> words = new java.util.ArrayList<>();
-            for (int i = 0; i < 4; i++) {
-                words.add(SessionWords.word("word" + (char) ('a' + i), "meaning " + i, box));
-            }
-            assertThat(builder.build(SessionKind.REVIEW, words, box)).extracting(Task::type)
-                    .doesNotContain("listen").contains("pair", "gap", "type", "translate");
-        }
     }
 
     @Test
@@ -103,9 +81,9 @@ class TaskBuilderTest {
     }
 
     @Test
-    void aRecallAsksEachWordFromItsAzerbaijaniWithNoHint() {
+    void aRoundAsksEachWordFromItsAzerbaijaniWithNoHintAndNeverListens() {
         List<SessionWord> words = SessionWords.five();
-        List<Task> tasks = builder.build(SessionKind.RECALL, words, 9);
+        List<Task> tasks = builder.build(SessionKind.ROUND, words, 9);
         assertThat(tasks).extracting(Task::type).containsOnly("translate").hasSize(5);
         assertThat(tasks).allMatch(t -> t.phase() == TaskPhase.MASTER);
         Task.Translate first = (Task.Translate) tasks.get(0);
@@ -117,9 +95,9 @@ class TaskBuilderTest {
     }
 
     @Test
-    void aRecallAcceptsTheLearnersOtherWordsWithTheSameAzerbaijani() {
-        SessionWord big = SessionWords.word("big", "large in size", 2);
-        Task.Translate task = (Task.Translate) builder.build(SessionKind.RECALL, List.of(big), 1,
+    void aRoundAcceptsTheLearnersOtherWordsWithTheSameAzerbaijani() {
+        SessionWord big = SessionWords.word("big", "large in size");
+        Task.Translate task = (Task.Translate) builder.build(SessionKind.ROUND, List.of(big), 1,
                 java.util.Map.of(big.saved(), List.of("large", "larges"))).get(0);
         assertThat(task.grade(new GivenAnswer.Text("large"), normalise).correct()).isTrue();
         assertThat(task.grade(new GivenAnswer.Text("huge"), normalise).expected()).isEqualTo("big");

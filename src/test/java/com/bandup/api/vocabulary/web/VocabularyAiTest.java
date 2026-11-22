@@ -135,6 +135,29 @@ class VocabularyAiTest {
         assertThat(usage(kamal)).isZero();
     }
 
+    /** Bug: "vicious cycle" failed — the AI blanked one word of the phrase (requirement 3.11). */
+    @Test
+    void aPhraseGetsACardWhenItsBlanksHoldOneOfItsWords() throws Exception {
+        AI.script((word, n) -> {
+            var card = StubOpenRouter.card("vicious circle", List.of("vicious circles", "vicious cycle"));
+            card.put("pos", "phrase");
+            card.putArray("examples").add("Poverty and poor health form a vicious circle.")
+                    .add("We must break this vicious cycle soon.");
+            card.putArray("collocations").add("break the vicious circle");
+            card.putObject("gap").put("sentence", "Debt can become a ___ circle for poor families.").put("answer", "vicious");
+            var pair = card.putObject("pair");
+            pair.put("sentence", "They were stuck in a vicious ___ of debt.");
+            pair.putArray("options").add("circle").add("table").add("window").add("garden");
+            pair.put("answer", 0);
+            return card.toString();
+        });
+        JsonNode saved = body(save(leyla, "Vicious  cycle").andExpect(status().isCreated()));
+        JsonNode ready = awaitReady(leyla, saved.path("word").path("id").asString());
+        assertThat(ready.path("word").asString()).isEqualTo("vicious circle");
+        assertThat(AI.calls("vicious cycle")).isEqualTo(1);
+        assertThat(AI.requests().get(0).system()).contains("A short phrase", "is one unit");
+    }
+
     @Test
     void twoLearnersSavingTheSameNewWordAtOnceCauseOneCall() throws Exception {
         AI.delay(800);

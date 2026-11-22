@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::title}, ~{::#pageCss}, ~{::main})}">
+<head>
+    <title>Sets · Orbiko</title>
+    <link id="pageCss" rel="stylesheet" th:href="@{/css/vocabulary.css}">
+</head>
+<body>
+<!--
+  The learner's sets of learned words, 25 at a time (vocabulary requirement 6).
+  vocabulary/sets.js fills it from /api/v1/vocabulary/sets.
+-->
+<main class="wrap vocab v-session" id="setsRoot">
+    <p class="v-status" id="vsStatus" role="status">Loading your sets…</p>
+
+    <section class="v-card v-guest" id="vsGuest" hidden>
+        <div class="v-guest__icon" aria-hidden="true">🧩</div>
+        <h1>Master your words set by set</h1>
+        <p>Your learned words, 25 at a time: see the Azerbaijani, type the English.</p>
+        <a class="btn btn--primary" href="/login?next=%2Fvocabulary%2Fsets">Sign in to start</a>
+    </section>
+
+    <section id="vsPage" hidden>
+        <div class="v-head">
+            <div>
+                <h1>Sets</h1>
+                <p class="v-sub">All your learned words, 25 at a time. Master one set — the next one opens.</p>
+            </div>
+            <span class="v-grow"></span>
+            <a class="btn" href="/vocabulary">← My words</a>
+        </div>
+        <div class="v-sets" id="vsList"></div>
+        <p class="v-empty" id="vsEmpty" hidden>No sets yet. Learn some words first — they join Set 1.</p>
+        <div class="v-legend" aria-hidden="true">
+            <span><span class="v-dots v-dots--inline"><i></i></span> not yet</span>
+            <span><span class="v-dots v-dots--inline"><i class="is-once"></i></span> right once — one more round</span>
+            <span><span class="v-dots v-dots--inline"><i class="is-mastered"></i></span> mastered</span>
+        </div>
+        <p class="v-rule">A word is <b>mastered</b> when you type it right on the first try in <b>2 rounds in a row</b>.
+            A miss starts it again from 0. Mastered words aren't asked again.</p>
+    </section>
+
+    <script type="module" th:src="@{/js/vocabulary/sets.js}"></script>
+</main>
+</body>
+</html>
