@@ -39,6 +39,9 @@ final class CardPrompt {
             - Examples are natural, everyday or IELTS-like; no real people, brands or politics.
             - In "gap" and "pair" only one answer can be right; the other "pair" options are real words of the same
               part of speech that don't fit. The right option is a form of the word.
+            - A short phrase ("vicious circle", "take for granted") is one unit: lemma and forms are whole phrases,
+              the examples and word pairs use the whole phrase, and the "gap" and "pair" blanks hold the whole phrase
+              or one of its words.
             - Plain text only: no HTML, no markdown.
             """;
 

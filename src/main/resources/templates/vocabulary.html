@@ -16,7 +16,7 @@
     <section class="v-card v-guest" id="vGuest" hidden>
         <div class="v-guest__icon" aria-hidden="true">📚</div>
         <h1>Build your own word list</h1>
-        <p>Save words you don't know from any passage, learn them 5 at a time, and review them until they stick.</p>
+        <p>Save words you don't know from any passage, learn them 5 at a time, and master them set by set.</p>
         <a class="btn btn--primary" id="vSignIn" href="/login?next=%2Fvocabulary">Sign in to start</a>
     </section>
 
@@ -24,7 +24,7 @@
         <div class="v-head">
             <div>
                 <h1>My words</h1>
-                <p class="v-sub">Words you saved from passages or typed yourself. Learn 5 at a time, then review them until they stick.</p>
+                <p class="v-sub">Words you saved from passages or typed yourself. Learn 5 at a time, then master them set by set.</p>
             </div>
         </div>
 
@@ -42,23 +42,18 @@
                 <p id="vLearnText"></p>
                 <a class="btn btn--primary" id="vLearnGo" href="/vocabulary/learn" hidden>Start learning →</a>
             </div>
-            <div class="v-card v-todo__review">
-                <span class="v-kick v-kick--sun">Daily review</span>
-                <h2 id="vReviewTitle"></h2>
-                <p id="vReviewText"></p>
-                <a class="btn" id="vReviewGo" href="/vocabulary/review" hidden>Review now</a>
-            </div>
-            <div class="v-card v-todo__recall">
-                <span class="v-kick v-kick--grape">Recall · 🇦🇿 → 🇬🇧</span>
-                <h2 id="vRecallTitle"></h2>
-                <p id="vRecallText"></p>
-                <a class="btn" id="vRecallGo" href="/vocabulary/recall" hidden>Start recall</a>
+            <div class="v-card v-todo__sets">
+                <span class="v-kick v-kick--grape">Sets · 🇦🇿 → 🇬🇧</span>
+                <h2 id="vSetsTitle"></h2>
+                <div id="vSetsDots"></div>
+                <p id="vSetsText"></p>
+                <a class="btn btn--primary" id="vSetsGo" href="/vocabulary/sets" hidden>Open sets</a>
             </div>
         </div>
 
         <form class="v-add" id="vAdd" autocomplete="off">
-            <input class="v-input" id="vAddInput" maxlength="40" placeholder="Add a word yourself, e.g. “sustainable”"
-                   aria-label="Add a word" spellcheck="false" autocapitalize="none">
+            <input class="v-input" id="vAddInput" maxlength="40" placeholder="Add a word or phrase, e.g. “vicious circle”"
+                   aria-label="Add a word or phrase" spellcheck="false" autocapitalize="none">
             <button class="btn" type="submit" id="vAddBtn">＋ Add</button>
         </form>
         <p class="v-msg" id="vAddMsg" role="status" hidden></p>

@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.bandup.api.vocabulary.domain.saved.aggregate.SavedWord;
 import com.bandup.api.vocabulary.domain.saved.repository.SavedWordRepository;
-import com.bandup.api.vocabulary.domain.saved.valueobject.Box;
 import com.bandup.api.vocabulary.domain.saved.valueobject.LearnerId;
 import com.bandup.api.vocabulary.domain.saved.valueobject.SavedWordId;
 import com.bandup.api.vocabulary.domain.saved.valueobject.WordSource;
@@ -80,9 +79,9 @@ class JpaSavedWordRepository implements SavedWordRepository {
         }
         row.wordId = word.word().value();
         row.state = word.state().name();
-        row.box = word.box().map(b -> (short) b.value()).orElse(null);
-        row.dueOn = word.dueOn().orElse(null);
-        row.lastAnsweredOn = word.lastAnsweredOn().orElse(null);
+        row.learnedAt = word.learnedAt().orElse(null);
+        row.streak = (short) word.streak();
+        row.rounds = word.rounds();
         if (isNew) {
             em.persist(row);
         }
@@ -105,6 +104,6 @@ class JpaSavedWordRepository implements SavedWordRepository {
                         .optional().orElse(null);
         return SavedWord.restore(new SavedWordId(row.id), learners.learnerId(row.userId), new WordId(row.wordId),
                 new WordSource(slug, row.sourceSentence), row.addedOn, WordState.valueOf(row.state),
-                row.box == null ? null : new Box(row.box), row.dueOn, row.lastAnsweredOn);
+                row.learnedAt, row.streak, row.rounds);
     }
 }

@@ -2,6 +2,7 @@ package com.bandup.api.vocabulary.application;
 
 import lombok.experimental.UtilityClass;
 
+import com.bandup.api.vocabulary.domain.saved.service.SetPlan;
 import com.bandup.api.vocabulary.domain.session.service.AnswerNormaliser;
 import com.bandup.api.vocabulary.domain.session.service.TaskBuilder;
 import com.bandup.api.vocabulary.domain.word.service.CardPolicy;
@@ -17,4 +18,5 @@ final class VocabularyRules {
     static final CardPolicy POLICY = new CardPolicy(NORMALISER);
     static final AnswerNormaliser ANSWERS = new AnswerNormaliser();
     static final TaskBuilder TASKS = new TaskBuilder();
+    static final SetPlan SETS = new SetPlan();
 }

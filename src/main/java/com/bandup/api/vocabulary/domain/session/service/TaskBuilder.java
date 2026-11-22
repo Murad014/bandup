@@ -19,24 +19,22 @@ import com.bandup.api.vocabulary.domain.session.valueobject.TaskId;
  * Builds a session's tasks from its word snapshots (vocabulary requirements
  * 5.4, 5.5, 6). LEARN: choose the meaning of the first word, a match of all
  * words (3+, all with different meanings), then one master task per word, rotating gap / type from meaning
- * / listen / pair / translate. REVIEW: one task per word, rotating pair / gap
- * / type from meaning / translate — never listen, which would give the word
- * to the browser. RECALL: one translate per word with no hint (requirement
- * 11.3). Options are shuffled with the session's seed.
+ * / listen / pair / translate. ROUND: one translate per word with no hint
+ * (requirement 6.4) — never listen, which would give the word to the browser.
+ * Options are shuffled with the session's seed.
  */
 @DomainService
 public final class TaskBuilder {
 
     private static final List<String> LEARN_ROTATION = List.of("gap", "type", "listen", "pair", "translate");
-    private static final List<String> REVIEW_ROTATION = List.of("pair", "gap", "type", "translate");
 
     public List<Task> build(SessionKind kind, List<SessionWord> words, long seed) {
         return build(kind, words, seed, Map.of());
     }
 
     /**
-     * @param alsoAccepted RECALL only: per word, the spellings of the learner's other words with the same
-     *                     Azerbaijani meaning (requirement 11.4)
+     * @param alsoAccepted ROUND only: per word, the spellings of the learner's other learned words with the same
+     *                     Azerbaijani meaning (requirement 6.5)
      */
     public List<Task> build(SessionKind kind, List<SessionWord> words, long seed,
             Map<SavedWordId, List<String>> alsoAccepted) {
@@ -52,7 +50,7 @@ public final class TaskBuilder {
                 tasks.add(match(TaskId.of(2), words, random));
             }
         }
-        if (kind == SessionKind.RECALL) {
+        if (kind == SessionKind.ROUND) {
             for (SessionWord w : words) {
                 List<String> accept = new ArrayList<>(accepted(w));
                 accept.addAll(alsoAccepted.getOrDefault(w.saved(), List.of()));
@@ -63,9 +61,7 @@ public final class TaskBuilder {
         }
         for (int i = 0; i < words.size(); i++) {
             SessionWord word = words.get(i);
-            String type = kind == SessionKind.LEARN ? LEARN_ROTATION.get(i % LEARN_ROTATION.size())
-                    : REVIEW_ROTATION.get((i + word.box()) % REVIEW_ROTATION.size());
-            tasks.add(task(type, TaskId.of(tasks.size() + 1), word, random));
+            tasks.add(task(LEARN_ROTATION.get(i % LEARN_ROTATION.size()), TaskId.of(tasks.size() + 1), word, random));
         }
         return List.copyOf(tasks);
     }

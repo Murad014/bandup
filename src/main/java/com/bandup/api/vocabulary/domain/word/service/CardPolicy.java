@@ -87,8 +87,11 @@ public final class CardPolicy {
             text(c.family().get(i), "family[" + i + "]", 1, 40, v);
         }
         gapSentence(c.gap().sentence(), "gap.sentence", v);
-        if (!isForm(c.gap().answer(), forms)) {
-            v.add(new Violation("gap.answer", "The answer must be one of the forms."));
+        boolean phrase = forms.stream().anyMatch(f -> f.value().contains(" "));
+        if (!blankFits(c.gap().sentence(), c.gap().answer(), forms)) {
+            v.add(new Violation("gap.answer", phrase
+                    ? "The answer must be the phrase, or one of its words with the sentence making the phrase."
+                    : "The answer must be one of the forms."));
         }
         gapSentence(c.pair().sentence(), "pair.sentence", v);
         List<String> options = c.pair().options();
@@ -103,8 +106,10 @@ public final class CardPolicy {
         }
         if (c.pair().answer() < 0 || c.pair().answer() >= options.size()) {
             v.add(new Violation("pair.answer", "The answer must be the index of one option (0 = first)."));
-        } else if (!isForm(options.get(c.pair().answer()), forms)) {
-            v.add(new Violation("pair.answer", "The right option must be one of the forms."));
+        } else if (!blankFits(c.pair().sentence(), options.get(c.pair().answer()), forms)) {
+            v.add(new Violation("pair.answer", phrase
+                    ? "The right option must be the phrase, or one of its words with the sentence making the phrase."
+                    : "The right option must be one of the forms."));
         }
         if (c.wrongMeanings().size() != 3) {
             v.add(new Violation("wrongMeanings", "Give 3 wrong meanings."));
@@ -124,6 +129,26 @@ public final class CardPolicy {
     public boolean containsWord(String text, Collection<WordForm> forms) {
         String lower = " " + normaliser.normalise(text).replaceAll("[^a-z' -]", " ") + " ";
         return forms.stream().anyMatch(f -> lower.contains(" " + f.value() + " "));
+    }
+
+    /**
+     * The blank's answer is one of the forms, or (a phrase, decision 17) one word of a multi-word form when the
+     * sentence contains a form only once the answer is filled in ("a ___ cycle" + "vicious"). For a one-word card
+     * that is the same as "one of the forms".
+     */
+    private boolean blankFits(String sentence, String answer, Collection<WordForm> forms) {
+        if (isForm(answer, forms)) {
+            return true;
+        }
+        if (sentence == null || answer == null) {
+            return false;
+        }
+        String word = normaliser.normalise(answer);
+        boolean partOfPhrase = !word.isEmpty() && !word.contains(" ")
+                && forms.stream().anyMatch(f -> List.of(f.value().split(" ")).contains(word));
+        // the blank itself must complete the phrase: the sentence has it only once the answer is filled in
+        return partOfPhrase && containsWord(sentence.replace("___", answer), forms)
+                && !containsWord(sentence.replace("___", " "), forms);
     }
 
     private boolean isForm(String text, Collection<WordForm> forms) {

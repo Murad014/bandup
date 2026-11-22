@@ -26,6 +26,7 @@ import com.bandup.api.vocabulary.application.WordLookup;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.CardView;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.SaveResult;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.SavedWordView;
+import com.bandup.api.vocabulary.application.view.VocabularyViews.SetsView;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.WordsPage;
 
 /** The learner's words (vocabulary design §5.1). Everything but {@code /lookup} needs a token. */
@@ -76,6 +77,12 @@ class WordController {
         } catch (IllegalArgumentException e) {
             throw DomainException.of("ids", "Give word ids separated by commas.");
         }
+    }
+
+    /** The learner's sets of learned words (requirement 6.3). */
+    @GetMapping("/sets")
+    SetsView sets() {
+        return myWords.sets();
     }
 
     @DeleteMapping("/words/{id}")

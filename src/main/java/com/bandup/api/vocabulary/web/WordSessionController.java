@@ -17,7 +17,7 @@ import com.bandup.api.vocabulary.application.WordSessions;
 import com.bandup.api.vocabulary.application.view.SessionViews.AnswerView;
 import com.bandup.api.vocabulary.application.view.SessionViews.SessionView;
 
-/** Learn and review sessions (vocabulary design §5.1); a token is required. */
+/** Learn sessions and rounds (vocabulary design §5.1); a token is required. */
 @RestController
 @RequestMapping("/api/v1/vocabulary/sessions")
 @RequiredArgsConstructor

@@ -228,7 +228,7 @@ com.bandup
 └── ui/                       page shells: HomeController, ReadingPageController, AuthPageController
                               (/login, /register), GrammarPageController (/grammar, /grammar/lessons/{slug},
                               /grammar/review), VocabularyPageController (/vocabulary,
-                              /vocabulary/learn, /vocabulary/review, /vocabulary/recall), NavItem, NavigationAdvice; admin/: AdminPageController,
+                              /vocabulary/learn, /vocabulary/sets, /vocabulary/round; /review and /recall redirect to /sets), NavItem, NavigationAdvice; admin/: AdminPageController,
                               AdminNavItem, AdminNavigationAdvice — no data, no API imports
 ```
 
@@ -913,7 +913,8 @@ GET /api/v1/exercises/filters?lang=  → {skills[], formats[], levels[], types[]
 | POST | `/api/v1/admin/grammar/lessons/{slug}/publish` · `/unpublish` | ADMIN/AUTHOR | 200 |
 | GET | `/api/v1/vocabulary/lookup?text=` | public | 200 / 404 (never calls the AI) |
 | GET / POST / DELETE | `/api/v1/vocabulary/words` (`?state&q&exercise&page&size` or `?ids=`), `/words/{id}`, `/words/{id}/retry` | token | 200 / 201 / 204 / 202; 422, 429, 503 (vocabulary spec §5.1) |
-| POST / GET | `/api/v1/vocabulary/sessions`, `/sessions/{id}`, `/sessions/{id}/answers` | token (own sessions) | 201 / 200 |
+| GET | `/api/v1/vocabulary/sets` | token | 200 (the learner's sets of 25) |
+| POST / GET | `/api/v1/vocabulary/sessions` (LEARN, ROUND), `/sessions/{id}`, `/sessions/{id}/answers` | token (own sessions) | 201 / 200 |
 | GET / PUT / POST / DELETE | `/api/v1/admin/vocabulary/words[/{id}[/regenerate]]` | ADMIN/AUTHOR | 200 / 202 / 204 (vocabulary spec §5.2) |
 
 ### Error mapping (`api.shared.web`)
@@ -1080,7 +1081,8 @@ Tactical design (7–13):
     (JDK `HttpClient`) only for a word no card has, once, after commit and
     outside any transaction. The key is `BANDUP_OPENROUTER_API_KEY` (never
     committed; without it known words still work). The shared kernel gained
-    `ServiceUnavailableException` (503). Tables: V11 (V12: recall sessions).
+    `ServiceUnavailableException` (503). Tables: V11 (V12: recall sessions;
+    V13: sets replace the review and recall — vocabulary decision 15).
 
 ### Open — product decisions needed
 

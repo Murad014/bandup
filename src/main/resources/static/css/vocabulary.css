@@ -1,7 +1,7 @@
 /* =========================================================================
-   vocabulary.css — My words and the learn / review sessions (vocabulary
+   vocabulary.css — My words, the sets, learn sessions and rounds (vocabulary
    design §6; the approved prototype ai-docs/vocabulary). Only app.css tokens:
-   coral accent, ok/bad for answers, sun for review, sky for new words, teal
+   coral accent, ok/bad for answers, grape for sets, sky for new words, teal
    for words from passages. Light and dark come from the site theme.
    ========================================================================= */
 
@@ -37,14 +37,13 @@
 .v-stat--new b { color: var(--sky); }
 .v-stat--learning b { color: color-mix(in srgb, var(--sun) 80%, var(--fg)); }
 .v-stat--mastered b { color: var(--ok); }
-.v-todo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+.v-todo { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 22px; }
 .v-todo .v-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
 .v-todo h2 { margin: 0; font: 800 1.1rem var(--display); }
 .v-todo p { margin: 0; color: var(--muted); font-size: .92rem; flex: 1; }
 .v-todo .btn { align-self: stretch; }
 .v-todo__learn { border-left: 4px solid var(--accent) !important; }
-.v-todo__review { border-left: 4px solid var(--sun) !important; }
-.v-todo__recall { border-left: 4px solid var(--grape) !important; }
+.v-todo__sets { border-left: 4px solid var(--grape) !important; }
 .v-add { display: flex; gap: 8px; margin-bottom: 8px; }
 .v-input {
     flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--paper); color: var(--fg);
@@ -72,10 +71,8 @@
 .v-word__mean { font-size: .92rem; min-width: 0; }
 .v-word__mean small { display: block; color: var(--muted); font-size: .8rem; }
 .v-word__az { color: var(--muted); }
-.v-strength { display: flex; gap: 3px; align-items: center; }
-.v-strength i { width: 9px; height: 18px; border-radius: 3px; background: var(--line); }
-.v-strength i.is-on { background: var(--sun); }
-.v-strength em { font-style: normal; font-size: .75rem; color: var(--muted); font-weight: 700; margin-left: 6px; min-width: 70px; }
+.v-strength { display: flex; gap: 6px; align-items: center; }
+.v-strength em { font-style: normal; font-size: .75rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
 .v-state { font: 800 .7rem var(--ui); text-transform: uppercase; letter-spacing: .04em; padding: 3px 8px; border-radius: var(--radius-pill); white-space: nowrap; }
 .v-state--new { background: var(--sky-soft); color: var(--sky); }
 .v-state--mastered { background: var(--ok-soft); color: var(--ok); }
@@ -201,7 +198,6 @@
 .v-fb__line { font-size: .93rem; margin: 4px 0; }
 .v-fb__retry { font: 800 .82rem var(--ui); color: color-mix(in srgb, var(--sun) 75%, var(--fg)); margin-top: 6px; }
 .v-fb__next { font: 800 .82rem var(--ui); color: var(--muted); margin-top: 6px; }
-.v-boxmove { display: inline-block; background: var(--sun-soft); border-radius: var(--radius-pill); padding: 2px 10px; font-weight: 800; font-size: .8rem; margin-left: 6px; }
 .v-fb .btn { margin-top: 12px; width: 100%; }
 
 @media (max-width: 800px) {
@@ -220,10 +216,41 @@
     .v-meet__word { font-size: 1.8rem; }
 }
 
-/* ---- Recall (Azerbaijani → English; requirement 11) ---- */
+/* ---- Rounds (Azerbaijani → English; requirement 6) ---- */
 .v-az--big { font: 800 2rem/1.2 var(--display); margin: 6px 0 16px; overflow-wrap: anywhere; }
 .v-skip { background: none; border: 0; color: var(--muted); font: 700 .88rem var(--ui); cursor: pointer;
     padding: 10px 0 0; text-decoration: underline; }
 .v-skip:hover, .v-skip:focus-visible { color: var(--fg); }
 .v-score { font: 800 2.4rem var(--display); color: var(--grape); margin: 4px 0; }
 .v-chips--missed span { background: var(--bad-soft); color: var(--bad); }
+
+/* ---- Sets (requirement 6): ○ not yet, ◐ right once, ● mastered ---- */
+.v-dots { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+.v-dots i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--line); box-sizing: border-box; }
+.v-dots i.is-once { border-color: var(--grape); background: linear-gradient(90deg, var(--grape) 50%, transparent 50%); }
+.v-dots i.is-mastered { border-color: var(--ok); background: var(--ok); }
+.v-dots i.is-empty { border-style: dashed; opacity: .45; }
+.v-dots--inline { display: inline-flex; margin: 0; vertical-align: middle; }
+.v-done .v-dots { justify-content: center; margin: 8px 0; }
+.v-sets { display: flex; flex-direction: column; gap: 12px; }
+.v-set { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
+.v-set__head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.v-set__head h2 { margin: 0; font: 800 1.1rem var(--display); }
+.v-set__head .v-grow { flex: 1; }
+.v-set__status { font-weight: 800; color: var(--muted); }
+.v-set p { margin: 0; color: var(--muted); font-size: .92rem; }
+.v-set .btn { align-self: flex-start; }
+.v-set--mastered { border-left: 4px solid var(--ok) !important; }
+.v-set--mastered .v-set__status { color: var(--ok); }
+.v-set--open { border-left: 4px solid var(--grape) !important; box-shadow: 0 0 0 2px var(--grape-soft), var(--shadow-1); }
+.v-set--open .v-set__status { color: var(--grape); }
+.v-set--locked { opacity: .75; border-left: 4px solid var(--line) !important; }
+.v-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .85rem; color: var(--muted); margin: 16px 0 6px; }
+.v-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.v-rule { font-size: .88rem; color: var(--muted); margin: 6px 0 0; }
+.v-step { font: 800 .82rem var(--ui); margin-top: 6px; }
+.v-step--once { color: var(--grape); }
+.v-step--mastered { color: var(--ok); }
+.v-step--zero { color: var(--bad); }
+.v-done h3 { margin: 14px 0 2px; font: 800 .9rem var(--ui); color: var(--muted); }
+.v-chips--once span { background: var(--grape-soft); color: var(--grape); }

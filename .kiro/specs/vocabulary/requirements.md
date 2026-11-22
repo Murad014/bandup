@@ -6,7 +6,9 @@ Vocabulary is Orbiko's third learner feature, next to Reading and Grammar. A
 learner **saves words** they want to learn: from a reading passage (a dotted
 word, or any word they select) or by typing them. Saved words are taught in
 short **learn sessions** (meet → practise → master, like a grammar lesson)
-and come back in a **spaced review** until they stick.
+and are then **mastered set by set**: learned words, 25 at a time,
+Azerbaijani shown, English typed, until every word of the set is sure
+(requirement 6; it replaced the daily review and Recall).
 
 Every word has one shared **word card** (meaning, Azerbaijani, examples,
 word pairs, task material). The **database is always checked first**; a card
@@ -15,7 +17,8 @@ first time any learner saves it. Every later learner gets it from the
 database.
 
 The UI follows the approved prototype `ai-docs/vocabulary/Orbiko — Vocabulary.html`
-(screens 1–4), with Orbiko's look.
+(screens 1–3 and 7 — Sets; screens 4 Review and 6 Recall are kept only for
+comparison), with Orbiko's look.
 
 ### Scope
 
@@ -28,18 +31,21 @@ The UI follows the approved prototype `ai-docs/vocabulary/Orbiko — Vocabulary.
 
 ### Definitions
 
-- **Word card**: the shared description of one English word (its base form,
-  e.g. `riverbank`), with its other forms (`riverbanks`).
+- **Word card**: the shared description of one English word or short phrase
+  (its base form, e.g. `riverbank`, `vicious circle`), with its other forms
+  (`riverbanks`, `vicious circles`).
 - **Saved word**: one learner's link to a card, with its learning state.
-- **States**: NEW (saved, not learned) → LEARNING (boxes 1–3) → MASTERED
-  (answered right in box 4).
+- **States**: NEW (saved, not learned) → LEARNING (learned, in a set, not
+  mastered yet) → MASTERED (typed right on the first try in 2 rounds in a
+  row).
 - **Learn session**: up to 5 NEW words taught and checked in one go.
-- **Review session**: up to 20 due words.
-- **Recall session**: up to 10 learned words, Azerbaijani → English, practice
-  only.
+- **Set**: 25 learned words in the order they were learned (the last set may
+  be smaller). **Current set**: the first set with a word not mastered.
+- **Round**: one pass over the current set's words that aren't mastered yet,
+  Azerbaijani → English.
 - **Day**: a calendar day in the configured zone (default `Asia/Baku`). The
-  server counts days ("tomorrow", "in 3 days", "added today"); pages never
-  count with the browser's clock, which may be on another day.
+  server counts days ("added today", the daily AI limit); pages never count
+  with the browser's clock, which may be on another day.
 
 ---
 
@@ -61,11 +67,12 @@ know, so that I can learn them later.
    words".
 5. A guest SHALL be asked to sign in to save words (decision 3).
 
-## Requirement 2 — Save a word by typing
+## Requirement 2 — Save a word or phrase by typing
 
-1. My words SHALL have an input "Add a word yourself"; Enter or ＋ Add saves.
+1. My words SHALL have an input "Add a word or phrase, e.g. "vicious circle""; Enter or ＋ Add saves.
 2. Input SHALL be 1–3 English words (letters, `'` and `-`), at most 40
-   characters; anything else SHALL be refused before any lookup (422).
+   characters — a word or a short phrase ("vicious cycle", "take for
+   granted"); anything else SHALL be refused before any lookup (422).
 
 ## Requirement 3 — Database first, AI once per word
 
@@ -98,17 +105,23 @@ know, so that I can learn them later.
    now".
 10. A card for a dotted passage word SHALL be written with that passage's
     sentence and meaning as context.
+11. A phrase SHALL get a card like a word: its base form and forms are whole
+    phrases. In its gap and word-pair tasks the blank MAY hold one word of the
+    phrase ("a ___ cycle of debt" → "vicious") when the completed sentence
+    contains the phrase; for a one-word card the blank SHALL hold one of its
+    forms, as before.
 
 ## Requirement 4 — My words
 
 1. `/vocabulary` SHALL show totals (all, new, learning, mastered), a Learn
-   card ("N new words ready", up to 5) and a Daily review card ("N words
-   due · ~M min"), the add input, tabs (All / New / Learning / Mastered),
+   card ("N new words ready", up to 5) and a **Sets** card ("Set 2 of 3 ·
+   18 / 25 mastered", a dot per word, "Continue Set 2 →"; "No sets yet" until
+   a word is learned), the add input, tabs (All / New / Learning / Mastered),
    search and the list.
 2. Each row SHALL show the word, part of speech and level, the meaning, where
-   it came from and when, its strength (4 bars + "tomorrow / in 3 days / in 1
-   week / in 2 weeks", or NEW, or ✓ MASTERED, or "Preparing… ⏳" / "Couldn't
-   prepare — Try again") and Remove.
+   it came from and when, its progress ("Set 2 · not yet" / "Set 2 · right
+   once", or NEW, or ✓ MASTERED, or "Preparing… ⏳" / "Couldn't prepare — Try
+   again") and Remove.
 3. The navbar SHALL have an enabled **Vocabulary** item with the number of NEW
    words.
 4. Removing a word SHALL remove only the learner's saved word, never the card.
@@ -129,29 +142,63 @@ know, so that I can learn them later.
    hint, listen and type, word pair, Azerbaijani → English); a wrong task
    SHALL go to the end and come back ("↻ This word comes back until you get it
    right"); a mastery bar "n / N".
-6. **Done**: the words learned, tasks and retries, "they come back tomorrow",
+6. **Done**: the words learned, tasks and retries, "they join your sets",
    and "Learn N more" when NEW words are left.
-7. At the end every session word SHALL become LEARNING, box 1, due tomorrow.
+7. At the end every session word SHALL become LEARNING (it joins the sets,
+   after every word learned before it).
 8. Leaving a session SHALL ask first; words already mastered in it are not
    lost (decision 6).
 
-## Requirement 6 — Review
+## Requirement 6 — Sets (replaces the daily review and Recall)
 
-1. A review session SHALL show up to **20** due words, oldest due first, each
-   labelled with where it came from (never with the word itself).
-2. Boxes as in Grammar: right → up one box, wrong → box 1; due: box 1 →
-   tomorrow, 2 → 3 days, 3 → 1 week, 4 → 2 weeks; right in box 4 →
-   MASTERED (no longer due).
-3. Only the first answer of a word on a day SHALL change its schedule; a wrong
-   word repeats in the session without further changes.
-4. Feedback SHALL show "⏱ Next review: …" and the box change.
+**User story:** As a learner with many words, I want to work through them
+step by step, 25 at a time, so that every word gets covered and I'm sure I
+know it before it counts as mastered.
+
+#### Acceptance Criteria
+
+1. Learned words (LEARNING or MASTERED) SHALL be split into sets of **25** in
+   the order they were learned (words learned in one session by the order
+   they were saved). The last set MAY be smaller and fills up as words are
+   learned. Removing a word moves the later words up.
+2. The **current set** SHALL be the first set with a word not mastered; sets
+   before it are mastered, sets after it are locked.
+3. `/vocabulary/sets` SHALL list the sets: number, size ("4 / 25 words" while
+   filling), a dot per word (○ not yet, ◐ right once, ● mastered), and
+   "✓ Mastered · in N rounds", "n / 25 mastered" with **Start round N →**, or
+   "🔒 Locked · opens when Set n is mastered"; a legend and the rule.
+4. A **round** SHALL ask every not-mastered word of the current set once, in
+   random order: the Azerbaijani meaning, part of speech and level, **no
+   hint**; the learner types the English. "I don't remember — show me" SHALL
+   count as wrong. A wrong word SHALL come back at the end of the round until
+   typed right. A word whose card isn't READY is skipped.
+5. Accepted answers: the word or phrase and its forms, case and spaces
+   ignored; also the learner's other learned words with the same Azerbaijani
+   meaning.
+6. Only the **first answer of a word in a round** SHALL count: right → right
+   once (◐), or **MASTERED** (●) when it was right once in the round before;
+   wrong → back to not yet (○). Each answer is saved at once; leaving a round
+   asks nothing and keeps the answers.
+7. Feedback: ✓ / ✕, the word, 🔊, and the step ("◐ Right once — get it right
+   in the next round to master it", "● Mastered! It won't be asked again",
+   "○ Missed — it needs 2 rounds in a row again"); a bar "Answered n / N".
+8. **Round done**: "n / N right on the first try", the words mastered now,
+   right once and missed, the set's dots and "n / 25 mastered", then **Next
+   round →**, or "🎉 Set n mastered!" with **Start Set n+1 →** (or "you
+   mastered every learned word"), All sets and My words.
+9. Mastered words SHALL NOT be asked again.
+10. No learned word → 422 "Learn some words first — they join Set 1."; every
+    word mastered → 422 "Every set is mastered. Learn new words to start the
+    next set."
+11. Words learned before this change keep their order by when they were
+    saved; MASTERED words stay mastered, LEARNING words start at not yet.
+    Review boxes and due days are no longer used.
 
 ## Requirement 7 — Answers stay on the server
 
 1. Session tasks SHALL be built and graded on the server; task payloads SHALL
    NOT contain the answer, accepted values or the "why" texts.
-2. Review tasks SHALL NOT reveal the word in labels or hints beyond the first
-   letter.
+2. Round tasks SHALL NOT reveal the word (no hint, no label naming it).
 3. A test SHALL check every learner response shape for key fields.
 
 ## Requirement 8 — Admin: word cards
@@ -170,32 +217,12 @@ know, so that I can learn them later.
    answers; options and tiles focusable).
 2. All card texts are plain text (no HTML), inserted with `textContent`.
 
-## Requirement 11 — Recall (Azerbaijani → English)
+## Requirement 11 — Recall (Azerbaijani → English) — replaced
 
-**User story:** As a learner, I want to see a word in my own language and
-type it in English, so that I can check I really remember my words.
-
-#### Acceptance Criteria
-
-1. My words SHALL have a third card **"Recall · 🇦🇿 → 🇬🇧"** next to Learn and
-   Daily review: "N words, mixed" (N = learned words, at most 10) with **Start
-   recall**, or "Nothing to recall yet" with the button hidden.
-2. A recall session SHALL take up to **10** learned words (LEARNING or
-   MASTERED, READY cards) **at random**, a different mix each time, with at
-   most one word per Azerbaijani meaning.
-3. Each task SHALL show the Azerbaijani meaning, part of speech and level,
-   and **no hint** (no first letter, no length); the learner types the English
-   word. "I don't remember — show me" SHALL count as a wrong answer.
-4. Accepted answers: the word and its forms, case and spaces ignored; also
-   the learner's other learned words with the same Azerbaijani meaning.
-5. Right → ✓ with the word, its meaning and 🔊; wrong → the right word, and
-   the word comes back at the end until typed right; a "Recalled n / N" bar.
-6. **Done**: "n / N right on the first try", the missed words, a note that
-   review days haven't changed, **Again with other words** and My words.
-7. A recall session SHALL NOT change any word's state, box or due day; it can
-   be played any time, as often as the learner likes. Leaving it asks nothing.
-8. Answers SHALL be graded on the server as in requirement 7 (the English word
-   is never in the task payload).
+Recall (10 random learned words, practice only) was replaced by Sets
+(requirement 6) at the user's request: random words never covered every word,
+and nothing became mastered. `/vocabulary/recall` and `/vocabulary/review`
+open `/vocabulary/sets`.
 
 ## Requirement 10 — Security and cost
 

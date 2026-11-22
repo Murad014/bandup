@@ -27,6 +27,9 @@ export const remove = (id) => apiFetch(API + "/words/" + encodeURIComponent(id),
 
 export const retry = (id) => apiFetch(API + "/words/" + encodeURIComponent(id) + "/retry", { method: "POST" });
 
+/** The learner's sets: {current, sets: [{number, size, mastered, rounds, status, streaks}]}. */
+export const sets = () => apiFetch(API + "/sets");
+
 export const startSession = (kind, exercise) =>
     apiFetch(API + "/sessions", { method: "POST", json: { kind, exercise: exercise || null } });
 
@@ -51,6 +54,17 @@ export function say(text) {
     } catch (e) {
         /* no speech on this device */
     }
+}
+
+export const SET_SIZE = 25;
+
+/** A dot per word of a set (○ not yet, ◐ right once, ● mastered); dashed dots for the places still free. */
+export function dots(streaks, fill = false) {
+    const box = el("div", "v-dots");
+    box.setAttribute("aria-hidden", "true");
+    streaks.forEach((s) => box.append(el("i", s >= 2 ? "is-mastered" : s === 1 ? "is-once" : null)));
+    if (fill) for (let i = streaks.length; i < SET_SIZE; i++) box.append(el("i", "is-empty"));
+    return box;
 }
 
 export function el(tag, className, text) {

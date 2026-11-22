@@ -3,8 +3,6 @@ package com.bandup.browser;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
@@ -19,7 +17,7 @@ import tools.jackson.databind.node.ObjectNode;
 /**
  * Vocabulary in Chrome (vocabulary requirements 1, 2, 4–6): saving words on
  * the reading page and in My words (a fake OpenRouter writes new cards), a
- * learn session with a wrong task coming back, and the review.
+ * learn session with a wrong task coming back, and the sets with their rounds.
  */
 class VocabularyBrowserTest extends BrowserTestBase {
 
@@ -178,107 +176,111 @@ class VocabularyBrowserTest extends BrowserTestBase {
         shot(tab, "done");
         assertThat(jdbc.queryForObject("""
                 select count(*) from vocab_saved_word s join app_user u on u.id = s.user_id
-                where u.display_name = 'Kamal' and s.state = 'LEARNING' and s.box = 1""", Integer.class)).isEqualTo(3);
+                where u.display_name = 'Kamal' and s.state = 'LEARNING' and s.learned_at is not null""", Integer.class)).isEqualTo(3);
     }
 
     @Test
-    void theReviewMovesEachWordAndSaysWhenItComesBack() throws Exception {
-        bank("predator", "erosion");
-        HeadlessChrome.Tab tab = chrome.newTab(url("/"));
-        signIn(tab, registerLearner(tab, "Aysel"), PASSWORD);
-        for (String w : List.of("predator", "erosion")) {
-            tab.eval("import('/js/vocabulary/api.js').then(m => m.save('" + w + "', null))");
-        }
-        jdbc.update("""
-                update vocab_saved_word set state = 'LEARNING', box = 2, due_on = ?, last_answered_on = ?
-                where user_id = (select id from app_user where display_name = 'Aysel')""",
-                LocalDate.now(ZoneId.of("Asia/Baku")), LocalDate.now(ZoneId.of("Asia/Baku")).minusDays(3));
-        tab.navigate(url("/vocabulary"));
-        tab.waitFor("!document.getElementById('vReviewGo').hidden");
-        assertThat(tab.text("document.getElementById('vReviewTitle').textContent")).isEqualTo("2 words due");
-        tab.eval("document.getElementById('vReviewGo').click()");
-        tab.waitFor("document.querySelector('.v-q') !== null");
-        assertThat(tab.text("document.querySelector('.v-q__kick').textContent")).contains("your words", "box 2")
-                .doesNotContain("predator", "erosion");
-        String first = tab.text("document.querySelector('.v-q').dataset.task");
-        wrongAnswer(tab);
-        tab.waitFor("document.querySelector('.v-fb__next') !== null");
-        assertThat(tab.text("document.querySelector('.v-fb__next').textContent")).isEqualTo("⏱ Next review: tomorrowbox 2 → 1");
-        shot(tab, "review");
-        next(tab);
-        tab.waitFor("document.querySelector('.v-q').dataset.task !== '" + first + "'");
-        rightAnswer(tab);
-        tab.waitFor("document.querySelector('.v-fb__next') !== null");
-        assertThat(tab.text("document.querySelector('.v-fb__next').textContent")).isEqualTo("⏱ Next review: in 1 weekbox 2 → 3");
-        next(tab);
-        tab.waitFor("document.querySelector('.v-q').dataset.task === '" + first + "' && document.querySelector('#fb, .v-fb[hidden]') !== null");
-        rightAnswer(tab);
-        tab.waitFor("document.querySelector('.v-fb__next') !== null");
-        assertThat(tab.text("document.querySelector('.v-fb__next').textContent")).isEqualTo("⏱ Next review: tomorrowstays in box 1");
-        next(tab);
-        tab.waitFor("document.getElementById('sessionDone') !== null");
-        assertThat(tab.text("document.getElementById('sessionDone').textContent")).contains("Review done", "Retries: 1");
-    }
-
-    @Test
-    void aRecallAsksInAzerbaijaniWithNoHintAndMovesNothing() throws Exception {
+    void setsAreWorkedThroughInRoundsUntilEveryWordIsMastered() throws Exception {
         bank("predator", "erosion", "decline");
         HeadlessChrome.Tab tab = chrome.newTab(url("/"));
-        signIn(tab, registerLearner(tab, "Samir"), PASSWORD);
+        signIn(tab, registerLearner(tab, "Tural"), PASSWORD);
         for (String w : List.of("predator", "erosion", "decline")) {
             tab.eval("import('/js/vocabulary/api.js').then(m => m.save('" + w + "', null))");
         }
-        LocalDate later = LocalDate.now(ZoneId.of("Asia/Baku")).plusDays(3);
-        String samir = "user_id = (select id from app_user where display_name = 'Samir')";
-        tab.waitFor("true");
-        for (int i = 0; i < 50 && jdbc.queryForObject("select count(*) from vocab_saved_word where " + samir, Integer.class) < 3; i++) {
+        String tural = "user_id = (select id from app_user where display_name = 'Tural')";
+        for (int i = 0; i < 50 && jdbc.queryForObject("select count(*) from vocab_saved_word where " + tural, Integer.class) < 3; i++) {
             Thread.sleep(100);
         }
-        jdbc.update("update vocab_saved_word set state = 'LEARNING', box = 2, due_on = ? where " + samir, later);
+        jdbc.update("update vocab_saved_word set state = 'LEARNING', learned_at = created_at where " + tural);
 
+        // My words: the Sets card, then the sets page
         tab.navigate(url("/vocabulary"));
-        tab.waitFor("!document.getElementById('vRecallGo').hidden");
-        assertThat(tab.text("document.getElementById('vRecallTitle').textContent")).isEqualTo("3 words, mixed");
-        tab.eval("document.getElementById('vRecallGo').click()");
-        tab.waitFor("location.pathname === '/vocabulary/recall'");
-        tab.waitFor("document.querySelector('.v-q') !== null");
-        assertThat(tab.text("document.querySelector('.v-pill').textContent")).contains("Recall");
+        tab.waitFor("!document.getElementById('vSetsGo').hidden");
+        assertThat(tab.text("document.getElementById('vSetsTitle').textContent")).isEqualTo("Set 1 of 1 · 0 / 3 mastered");
+        assertThat(tab.eval("document.querySelectorAll('#vSetsDots i').length").asInt()).isEqualTo(3);
+        assertThat(tab.text("document.getElementById('vSetsGo').textContent")).isEqualTo("Continue Set 1 →");
+        assertThat(tab.text("document.querySelector('.v-word .v-strength').textContent")).isEqualTo("Set 1 · not yet");
+        shot(tab, "sets-card");
+        tab.eval("document.getElementById('vSetsGo').click()");
+        tab.waitFor("location.pathname === '/vocabulary/sets' && document.getElementById('vsStart') !== null");
+        assertThat(tab.text("document.querySelector('.v-set').textContent")).contains("Set 1", "3 / 25 words", "0 / 3 mastered");
+        shot(tab, "sets");
+        tab.eval("document.getElementById('vsStart').click()");
+
+        // Round 1: the first word missed (it comes back, the retry doesn't count), the others right once
+        tab.waitFor("location.pathname === '/vocabulary/round' && document.querySelector('.v-q') !== null");
+        assertThat(tab.text("document.querySelector('.v-pill').textContent")).contains("Set 1 · Round 1");
         assertThat(tab.text("String(document.querySelector('.v-q .v-hint'))")).as("no hint").isEqualTo("null");
-        String first = tab.text("document.querySelector('.v-az--big').textContent").replace("🇦🇿 az ", "");
+        String first = asked(tab);
         tab.eval("document.querySelector('[data-dont-know]').click()");
         tab.waitFor("document.querySelector('.v-fb__verdict') !== null");
         assertThat(tab.text("document.querySelector('.v-fb').textContent"))
-                .contains("✕ Not quite", "Correct: " + first, "comes back until you get it right");
-        shot(tab, "recall");
+                .contains("✕ Not quite", "Correct: " + first, "comes back at the end of the round", "○ Missed");
+        shot(tab, "round");
         next(tab);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 2; i++) {
             tab.waitFor("document.querySelector('.v-q .v-fb[hidden]') !== null");
-            String word = tab.text("document.querySelector('.v-az--big').textContent").replace("🇦🇿 az ", "");
-            typeAnswer(tab, word.toUpperCase() + "s");
+            typeAnswer(tab, asked(tab).toUpperCase() + "s");
+            assertThat(tab.text("document.querySelector('[data-step]').dataset.step")).isEqualTo("once");
             next(tab);
         }
-        tab.waitFor("document.getElementById('sessionDone') !== null");
-        assertThat(tab.text("document.getElementById('recallScore').textContent")).isEqualTo("2 / 3");
-        assertThat(tab.text("document.getElementById('recallMissed').textContent")).isEqualTo(first);
-        assertThat(tab.text("document.getElementById('sessionDone').textContent"))
-                .contains("right on the first try", "haven’t changed", "Again with other words");
-        shot(tab, "recall-done");
-        assertThat(jdbc.queryForObject("select count(*) from vocab_saved_word where " + samir
-                + " and state = 'LEARNING' and box = 2 and due_on = ? and last_answered_on is null", Integer.class, later))
-                .as("recall moves nothing").isEqualTo(3);
+        tab.waitFor("document.querySelector('.v-q .v-fb[hidden]') !== null");
+        assertThat(asked(tab)).isEqualTo(first);
+        typeAnswer(tab, first);
+        assertThat(tab.text("document.querySelector('.v-fb').textContent")).contains("Only first tries count");
+        next(tab);
+        tab.waitFor("document.getElementById('sessionDone') !== null && document.getElementById('roundSet') !== null");
+        assertThat(tab.text("document.getElementById('roundScore').textContent")).isEqualTo("2 / 3");
+        assertThat(tab.text("document.getElementById('roundMissed').textContent")).isEqualTo(first);
+        assertThat(tab.eval("document.querySelectorAll('#roundOnce span').length").asInt()).isEqualTo(2);
+        assertThat(tab.text("document.getElementById('roundSet').textContent")).isEqualTo("Set 1: 0 / 3 mastered");
+        shot(tab, "round-done");
+
+        // Round 2: two words mastered, the missed one right once; round 3 masters the set
+        tab.eval("[...document.querySelectorAll('#sessionDone a')].find(a => a.textContent === 'Next round →').click()");
+        tab.waitFor("document.querySelector('.v-pill') !== null && document.querySelector('.v-pill').textContent.includes('Round 2')");
+        for (int i = 0; i < 3; i++) {
+            tab.waitFor("document.querySelector('.v-q .v-fb[hidden]') !== null");
+            typeAnswer(tab, asked(tab));
+            next(tab);
+        }
+        tab.waitFor("document.getElementById('sessionDone') !== null && document.getElementById('roundSet') !== null");
+        assertThat(tab.text("document.getElementById('roundMastered').textContent")).doesNotContain(first);
+        assertThat(tab.text("document.getElementById('roundOnce').textContent")).isEqualTo(first);
+        tab.eval("[...document.querySelectorAll('#sessionDone a')].find(a => a.textContent === 'Next round →').click()");
+        tab.waitFor("document.querySelector('.v-pill') !== null && document.querySelector('.v-pill').textContent.includes('Round 3')");
+        typeAnswer(tab, asked(tab));
+        assertThat(tab.text("document.querySelector('[data-step]').dataset.step")).isEqualTo("mastered");
+        next(tab);
+        tab.waitFor("document.getElementById('sessionDone') !== null && document.getElementById('roundSet') !== null");
+        assertThat(tab.text("document.querySelector('#sessionDone h1').textContent")).isEqualTo("Set 1 mastered!");
+        assertThat(tab.text("document.getElementById('sessionDone').textContent")).contains("You mastered every learned word");
+        shot(tab, "set-mastered");
+        assertThat(jdbc.queryForObject("select count(*) from vocab_saved_word where state = 'MASTERED' and " + tural,
+                Integer.class)).isEqualTo(3);
     }
 
     @Test
-    void guestsAreAskedToSignInAndEmptySessionsSaySo() throws Exception {
+    void guestsAreAskedToSignInAndEmptySetsSaySo() throws Exception {
         HeadlessChrome.Tab tab = chrome.newTab(url("/vocabulary"));
         tab.waitFor("!document.getElementById('vGuest').hidden");
         tab.navigate(url("/vocabulary/learn"));
         tab.waitFor("document.querySelector('.v-msgcard h1') !== null");
         assertThat(tab.text("document.querySelector('.v-msgcard h1').textContent")).isEqualTo("Sign in to learn your words");
         signIn(tab, registerLearner(tab, "Rauf"), PASSWORD);
-        tab.navigate(url("/vocabulary/review"));
+        tab.eval("location.href = '/vocabulary/review'"); // an old link lands on the sets
+        tab.waitFor("location.pathname === '/vocabulary/sets' && document.getElementById('vsPage') !== null"
+                + " && !document.getElementById('vsPage').hidden");
+        assertThat(tab.eval("document.getElementById('vsEmpty').hidden").asBoolean()).isFalse();
+        tab.navigate(url("/vocabulary/round"));
         tab.waitFor("document.querySelector('.v-msgcard h1') !== null");
-        assertThat(tab.text("document.querySelector('.v-msgcard h1').textContent")).isEqualTo("Nothing to review");
+        assertThat(tab.text("document.querySelector('.v-msgcard').textContent"))
+                .contains("Nothing to ask right now", "Learn some words first — they join Set 1.");
+    }
+
+    /** The English word a round task asks for (the test cards' Azerbaijani is "az <word>"). */
+    private static String asked(HeadlessChrome.Tab tab) throws Exception {
+        return tab.text("document.querySelector('.v-az--big').textContent").replace("🇦🇿 az ", "");
     }
 
     // ------------------------------------------------------------- helpers
@@ -323,26 +325,6 @@ class VocabularyBrowserTest extends BrowserTestBase {
                 + "'; document.querySelector('.v-typed .btn:not([hidden])').click(); })()");
         tab.waitFor("document.querySelector('.v-fb__verdict') !== null");
         assertThat(tab.text("document.querySelector('.v-fb__verdict').textContent")).isEqualTo("✓ Correct");
-    }
-
-    /** Review tasks of the test cards: pair → the bank word option; typed → the word from the hint / az text. */
-    private static final String ANSWER_JS = """
-            (() => { const q = document.querySelector('.v-q'); const t = q.dataset.type;
-              const words = ['predator', 'erosion'];
-              if (t === 'pair') { const opts = [...q.querySelectorAll('.v-opt')];
-                const right = opts.find(o => words.some(w => o.textContent.endsWith(w)));
-                (WRONG ? opts.find(o => o !== right) : right).click(); return; }
-              let word = '';
-              if (t === 'translate') word = q.querySelector('.v-az').textContent.replace('🇦🇿 az ', '');
-              else { const h = q.querySelector('.v-hint').textContent; word = words.find(w => w[0] === h[0] && w.length === h.split(' ').length); }
-              q.querySelector('.v-answer').value = WRONG ? 'nonsense' : word; q.querySelector('.v-typed .btn').click(); })()""";
-
-    private static void rightAnswer(HeadlessChrome.Tab tab) throws Exception {
-        tab.eval(ANSWER_JS.replace("WRONG", "false"));
-    }
-
-    private static void wrongAnswer(HeadlessChrome.Tab tab) throws Exception {
-        tab.eval(ANSWER_JS.replace("WRONG", "true"));
     }
 
     private static void next(HeadlessChrome.Tab tab) throws Exception {

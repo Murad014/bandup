@@ -28,11 +28,12 @@ import com.bandup.api.vocabulary.domain.session.valueobject.TaskId;
 import com.bandup.api.vocabulary.domain.session.valueobject.TaskPhase;
 
 /**
- * One learn or review session (aggregate root; vocabulary requirements 5, 6).
+ * One learn session or round (aggregate root; vocabulary requirements 5, 6).
  * Holds snapshots of its words and the tasks built from them, and grades
  * every answer on the server. Practise tasks are answered once; a wrong master
- * task goes to the back of the queue until it is right. The session is
- * finished when every master task is mastered.
+ * task goes to the back of the queue until it is right, and is remembered as
+ * missed (its next answer isn't a first try). The session is finished when
+ * every master task is mastered.
  */
 @AggregateRoot
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -51,6 +52,7 @@ public final class WordSession {
     private final List<Task> tasks;
     private final List<TaskId> queue;
     private final Set<TaskId> mastered;
+    private final Set<TaskId> missed;
     @Getter
     private int retries;
     @Getter
@@ -58,7 +60,8 @@ public final class WordSession {
     private Instant finishedAt;
 
     private WordSession(SessionId id, LearnerId learner, SessionKind kind, List<SessionWord> words, List<Task> tasks,
-            Collection<TaskId> queue, Collection<TaskId> mastered, int retries, Instant startedAt, Instant finishedAt) {
+            Collection<TaskId> queue, Collection<TaskId> mastered, Collection<TaskId> missed, int retries,
+            Instant startedAt, Instant finishedAt) {
         this.id = Objects.requireNonNull(id, "id");
         this.learner = Objects.requireNonNull(learner, "learner");
         this.kind = Objects.requireNonNull(kind, "kind");
@@ -66,6 +69,7 @@ public final class WordSession {
         this.tasks = List.copyOf(tasks);
         this.queue = new ArrayList<>(queue);
         this.mastered = new LinkedHashSet<>(mastered);
+        this.missed = new LinkedHashSet<>(missed);
         this.retries = retries;
         this.startedAt = Objects.requireNonNull(startedAt, "startedAt");
         this.finishedAt = finishedAt;
@@ -76,14 +80,15 @@ public final class WordSession {
         if (tasks.isEmpty()) {
             throw new IllegalArgumentException("A session needs tasks");
         }
-        return new WordSession(id, learner, kind, words, tasks, tasks.stream().map(Task::id).toList(), List.of(), 0,
-                now, null);
+        return new WordSession(id, learner, kind, words, tasks, tasks.stream().map(Task::id).toList(), List.of(),
+                List.of(), 0, now, null);
     }
 
     public static WordSession restore(SessionId id, LearnerId learner, SessionKind kind, List<SessionWord> words,
-            List<Task> tasks, List<TaskId> queue, Collection<TaskId> mastered, int retries, Instant startedAt,
-            Instant finishedAt) {
-        return new WordSession(id, learner, kind, words, tasks, queue, mastered, retries, startedAt, finishedAt);
+            List<Task> tasks, List<TaskId> queue, Collection<TaskId> mastered, Collection<TaskId> missed, int retries,
+            Instant startedAt, Instant finishedAt) {
+        return new WordSession(id, learner, kind, words, tasks, queue, mastered, missed, retries, startedAt,
+                finishedAt);
     }
 
     /**
@@ -102,12 +107,14 @@ public final class WordSession {
         }
         Task task = task(taskId).orElseThrow();
         Grade grade = task.grade(answer, normalise);
+        boolean firstTry = !missed.contains(taskId);
         queue.remove(taskId);
         if (task.phase() == TaskPhase.MASTER) {
             if (grade.correct()) {
                 mastered.add(taskId);
             } else {
                 queue.add(taskId);
+                missed.add(taskId);
                 retries++;
             }
         }
@@ -115,7 +122,7 @@ public final class WordSession {
             finishedAt = now;
         }
         return new TaskFeedback(taskId, task.word(), task.phase(), grade.correct(), grade.expected(), grade.why(),
-                explanation(task), mastered.size(), masterTotal(), isFinished());
+                explanation(task), mastered.size(), masterTotal(), isFinished(), firstTry);
     }
 
     private String explanation(Task task) {
@@ -140,6 +147,11 @@ public final class WordSession {
 
     public Set<TaskId> mastered() {
         return Collections.unmodifiableSet(mastered);
+    }
+
+    /** Master tasks answered wrong at least once. */
+    public Set<TaskId> missed() {
+        return Collections.unmodifiableSet(missed);
     }
 
     public boolean isFinished() {

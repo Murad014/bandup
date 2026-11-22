@@ -10,7 +10,6 @@ import com.bandup.api.vocabulary.application.view.VocabularyViews.MeaningView;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.SavedWordView;
 import com.bandup.api.vocabulary.application.view.VocabularyViews.SourceView;
 import com.bandup.api.vocabulary.domain.saved.aggregate.SavedWord;
-import com.bandup.api.vocabulary.domain.saved.valueobject.Box;
 import com.bandup.api.vocabulary.domain.word.aggregate.WordCard;
 import com.bandup.api.vocabulary.domain.word.valueobject.CardContent;
 
@@ -30,7 +29,7 @@ class WordViews {
                 c == null ? null : new MeaningView(c.meaning().en(), c.meaning().az()),
                 new SourceView(slug, slug == null ? null : passages.title(slug).orElse(null),
                         word.source().sentenceText().orElse(null)),
-                word.addedOn(), word.state().name(), word.box().map(Box::value).orElse(null), word.dueOn().orElse(null),
+                word.addedOn(), word.state().name(), word.streak(), null,
                 card.status().name());
     }
 

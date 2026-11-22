@@ -15,10 +15,11 @@ public final class VocabularyViews {
      *
      * @param forms      every spelling of the word (to find it in a passage)
      * @param cardStatus PREPARING, READY or FAILED
-     * @param box        1–4 while LEARNING; null otherwise
+     * @param streak     rounds in a row with a right first try (0–2; 2 = mastered)
+     * @param set        the set it is in (1-based) once learned; null while NEW
      */
     public record SavedWordView(UUID id, String word, List<String> forms, String pos, String level, String ipa, MeaningView meaning,
-            SourceView source, LocalDate addedOn, String state, Integer box, LocalDate dueOn, String cardStatus) {
+            SourceView source, LocalDate addedOn, String state, int streak, Integer set, String cardStatus) {
     }
 
     public record MeaningView(String en, String az) {
@@ -36,9 +37,22 @@ public final class VocabularyViews {
     }
 
     /** The My words page. @param today the server's day ("added today / yesterday" is counted from it) */
-    public record WordsPage(Counts counts, LocalDate today, int due, int newReady, List<SavedWordView> words, int page,
-            int size,
-            long total) {
+    public record WordsPage(Counts counts, LocalDate today, int newReady, SetsView sets, List<SavedWordView> words,
+            int page, int size, long total) {
+    }
+
+    /** The learner's sets (requirement 6). @param current the open set's number; 0 when none is open */
+    public record SetsView(int current, List<SetView> sets) {
+    }
+
+    /**
+     * One set.
+     *
+     * @param rounds  rounds played on it; the next round is {@code rounds + 1}
+     * @param status  MASTERED, OPEN or LOCKED
+     * @param streaks per word in learned order: 0 not yet, 1 right once, 2 mastered
+     */
+    public record SetView(int number, int size, int mastered, int rounds, String status, List<Integer> streaks) {
     }
 
     /** A card in the bank (lookup and the Meet step). */

@@ -9,7 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** {@code vocab_saved_word}. */
+/** {@code vocab_saved_word}. {@code box}, {@code due_on}, {@code last_answered_on} belong to the old review: not mapped. */
 @Entity
 @Table(name = "vocab_saved_word")
 class SavedWordEntity {
@@ -27,13 +27,15 @@ class SavedWordEntity {
     @Column(nullable = false)
     String state;
 
-    Short box;
+    /** When a learn session taught it; orders the sets. Null while NEW. */
+    @Column(name = "learned_at")
+    Instant learnedAt;
 
-    @Column(name = "due_on")
-    LocalDate dueOn;
+    @Column(nullable = false)
+    short streak;
 
-    @Column(name = "last_answered_on")
-    LocalDate lastAnsweredOn;
+    @Column(nullable = false)
+    int rounds;
 
     @Column(name = "source_exercise_id")
     Long sourceExerciseId;

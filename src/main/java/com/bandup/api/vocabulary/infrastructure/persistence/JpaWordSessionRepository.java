@@ -34,7 +34,7 @@ class JpaWordSessionRepository implements WordSessionRepository {
         em.refresh(row, LockModeType.PESSIMISTIC_WRITE);
         SessionJson.Content c = SessionJson.read(row.content);
         return Optional.of(WordSession.restore(new SessionId(row.id), learners.learnerId(row.userId),
-                SessionKind.valueOf(row.kind), c.words(), c.tasks(), c.queue(), c.mastered(), row.retries,
+                SessionKind.valueOf(row.kind), c.words(), c.tasks(), c.queue(), c.mastered(), c.missed(), row.retries,
                 row.startedAt, row.finishedAt));
     }
 
@@ -50,7 +50,8 @@ class JpaWordSessionRepository implements WordSessionRepository {
             row.kind = session.kind().name();
             row.startedAt = session.startedAt();
         }
-        row.content = SessionJson.write(session.words(), session.tasks(), session.queue(), session.mastered());
+        row.content = SessionJson.write(session.words(), session.tasks(), session.queue(), session.mastered(),
+                session.missed());
         row.retries = session.retries();
         row.finishedAt = session.finishedAt().orElse(null);
         if (isNew) {
